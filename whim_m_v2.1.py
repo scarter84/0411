@@ -508,16 +508,53 @@ function sendAIChat(){
       const msgEl=appendAIChatMsg('...','assistant');
       function read(){reader.read().then(({done,value})=>{if(done){
         chatHistory.push({role:'assistant',content:full});
-        msgEl.querySelector('.msg-text').textContent=full;
+        const displayText=full.replace(/```whim-cmd[\s\S]*?```/g,'').trim();
+        msgEl.querySelector('.msg-text').textContent=displayText;
         const sb=document.createElement('span');sb.className='speak-btn';sb.textContent='Speak';
-        sb.onclick=()=>speakText(full,sb);msgEl.appendChild(sb);
-        if(autoSpeak&&currentVoice&&currentVoice.name){speakText(full,sb)}
+        sb.onclick=()=>speakText(displayText,sb);msgEl.appendChild(sb);
+        if(autoSpeak&&currentVoice&&currentVoice.name){speakText(displayText,sb)}
+        parseAndExecuteCommands(full,msgEl);
         return}
         const chunk=decoder.decode(value);
         chunk.split('\n').filter(l=>l.trim()).forEach(line=>{try{const j=JSON.parse(line);
           if(j.message&&j.message.content){full+=j.message.content;msgEl.querySelector('.msg-text').textContent=full}}catch(e){}});
         read()})}
       read()}).catch(e=>{appendAIChatMsg('Error: '+e.message,'assistant')});
+}
+
+function parseAndExecuteCommands(text,msgEl){
+  const cmdMatch=text.match(/```whim-cmd\s*\n?([\s\S]*?)\n?```/);
+  if(!cmdMatch)return;
+  try{
+    const cmd=JSON.parse(cmdMatch[1].trim());
+    executeCommand(cmd,msgEl);
+  }catch(e){}
+}
+
+function executeCommand(cmd,msgEl){
+  const action=cmd.action,params=cmd.params||{};
+  fetch('/api/command',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(cmd)})
+    .then(r=>r.json()).then(d=>{
+      if(d.action==='play_music'&&d.intent_url){
+        if(typeof WhimBridge!=='undefined'&&WhimBridge.openUrl){WhimBridge.openUrl(d.intent_url)}
+        else{window.open(d.intent_url,'_blank')}
+      }
+      if(d.action==='send_file'&&d.download_url){
+        const link=document.createElement('span');link.className='speak-btn';
+        link.textContent='Download: '+d.file;
+        link.onclick=()=>{window.open(d.download_url,'_blank')};
+        msgEl.appendChild(link);
+      }
+      if(d.action==='open_maps'&&params.destination){
+        if(typeof WhimBridge!=='undefined'&&WhimBridge.openMaps){
+          WhimBridge.openMaps(params.destination)}
+      }
+      if(d.message){
+        const info=document.createElement('div');
+        info.style.cssText='color:#2fa572;font-size:12px;margin-top:4px';
+        info.textContent=d.message;msgEl.appendChild(info)}
+    }).catch(()=>{});
 }
 
 function appendAIChatMsg(text,role){
@@ -685,6 +722,8 @@ class RecorderHandler(BaseHTTPRequestHandler):
             self._serve_tts_audio()
         elif self.path == "/device/chat":
             self._serve_device_chat()
+        elif self.path.startswith("/search_files"):
+            self._handle_file_search()
         elif self.path == "/manifest.json":
             self._text_response(200, MANIFEST, "application/json")
         elif self.path == "/sw.js":
@@ -696,21 +735,26 @@ class RecorderHandler(BaseHTTPRequestHandler):
 
     _OPENCLAW_SYSTEM = (
         "You are OpenClaw, the AI assistant powering the Whim ecosystem. "
-        "You have FULL tool access and can execute any command the user requests. "
+        "You have FULL tool access and can execute any command the user requests.\n\n"
+        "IMPORTANT: When the user asks you to perform an ACTION, you MUST include a JSON command "
+        "block at the END of your response using this exact format:\n"
+        '```whim-cmd\n{"action":"ACTION_NAME","params":{...}}\n```\n\n'
+        "Available actions:\n"
+        '- open_maps: Open Organic Maps. params: {"destination":"address or place name"}\n'
+        '- play_music: Play music on device. params: {"query":"song or artist name"}\n'
+        '- send_file: Find a file on the PC and send it to the device library. params: {"query":"description of file","filename":"exact filename if known"}\n'
+        '- open_app: Open an app. params: {"app":"app name"}\n'
+        '- search_files: Search for files on the PC. params: {"query":"search term"}\n\n'
         "Available tools and commands:\n"
-        "QUICK PROMPTS: droid (launch agent), note (capture note), calc (inline calculator), "
-        "search (semantic search), summarize, rewrite, translate, explain.\n"
-        "OPENCLAW CORE: connect/disconnect (WS gateway), heartbeat, status (system check), "
-        "sessions (list active), presence (who's online), approve/deny (pending actions).\n"
-        "CHAT OPS: send (chat message), abort (current task), retry, history, clear, export.\n"
-        "VOICE & MEDIA: record (voice capture), transcribe (Whisper), tts (XTTS text-to-speech), "
-        "playback, scrub (clean audio).\n"
+        "QUICK PROMPTS: droid, note, calc, search, summarize, rewrite, translate, explain.\n"
+        "OPENCLAW CORE: connect/disconnect, heartbeat, status, sessions, presence, approve/deny.\n"
+        "CHAT OPS: send, abort, retry, history, clear, export.\n"
+        "VOICE & MEDIA: record, transcribe (Whisper), tts (XTTS), playback, scrub.\n"
         "SIGNAL / DISCORD: sig.send, sig.recv, sig.contacts, disc.send, disc.react, disc.search.\n"
         "ARCHIVE & FILES: archive.new, archive.save, archive.open, journal, ingest.\n"
-        "SYSTEM: You can read/write files, run shell commands, manage SmartThings devices, "
-        "control Tailscale networking, manage sessions, and access all Whim subsystems.\n"
-        "When the user issues a command, acknowledge it and describe what you would do. "
-        "Be concise and direct. You are always ready to act."
+        "SYSTEM: read/write files, shell commands, SmartThings, Tailscale, sessions.\n\n"
+        "Always respond conversationally AND include the command block when an action is needed. "
+        "Be concise and direct."
     )
 
     def do_POST(self):
@@ -726,6 +770,8 @@ class RecorderHandler(BaseHTTPRequestHandler):
             self._handle_library_upload()
         elif self.path == "/device/chat":
             self._handle_device_chat_post()
+        elif self.path == "/api/command":
+            self._handle_command()
         else:
             self.send_error(404)
 
@@ -1079,6 +1125,130 @@ class RecorderHandler(BaseHTTPRequestHandler):
                 if len(_device_chat_messages) > _CHAT_MAX_MESSAGES:
                     _device_chat_messages[:] = _device_chat_messages[-_CHAT_MAX_MESSAGES:]
             self._json_response(200, msg)
+        except Exception as e:
+            self._json_response(500, {"error": str(e)})
+
+    # --- File search ---
+    def _handle_file_search(self):
+        query = ""
+        if "?" in self.path:
+            qs = self.path.split("?", 1)[1]
+            for part in qs.split("&"):
+                if part.startswith("q="):
+                    import urllib.parse
+                    query = urllib.parse.unquote(part.split("=", 1)[1])
+        if not query:
+            self._json_response(400, {"error": "No search query"})
+            return
+        results = []
+        search_dirs = [
+            os.path.expanduser("~"),
+            os.path.expanduser("~/Documents"),
+            os.path.expanduser("~/Downloads"),
+            os.path.expanduser("~/Desktop"),
+            os.path.expanduser("~/Journal"),
+            os.path.expanduser("~/Shared"),
+        ]
+        query_lower = query.lower()
+        for search_dir in search_dirs:
+            if not os.path.isdir(search_dir):
+                continue
+            for root, dirs, files in os.walk(search_dir):
+                dirs[:] = [d for d in dirs if not d.startswith(".") and d not in
+                    ("miniconda3", ".cache", ".local", "go", "Android", ".venv", "node_modules", "__pycache__")]
+                for fn in files:
+                    if query_lower in fn.lower():
+                        fp = os.path.join(root, fn)
+                        results.append({
+                            "name": fn,
+                            "path": fp,
+                            "size": _human_size(os.path.getsize(fp)),
+                            "dir": os.path.dirname(fp),
+                        })
+                        if len(results) >= 20:
+                            break
+                if len(results) >= 20:
+                    break
+        self._json_response(200, results)
+
+    # --- Command dispatch (open maps, play music, send files) ---
+    def _handle_command(self):
+        try:
+            content_length = int(self.headers.get("Content-Length", 0))
+            body = self.rfile.read(content_length)
+            data = json.loads(body)
+            action = data.get("action", "")
+            params = data.get("params", {})
+
+            if action == "open_maps":
+                dest = params.get("destination", "")
+                try:
+                    subprocess.Popen(["flatpak", "run", "app.organicmaps.desktop"],
+                                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                except Exception:
+                    pass
+                self._json_response(200, {"status": "ok", "action": "open_maps",
+                    "message": f"Opened Organic Maps" + (f" (destination: {dest})" if dest else "")})
+
+            elif action == "play_music":
+                query = params.get("query", "")
+                self._json_response(200, {"status": "ok", "action": "play_music",
+                    "query": query,
+                    "intent_url": f"https://music.youtube.com/search?q={query.replace(' ', '+')}"})
+
+            elif action == "send_file":
+                query = params.get("query", "").lower()
+                filename = params.get("filename", "").lower()
+                search_dirs = [
+                    os.path.expanduser("~"),
+                    os.path.expanduser("~/Documents"),
+                    os.path.expanduser("~/Downloads"),
+                    os.path.expanduser("~/Desktop"),
+                ]
+                found = None
+                for search_dir in search_dirs:
+                    if not os.path.isdir(search_dir):
+                        continue
+                    for root, dirs, files in os.walk(search_dir):
+                        dirs[:] = [d for d in dirs if not d.startswith(".") and d not in
+                            ("miniconda3", ".cache", ".local", "go", "Android", ".venv", "node_modules", "__pycache__")]
+                        for fn in files:
+                            fn_lower = fn.lower()
+                            if (filename and filename in fn_lower) or \
+                               (query and query in fn_lower) or \
+                               (query and "resume" in query and fn_lower.endswith(".pdf") and "resume" in fn_lower):
+                                found = os.path.join(root, fn)
+                                break
+                        if found:
+                            break
+                    if found:
+                        break
+
+                if found:
+                    dest = os.path.join(SHARED_DIR, os.path.basename(found))
+                    os.makedirs(SHARED_DIR, exist_ok=True)
+                    shutil.copy2(found, dest)
+                    self._json_response(200, {"status": "ok", "action": "send_file",
+                        "file": os.path.basename(found),
+                        "download_url": f"/library/download/{os.path.basename(found)}",
+                        "message": f"Sent {os.path.basename(found)} to Library"})
+                else:
+                    self._json_response(404, {"status": "not_found", "action": "send_file",
+                        "message": f"Could not find file matching: {query or filename}"})
+
+            elif action == "open_app":
+                app = params.get("app", "").lower()
+                self._json_response(200, {"status": "ok", "action": "open_app", "app": app})
+
+            elif action == "search_files":
+                query = params.get("query", "")
+                import urllib.parse
+                self.path = f"/search_files?q={urllib.parse.quote(query)}"
+                self._handle_file_search()
+
+            else:
+                self._json_response(400, {"error": f"Unknown action: {action}"})
+
         except Exception as e:
             self._json_response(500, {"error": str(e)})
 

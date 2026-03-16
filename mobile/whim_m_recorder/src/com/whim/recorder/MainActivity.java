@@ -7,6 +7,7 @@ import android.app.NotificationManager;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.speech.RecognizerIntent;
@@ -270,6 +271,68 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void onReady() {
             // App loaded callback
+        }
+
+        @JavascriptInterface
+        public void openUrl(final String url) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(i);
+                    } catch (Exception e) { }
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void openMaps(final String destination) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        // Try Organic Maps first, then Google Maps, then generic geo intent
+                        Uri geoUri = Uri.parse("geo:0,0?q=" + Uri.encode(destination));
+                        Intent mapIntent = new Intent(Intent.ACTION_VIEW, geoUri);
+
+                        // Try Organic Maps
+                        mapIntent.setPackage("app.organicmaps");
+                        if (mapIntent.resolveActivity(getPackageManager()) != null) {
+                            startActivity(mapIntent);
+                            return;
+                        }
+
+                        // Try Google Maps
+                        mapIntent.setPackage("com.google.android.apps.maps");
+                        if (mapIntent.resolveActivity(getPackageManager()) != null) {
+                            startActivity(mapIntent);
+                            return;
+                        }
+
+                        // Fallback to any maps app
+                        mapIntent.setPackage(null);
+                        startActivity(mapIntent);
+                    } catch (Exception e) { }
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void playMusic(final String query) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        // Open YouTube Music search
+                        String url = "https://music.youtube.com/search?q=" + Uri.encode(query);
+                        Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(i);
+                    } catch (Exception e) { }
+                }
+            });
         }
     }
 }
