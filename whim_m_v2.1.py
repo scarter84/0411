@@ -31,6 +31,11 @@ TTS_OUTPUT_DIR = os.path.expanduser("~/xtts_tts_cache")
 LOCATION_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config", "device_locations.json")
 DEFAULT_PORT = 8089
 
+# In-memory device chat store (shared across all connected devices)
+_device_chat_messages = []
+_device_chat_lock = threading.Lock()
+_CHAT_MAX_MESSAGES = 200
+
 WHIM_ICON_B64 = ""
 _icon_path = os.path.expanduser("~/.openclaw/Whim.png")
 if os.path.isfile(_icon_path):
@@ -179,6 +184,15 @@ input[type=file]{display:none}
 .chat-input-row button{padding:12px 16px;background:#2fa572;border:none;border-radius:10px;
   color:#fff;font-weight:600;cursor:pointer;font-size:14px}
 .voice-label{color:#555;font-size:11px;text-align:center;margin-bottom:4px;font-family:'Courier New',monospace}
+
+/* Device chat */
+.dc-msg{padding:8px 12px;margin-bottom:6px;border-radius:10px;font-size:14px;line-height:1.4;
+  background:#2b2b2b;border:1px solid #3a3a3a;color:#dce4ee;max-width:85%;word-break:break-word}
+.dc-msg.dc-mine{background:#14507a;border-color:#14507a;margin-left:auto}
+.dc-sender{color:#2fa572;font-weight:600;font-size:12px}
+.dc-mine .dc-sender{color:#88ccff}
+.dc-time{color:#555;font-size:11px}
+.dc-file-link{color:#2fa572;text-decoration:underline;word-break:break-all}
 </style></head><body>
 
 <div class="health-bar" id="healthBar">
@@ -252,6 +266,28 @@ input[type=file]{display:none}
   </div>
 </div>
 
+<!-- ========== TAB: DEVICE CHAT ========== -->
+<div class="tab-content" id="tabDeviceChat">
+  <h1 style="margin-top:16px">Device Chat</h1>
+  <p class="sub">talk between your devices</p>
+  <div id="dcNameSetup" style="width:100%;max-width:var(--max-w);text-align:center">
+    <p style="color:#888;margin-bottom:12px">Set your device name to start chatting</p>
+    <input type="text" id="dcNameInput" placeholder="e.g. Galaxy S9, Tablet..." style="width:100%;padding:12px;background:#2b2b2b;border:1px solid #3a3a3a;border-radius:10px;color:#dce4ee;font-size:14px;outline:none;margin-bottom:8px">
+    <button class="action-btn blue" id="dcSaveBtn">JOIN CHAT</button>
+  </div>
+  <div id="dcChatArea" style="display:none;flex-direction:column;width:100%;max-width:var(--max-w);flex:1">
+    <div id="dcMessages" style="flex:1;overflow-y:auto;max-height:50vh;margin-bottom:8px"></div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <input type="text" id="dcInput" placeholder="Message all devices..." style="flex:1;padding:12px;background:#2b2b2b;border:1px solid #3a3a3a;border-radius:10px;color:#dce4ee;font-size:14px;outline:none" autocomplete="off">
+      <label style="cursor:pointer;padding:10px;background:#333;border:1px solid #3a3a3a;border-radius:10px;display:flex;align-items:center">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#888" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+        <input type="file" id="dcFileInput" style="display:none">
+      </label>
+      <button id="dcSendBtn" style="padding:12px 16px;background:#2fa572;border:none;border-radius:10px;color:#fff;font-weight:600;cursor:pointer;font-size:14px">Send</button>
+    </div>
+  </div>
+</div>
+
 <!-- ========== TAB BAR ========== -->
 <div class="tab-bar">
   <button class="tab-btn active" data-tab="tabRecorder">
@@ -261,6 +297,10 @@ input[type=file]{display:none}
   <button class="tab-btn" data-tab="tabLibrary">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
     LIBRARY
+  </button>
+  <button class="tab-btn" data-tab="tabDeviceChat">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    CHAT
   </button>
   <button class="tab-btn" data-tab="tabWakeWord">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
@@ -280,6 +320,7 @@ tabBtns.forEach(btn=>{btn.addEventListener('click',()=>{
   if(btn.dataset.tab==='tabRecorder'){setTimeout(()=>{resizeCanvas();drawIdle()},50)}
   if(btn.dataset.tab==='tabLibrary'){loadLibrary()}
   if(btn.dataset.tab==='tabWakeWord'){loadActiveVoice()}
+  if(btn.dataset.tab==='tabDeviceChat'&&deviceName){startDCPoll()}
 })});
 
 // ========== HEALTH ==========
@@ -443,54 +484,114 @@ wwToggle.addEventListener('click',()=>{
   }
 });
 
-// ========== CHAT WITH VOICE ==========
+// ========== WHIM.AI VOICE CHAT ==========
 const chatMessages=document.getElementById('chatMessages'),chatInput=document.getElementById('chatInput'),
   chatSendBtn=document.getElementById('chatSendBtn'),activeVoiceLabel=document.getElementById('activeVoiceLabel');
-let chatHistory=[],currentVoice=null;
+let chatHistory=[],currentVoice=null,autoSpeak=true;
 
 function loadActiveVoice(){fetch('/active_voice').then(r=>r.json()).then(d=>{
-  currentVoice=d;activeVoiceLabel.textContent='voice: '+(d.name||'none assigned')}).catch(()=>{})}
+  currentVoice=d;
+  activeVoiceLabel.textContent='voice: '+(d.name||'none assigned — set in AVR LAB')
+}).catch(()=>{activeVoiceLabel.textContent='voice: unavailable'})}
 loadActiveVoice();
 
-chatSendBtn.addEventListener('click',sendChat);
-chatInput.addEventListener('keydown',e=>{if(e.key==='Enter')sendChat()});
+chatSendBtn.addEventListener('click',sendAIChat);
+chatInput.addEventListener('keydown',e=>{if(e.key==='Enter')sendAIChat()});
 
-function sendChat(){
+function sendAIChat(){
   const text=chatInput.value.trim();if(!text)return;chatInput.value='';
   chatHistory.push({role:'user',content:text});
-  appendChatMsg(text,'user');
+  appendAIChatMsg(text,'user');
   const body=JSON.stringify({messages:chatHistory});
   fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body})
     .then(r=>{const reader=r.body.getReader();const decoder=new TextDecoder();let full='';
-      const msgEl=appendChatMsg('...','assistant');
+      const msgEl=appendAIChatMsg('...','assistant');
       function read(){reader.read().then(({done,value})=>{if(done){
         chatHistory.push({role:'assistant',content:full});
         msgEl.querySelector('.msg-text').textContent=full;
-        if(currentVoice&&currentVoice.name){
-          const sb=document.createElement('span');sb.className='speak-btn';sb.textContent='Speak';
-          sb.onclick=()=>speakText(full,sb);msgEl.appendChild(sb)}
+        const sb=document.createElement('span');sb.className='speak-btn';sb.textContent='Speak';
+        sb.onclick=()=>speakText(full,sb);msgEl.appendChild(sb);
+        if(autoSpeak&&currentVoice&&currentVoice.name){speakText(full,sb)}
         return}
         const chunk=decoder.decode(value);
         chunk.split('\n').filter(l=>l.trim()).forEach(line=>{try{const j=JSON.parse(line);
           if(j.message&&j.message.content){full+=j.message.content;msgEl.querySelector('.msg-text').textContent=full}}catch(e){}});
         read()})}
-      read()}).catch(e=>{appendChatMsg('Error: '+e.message,'assistant')});
+      read()}).catch(e=>{appendAIChatMsg('Error: '+e.message,'assistant')});
 }
 
-function appendChatMsg(text,role){
+function appendAIChatMsg(text,role){
   const d=document.createElement('div');d.className='chat-msg '+role;
   const s=document.createElement('span');s.className='msg-text';s.textContent=text;d.appendChild(s);
   chatMessages.appendChild(d);chatMessages.scrollTop=chatMessages.scrollHeight;return d}
 
 function speakText(text,btn){
-  btn.textContent='Generating...';btn.className='speak-btn loading';
+  if(!currentVoice||!currentVoice.file){
+    showStatus(wwStatus,'No voice assigned. Set one in AVR LAB on desktop.','err');return}
+  btn.textContent='Generating voice...';btn.className='speak-btn loading';
+  const ttsText=text.length>500?text.substring(0,500)+'...':text;
   fetch('/api/tts',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({text:text.substring(0,500),voice_file:currentVoice?currentVoice.file:''})})
-    .then(r=>r.json()).then(d=>{
-      if(d.audio_url){const a=new Audio(d.audio_url);a.play();btn.textContent='Speak';btn.className='speak-btn'}
-      else{btn.textContent='Error';setTimeout(()=>{btn.textContent='Speak';btn.className='speak-btn'},2000)}
-    }).catch(()=>{btn.textContent='Error';setTimeout(()=>{btn.textContent='Speak';btn.className='speak-btn'},2000)});
+    body:JSON.stringify({text:ttsText,voice_file:currentVoice.file})})
+    .then(r=>{if(!r.ok)throw new Error('TTS server error '+r.status);return r.json()})
+    .then(d=>{
+      if(d.audio_url){
+        const a=new Audio(d.audio_url);
+        a.oncanplaythrough=()=>a.play();
+        a.onerror=()=>{btn.textContent='Play failed';setTimeout(()=>{btn.textContent='Speak';btn.className='speak-btn'},2000)};
+        a.onended=()=>{btn.textContent='Speak';btn.className='speak-btn'};
+        btn.textContent='Playing...';btn.className='speak-btn';
+      } else{
+        btn.textContent=d.error||'TTS error';btn.className='speak-btn loading';
+        setTimeout(()=>{btn.textContent='Speak';btn.className='speak-btn'},3000)}
+    }).catch(e=>{btn.textContent='Error: '+e.message;
+      setTimeout(()=>{btn.textContent='Speak';btn.className='speak-btn'},3000)});
 }
+
+// ========== DEVICE-TO-DEVICE CHAT ==========
+let deviceName=localStorage.getItem('whim_device_name')||'';
+let lastMsgId=0,dcPollTimer=null;
+const dcNameInput=document.getElementById('dcNameInput'),dcSaveBtn=document.getElementById('dcSaveBtn'),
+  dcMessages=document.getElementById('dcMessages'),dcInput=document.getElementById('dcInput'),
+  dcSendBtn=document.getElementById('dcSendBtn'),dcFileInput=document.getElementById('dcFileInput'),
+  dcNameSetup=document.getElementById('dcNameSetup'),dcChatArea=document.getElementById('dcChatArea');
+
+if(deviceName){dcNameSetup.style.display='none';dcChatArea.style.display='flex';startDCPoll()}
+
+dcSaveBtn.addEventListener('click',()=>{
+  const n=dcNameInput.value.trim();if(!n)return;deviceName=n;localStorage.setItem('whim_device_name',n);
+  dcNameSetup.style.display='none';dcChatArea.style.display='flex';startDCPoll()});
+
+dcSendBtn.addEventListener('click',sendDCMsg);
+dcInput.addEventListener('keydown',e=>{if(e.key==='Enter')sendDCMsg()});
+
+function sendDCMsg(){
+  const text=dcInput.value.trim();if(!text||!deviceName)return;dcInput.value='';
+  fetch('/device/chat',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({sender:deviceName,text:text,type:'text'})}).catch(()=>{})
+}
+
+dcFileInput.addEventListener('change',()=>{
+  if(!dcFileInput.files.length||!deviceName)return;
+  const fd=new FormData();fd.append('file',dcFileInput.files[0]);
+  fetch('/library/upload',{method:'POST',body:fd}).then(r=>r.json()).then(d=>{
+    if(d.file){fetch('/device/chat',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({sender:deviceName,text:'Shared file: '+d.file,type:'file',
+        file_url:'/library/download/'+encodeURIComponent(d.file)})}).catch(()=>{})}
+  }).catch(()=>{})});
+
+function pollDC(){
+  fetch('/device/chat?since='+lastMsgId).then(r=>r.json()).then(msgs=>{
+    msgs.forEach(m=>{
+      lastMsgId=Math.max(lastMsgId,m.id);
+      const d=document.createElement('div');
+      d.className='dc-msg'+(m.sender===deviceName?' dc-mine':'');
+      let html='<span class="dc-sender">'+m.sender+'</span> <span class="dc-time">'+m.time+'</span><br>';
+      if(m.type==='file'&&m.file_url){html+='<a class="dc-file-link" href="'+m.file_url+'" download>'+m.text+'</a>'}
+      else{html+='<span>'+m.text+'</span>'}
+      d.innerHTML=html;dcMessages.appendChild(d);dcMessages.scrollTop=dcMessages.scrollHeight;
+    })}).catch(()=>{})}
+
+function startDCPoll(){if(dcPollTimer)return;pollDC();dcPollTimer=setInterval(pollDC,2000)}
 
 // ========== UTIL ==========
 function showStatus(el,msg,type){el.className='status '+type;el.textContent=msg;el.style.display='block';
@@ -498,8 +599,6 @@ function showStatus(el,msg,type){el.className='status '+type;el.textContent=msg;
 
 if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(()=>{})}
 document.getElementById('ssFab').addEventListener('click',()=>{window.location.href='http://'+location.hostname+':8091'});
-
-// Notify Android bridge if available
 if(typeof WhimBridge!=='undefined'&&WhimBridge.onReady){try{WhimBridge.onReady()}catch(e){}}
 </script></body></html>"""
 
@@ -584,6 +683,8 @@ class RecorderHandler(BaseHTTPRequestHandler):
             self._serve_active_voice()
         elif self.path.startswith("/tts_audio/"):
             self._serve_tts_audio()
+        elif self.path == "/device/chat":
+            self._serve_device_chat()
         elif self.path == "/manifest.json":
             self._text_response(200, MANIFEST, "application/json")
         elif self.path == "/sw.js":
@@ -623,6 +724,8 @@ class RecorderHandler(BaseHTTPRequestHandler):
             self._handle_tts()
         elif self.path == "/library/upload":
             self._handle_library_upload()
+        elif self.path == "/device/chat":
+            self._handle_device_chat_post()
         else:
             self.send_error(404)
 
@@ -932,6 +1035,50 @@ class RecorderHandler(BaseHTTPRequestHandler):
             })
         except subprocess.TimeoutExpired:
             self._json_response(500, {"error": "TTS generation timed out"})
+        except Exception as e:
+            self._json_response(500, {"error": str(e)})
+
+    # --- Device-to-device chat ---
+    def _serve_device_chat(self):
+        since = 0
+        if "?" in self.path:
+            qs = self.path.split("?", 1)[1]
+            for part in qs.split("&"):
+                if part.startswith("since="):
+                    try:
+                        since = int(part.split("=", 1)[1])
+                    except ValueError:
+                        pass
+        with _device_chat_lock:
+            msgs = [m for m in _device_chat_messages if m["id"] > since]
+        self._json_response(200, msgs)
+
+    def _handle_device_chat_post(self):
+        try:
+            content_length = int(self.headers.get("Content-Length", 0))
+            body = self.rfile.read(content_length)
+            data = json.loads(body)
+            sender = data.get("sender", "Unknown").strip()[:32]
+            text = data.get("text", "").strip()
+            msg_type = data.get("type", "text")
+            file_url = data.get("file_url", "")
+            if not text and not file_url:
+                self._json_response(400, {"error": "Empty message"})
+                return
+            with _device_chat_lock:
+                msg_id = len(_device_chat_messages) + 1
+                msg = {
+                    "id": msg_id,
+                    "sender": sender,
+                    "text": text,
+                    "type": msg_type,
+                    "file_url": file_url,
+                    "time": datetime.now().strftime("%H:%M:%S"),
+                }
+                _device_chat_messages.append(msg)
+                if len(_device_chat_messages) > _CHAT_MAX_MESSAGES:
+                    _device_chat_messages[:] = _device_chat_messages[-_CHAT_MAX_MESSAGES:]
+            self._json_response(200, msg)
         except Exception as e:
             self._json_response(500, {"error": str(e)})
 
