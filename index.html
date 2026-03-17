@@ -535,7 +535,7 @@ table tr:nth-child(even) td {
     </div>
     <div class="feature-card">
       <div class="fc-title">Mobile Companion</div>
-      <div class="fc-desc">Whim.m v2.1 serves a PWA-ready voice recorder and AI chat directly to your phone via HTTP, accessible over LAN or Tailscale.</div>
+      <div class="fc-desc">Whim.m v3.2 provides a four-tab mobile experience (REC, LIBRARY, CHAT, WAKE) with voice recording, AI chat, wake word commands, cross-device file sharing, and inter-device messaging &mdash; accessible over LAN or Tailscale.</div>
     </div>
     <div class="feature-card">
       <div class="fc-title">Local-First AI</div>
@@ -700,6 +700,69 @@ table tr:nth-child(even) td {
       <tr><td><span class="badge badge-yellow">EVENTS/DEBUG</span></td><td>events</td><td>Structured event log with module/level/session/request filtering, regex search, saved queries, and JSON/text export.</td></tr>
     </tbody>
   </table>
+
+  <h3>Tab Screenshots</h3>
+
+  <div class="screenshot-container">
+    <img src="manual_assets/desktop_chat_tab.png" alt="Desktop — Chat Tab">
+    <div class="screenshot-caption">CHAT tab — Cross-Device Chat for direct command-line communication with the OpenClaw gateway.</div>
+  </div>
+
+  <div class="screenshot-container">
+    <img src="manual_assets/desktop_smartthings_tab.png" alt="Desktop — SmartThings Tab">
+    <div class="screenshot-caption">SMARTTHINGS tab — Samsung SmartThings device browser with scan, filter, favorites, and device detail panel.</div>
+  </div>
+
+  <div class="screenshot-container">
+    <img src="manual_assets/desktop_sys_status_tab.png" alt="Desktop — Sys Status Tab">
+    <div class="screenshot-caption">SYS STATUS tab — Real-time system health monitoring with CPU, RAM, GPU, and network diagnostics.</div>
+  </div>
+
+  <div class="screenshot-container">
+    <img src="manual_assets/desktop_avatar_tab.png" alt="Desktop — Avatar Tab">
+    <div class="screenshot-caption">AVATAR tab — XTTS v2 voice synthesis lab with speaker references and TTS configuration.</div>
+  </div>
+
+  <div class="screenshot-container">
+    <img src="manual_assets/desktop_live_tab.png" alt="Desktop — Live Tab">
+    <div class="screenshot-caption">LIVE tab — Screen Share server with desktop-to-phone streaming and phone camera feed.</div>
+  </div>
+
+  <div class="screenshot-container">
+    <img src="manual_assets/desktop_trv_cipher_tab.png" alt="Desktop — TRV Cipher Tab">
+    <div class="screenshot-caption">TRV CIPHER tab — Audio transcription workstation with file browser, spectrogram, playback transport, and Whisper transcription.</div>
+  </div>
+
+  <div class="screenshot-container">
+    <img src="manual_assets/desktop_archive_tab.png" alt="Desktop — Archive Tab">
+    <div class="screenshot-caption">ARCHIVE tab — Rich text editor with formatting toolbar, font selection, bullet lists, find/replace, and file browser.</div>
+  </div>
+
+  <div class="screenshot-container">
+    <img src="manual_assets/desktop_discord_tab.png" alt="Desktop — Discord Tab">
+    <div class="screenshot-caption">DISCORD tab — OpenClaw bot management with action toggles, channel config, and desktop client launch controls.</div>
+  </div>
+
+  <div class="screenshot-container">
+    <img src="manual_assets/desktop_signal_tab.png" alt="Desktop — Signal Tab">
+    <div class="screenshot-caption">SIGNAL tab — Signal messenger integration for sending/receiving messages and viewing conversation history.</div>
+  </div>
+
+  <div class="screenshot-container">
+    <img src="manual_assets/desktop_ryvencore_tab.png" alt="Desktop — RyvenCore Tab">
+    <div class="screenshot-caption">RYVENCORE tab — Visual node-based programming environment with design settings, flows, variables, and stylus controls.</div>
+  </div>
+
+  <div class="screenshot-container">
+    <img src="manual_assets/desktop_ryven_editor_tab.png" alt="Desktop — Ryven Editor Tab">
+    <div class="screenshot-caption">RYVEN EDITOR tab — Advanced Ryven flow editor for building visual automation pipelines.</div>
+  </div>
+
+  <div class="screenshot-container">
+    <img src="manual_assets/desktop_events_debug_tab.png" alt="Desktop — Events/Debug Tab">
+    <div class="screenshot-caption">EVENTS/DEBUG tab — Structured event log with module/level filtering, regex search, saved queries, and JSON/text export.</div>
+  </div>
+
 </section>
 
 <!-- ==================== 04 WHIM.AI ==================== -->
@@ -800,8 +863,67 @@ table tr:nth-child(even) td {
   </div>
 
   <p>
-    Whim.m v2.1 is a recorder-only mobile web application served as a Progressive Web App (PWA) from either the desktop Whim app or a standalone Python server. It provides voice recording, AI chat (via Ollama proxy), and audio file upload.
+    Whim.m v3.2 is a full-featured mobile companion app served as a native APK or Progressive Web App (PWA) from either the desktop Whim app or a standalone Python server. It provides voice recording, AI chat (via Ollama proxy), wake word voice commands, a cross-device file library, and inter-device messaging &mdash; all organized into four dedicated bottom navigation tabs: <strong>REC</strong>, <strong>LIBRARY</strong>, <strong>CHAT</strong>, and <strong>WAKE</strong>.
   </p>
+
+  <h3>v3.2 &mdash; Four-Tab Navigation</h3>
+
+  <div class="phone-screenshot-row">
+    <div class="screenshot-container">
+      <img src="manual_assets/phone_rec_tab.png" alt="Whim.m REC Tab">
+      <div class="screenshot-caption">REC tab &mdash; Whim.m v3.2 voice recorder with record button, EXPORT TO WHIM, file list with play buttons, and status bar showing server/nic/ollama indicators</div>
+    </div>
+    <div class="screenshot-container">
+      <img src="manual_assets/phone_library_tab.png" alt="Whim.m Library Tab">
+      <div class="screenshot-caption">LIBRARY tab &mdash; Shared files across devices with "Pick from Gallery / Screenshots" and "Upload any file to library"</div>
+    </div>
+    <div class="screenshot-container">
+      <img src="manual_assets/phone_chat_tab.png" alt="Whim.m Chat Tab">
+      <div class="screenshot-caption">CHAT tab &mdash; Device Chat for talking between your devices with message input and attachment button</div>
+    </div>
+  </div>
+
+  <div class="phone-screenshot-row">
+    <div class="screenshot-container">
+      <img src="manual_assets/phone_wake_tab.png" alt="Whim.m Wake Tab">
+      <div class="screenshot-caption">WAKE tab &mdash; Wake Word "Hey Whim" listening mode with microphone, voice chat using MillyAl voice, and text input</div>
+    </div>
+    <div class="screenshot-container">
+      <img src="manual_assets/phone_whimai_chat_v3.png" alt="Whim.ai Chat Screen">
+      <div class="screenshot-caption">Whim.ai standalone chat screen powered by Llama + OpenClaw with "Welcome. Ask me anything." prompt</div>
+    </div>
+    <div class="screenshot-container">
+      <img src="manual_assets/phone_rec_tab_files.png" alt="Whim.m REC Tab File List">
+      <div class="screenshot-caption">REC tab showing the SENT TO WHIM file list with recordings (RevyMillyA.mp3, MillyAl.mp3, .webm recordings) and status bar indicators</div>
+    </div>
+  </div>
+
+  <h3>Wake Word Voice Commands</h3>
+
+  <div class="phone-screenshot-row">
+    <div class="screenshot-container">
+      <img src="manual_assets/phone_wake_open_maps.jpg" alt="Wake Word — Open Organic Maps">
+      <div class="screenshot-caption">Voice command: "Hey whim open organic maps application" &mdash; responds with whim-cmd {"action":"open_maps","params":{}} and generates voice reply via MillyAl</div>
+    </div>
+    <div class="screenshot-container">
+      <img src="manual_assets/phone_wake_open_app.jpg" alt="Wake Word — Open App on Device">
+      <div class="screenshot-caption">Voice command: "Hey whim open organic maps application on this device" &mdash; responds with whim-cmd {"action":"open_app","params":...} for direct on-device launch</div>
+    </div>
+    <div class="screenshot-container">
+      <img src="manual_assets/phone_wake_youtube_music.jpg" alt="Wake Word — Open YouTube Music">
+      <div class="screenshot-caption">Voice command: "Hey whim open youtube music on this device" &mdash; responds with whim-cmd {"action":"play_music","params":{"query":""}} to launch YouTube Music</div>
+    </div>
+  </div>
+
+  <h3>Known Issue &mdash; geo: URL Scheme</h3>
+  <div class="screenshot-row">
+    <div class="screenshot-container">
+      <img src="manual_assets/phone_maps_url_error.jpg" alt="geo: URL Scheme Error">
+      <div class="screenshot-caption">The geo:0,0?q= URL scheme triggers a "Webpage not available" error (net::ERR_UNKNOWN_URL_SCHEME) in the WebView. Use the "on this device" phrasing to launch apps directly via intent instead.</div>
+    </div>
+  </div>
+
+  <h3>Previous Versions</h3>
 
   <div class="phone-screenshot-row">
     <div class="screenshot-container">
@@ -818,8 +940,6 @@ table tr:nth-child(even) td {
     </div>
   </div>
 
-  <h3>Cellphone Screenshots</h3>
-
   <div class="phone-screenshot-row">
     <div class="screenshot-container">
       <img src="manual_assets/phone_whim_apk_connecting.jpg" alt="Whim APK Connecting">
@@ -830,7 +950,7 @@ table tr:nth-child(even) td {
       <div class="screenshot-caption">Whim.m voice recorder in action with 00:23 timer, "EXPORT TO WHIM" button, and list of sent recordings</div>
     </div>
     <div class="screenshot-container">
-      <img src="manual_assets/phone_whimai_welcome.jpg" alt="Whim.ai Welcome">
+      <img src="manual_assets/phone_whimai_welcome.png" alt="Whim.ai Welcome">
       <div class="screenshot-caption">Whim.ai mobile chat overlay showing the welcome screen with Screen Share and location FABs</div>
     </div>
   </div>
@@ -850,7 +970,6 @@ table tr:nth-child(even) td {
     </div>
   </div>
 
-  <h3>v2.2 — Screen Share &amp; Voice Recorder</h3>
   <div class="phone-screenshot-row">
     <div class="screenshot-container">
       <img src="manual_assets/phone_whim_m_recorder.jpg" alt="Whim.m Voice Recorder">
@@ -864,20 +983,35 @@ table tr:nth-child(even) td {
 
   <h3>Features</h3>
   <ul>
-    <li><strong>Voice Recorder</strong> &mdash; Tap-to-record with real-time waveform visualization, timer display, and WebM/Opus encoding</li>
+    <li><strong>Four-Tab Navigation</strong> &mdash; Bottom navigation bar with REC, LIBRARY, CHAT, and WAKE tabs for organized access to all features</li>
+    <li><strong>Voice Recorder (REC)</strong> &mdash; Tap-to-record with real-time timer display, WebM/Opus encoding, and per-file playback buttons</li>
     <li><strong>Export to Whim</strong> &mdash; One-tap upload of recordings to the desktop ~/Journal directory with progress bar</li>
     <li><strong>File Picker</strong> &mdash; Choose existing audio files (.m4a, .aac, .ogg, .opus, .flac, .wav, .mp3, .3gp, .amr) for upload</li>
-    <li><strong>Audio Playback</strong> &mdash; Play exported recordings directly from the file list on any device</li>
-    <li><strong>Health Bar</strong> &mdash; Top status bar with dot indicators for server, microphone, and Ollama status</li>
-    <li><strong>Whim.ai Chat</strong> &mdash; Slide-in AI overlay powered by Llama 3.1 through the Ollama proxy with cloned voice responses (XTTS)</li>
-    <li><strong>Wake Word</strong> &mdash; "Hey Whim" wake word triggers voice input for maps, music, file transfer commands</li>
-    <li><strong>File Library</strong> &mdash; Share files between devices via ~/Shared directory</li>
-    <li><strong>Device Chat</strong> &mdash; Real-time messaging between phones and tablets with file sharing</li>
+    <li><strong>Sent File List</strong> &mdash; SENT TO WHIM section showing all uploaded files with size and inline playback</li>
+    <li><strong>Health Status Bar</strong> &mdash; Top bar with dot indicators for server, nic (network), and Ollama connectivity status</li>
+    <li><strong>File Library (LIBRARY)</strong> &mdash; Share files between devices; pick from gallery/screenshots or upload any file to the shared library</li>
+    <li><strong>Device Chat (CHAT)</strong> &mdash; Real-time messaging between phones and tablets with "Message all devices..." input and file attachment support</li>
+    <li><strong>Wake Word (WAKE)</strong> &mdash; "Hey Whim" wake word activates voice input; listens continuously and responds with MillyAl cloned voice via XTTS</li>
+    <li><strong>Voice Commands</strong> &mdash; Wake word supports app control via whim-cmd JSON protocol:
+      <ul>
+        <li><code>open_maps</code> &mdash; Open Organic Maps for navigation</li>
+        <li><code>open_app</code> &mdash; Launch any app directly on the device via Android intent</li>
+        <li><code>play_music</code> &mdash; Open YouTube Music with optional search query</li>
+      </ul>
+    </li>
+    <li><strong>Whim.ai Chat</strong> &mdash; Standalone AI chat screen powered by Llama + OpenClaw with "Ask anything..." prompt</li>
+    <li><strong>MillyAl Voice</strong> &mdash; AI responses are spoken aloud using the MillyAl cloned voice (XTTS), with "Generating voice..." indicator during synthesis</li>
     <li><strong>Organic Maps</strong> &mdash; Voice-activated navigation: "open maps and set destination to..."</li>
     <li><strong>Screen Share FAB</strong> &mdash; Floating action button to open the Screen Share server (port 8091)</li>
     <li><strong>PWA Support</strong> &mdash; Full Progressive Web App manifest with installable home screen icon, service worker, and standalone display mode</li>
     <li><strong>Dark Theme</strong> &mdash; Matches the desktop Whim aesthetic with #1e1e1e background</li>
   </ul>
+
+  <h3>Wake Word Command Protocol</h3>
+  <p>When a voice command is recognized, Whim.m embeds a <code>whim-cmd</code> JSON block in the AI response to trigger device actions:</p>
+  <div class="code-block">whim-cmd {"action":"open_app","params":{"package":"app.organicmaps"}}
+whim-cmd {"action":"play_music","params":{"query":"song name"}}
+whim-cmd {"action":"open_maps","params":{}}</div>
 
   <h3>Running Whim.m Standalone</h3>
   <div class="code-block">python3 ~/vaults/WHIM/mobile/whim_m_v2.1.py --port 8089</div>
@@ -1080,6 +1214,12 @@ table tr:nth-child(even) td {
   </div>
 
   <h3>AVR Lab (XTTS Voice Synthesis)</h3>
+
+  <div class="screenshot-container">
+    <img src="manual_assets/desktop_avatar_tab.png" alt="Desktop Avatar/AVR Lab Tab">
+    <div class="screenshot-caption">AVATAR tab — XTTS v2 voice synthesis lab with speaker references, voice profiles, and TTS configuration.</div>
+  </div>
+
   <p>
     The AVR Lab tab provides text-to-speech synthesis using Coqui XTTS v2 running in a dedicated conda environment (<code>xtts</code>).
   </p>
@@ -1091,6 +1231,12 @@ table tr:nth-child(even) td {
   </ul>
 
   <h3>TRV Cipher (Hear Me Out)</h3>
+
+  <div class="screenshot-container">
+    <img src="manual_assets/desktop_trv_cipher_tab.png" alt="Desktop TRV Cipher Tab">
+    <div class="screenshot-caption">TRV CIPHER tab — Audio transcription workstation with file browser, spectrogram visualization, playback transport, and Whisper transcription tools.</div>
+  </div>
+
   <p>
     The TRV Cipher tab is a complete audio transcription workstation:
   </p>
@@ -1124,6 +1270,16 @@ table tr:nth-child(even) td {
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
     <span class="sec-num">10</span>
     <h2>Signal &amp; Discord Integration</h2>
+  </div>
+
+  <div class="screenshot-container">
+    <img src="manual_assets/desktop_signal_tab.png" alt="Desktop Signal Tab">
+    <div class="screenshot-caption">Signal desktop tab showing messenger integration for sending/receiving messages and conversation history.</div>
+  </div>
+
+  <div class="screenshot-container">
+    <img src="manual_assets/desktop_discord_tab.png" alt="Desktop Discord Tab">
+    <div class="screenshot-caption">Discord desktop tab with OpenClaw bot management, action toggles, channel config, and desktop client controls.</div>
   </div>
 
   <h3>Signal on the Phone</h3>
@@ -1176,6 +1332,11 @@ table tr:nth-child(even) td {
     The SmartThings tab provides a complete dashboard for Samsung SmartThings device management via the OpenClaw gateway.
   </p>
 
+  <div class="screenshot-container">
+    <img src="manual_assets/desktop_smartthings_tab.png" alt="Desktop SmartThings Tab">
+    <div class="screenshot-caption">SmartThings desktop tab showing device browser with scan, filter, favorites, device detail, and recently-controlled history.</div>
+  </div>
+
   <div class="screenshot-row">
     <div class="screenshot-container">
       <img src="manual_assets/phone_smartthings_hub.jpg" alt="SmartThings Hub">
@@ -1205,6 +1366,11 @@ table tr:nth-child(even) td {
   <p>
     The Archive tab is a full-featured document editor that saves files to <code>~/ARCHIVE</code>. All documents created in Whim are stored in this directory.
   </p>
+
+  <div class="screenshot-container">
+    <img src="manual_assets/desktop_archive_tab.png" alt="Desktop Archive Tab">
+    <div class="screenshot-caption">Archive tab with rich text editor, formatting toolbar, font selection, bullet lists, find/replace, and file browser.</div>
+  </div>
 
   <h3>Document Actions</h3>
   <ul>
@@ -1254,6 +1420,11 @@ Notes: User notes here
   <p>
     The SS (Screen Share) tab enables bidirectional visual communication between the desktop and mobile devices.
   </p>
+
+  <div class="screenshot-container">
+    <img src="manual_assets/desktop_live_tab.png" alt="Desktop Screen Share Tab">
+    <div class="screenshot-caption">Live/SS tab showing screen share server with desktop-to-phone streaming and phone camera feed capabilities.</div>
+  </div>
 
   <h3>Architecture</h3>
   <ul>
@@ -1365,6 +1536,12 @@ Notes: User notes here
   </p>
 
   <h3>Events/Debug Log</h3>
+
+  <div class="screenshot-container">
+    <img src="manual_assets/desktop_events_debug_tab.png" alt="Desktop Events/Debug Tab">
+    <div class="screenshot-caption">EVENTS/DEBUG tab — Structured event log with module/level filtering, regex search, saved queries, and export options.</div>
+  </div>
+
   <p>
     The Events/Debug tab provides a structured, filterable event log with:
   </p>
