@@ -32,13 +32,60 @@ CMD_REPORT_LOG = os.path.expanduser("~/vaults/WHIM/mobile/cmd_reports.jsonl")
 LOCATION_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config", "device_locations.json")
 DEFAULT_PORT = 8089
 
+# Hybrid connection: VPS tunnel (default) + Tailscale (fallback)
+TAILSCALE_IP = "100.69.17.20"
+TAILSCALE_PORT = 8089
+CONNECTION_CONFIG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "config", "connection_mode.json")
+
+_connection_lock = threading.Lock()
+
+def _load_connection_mode():
+    if os.path.isfile(CONNECTION_CONFIG_FILE):
+        try:
+            with open(CONNECTION_CONFIG_FILE, "r") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {"mode": "tunnel", "auto_detect": True}
+
+def _save_connection_mode(cfg):
+    os.makedirs(os.path.dirname(CONNECTION_CONFIG_FILE), exist_ok=True)
+    with open(CONNECTION_CONFIG_FILE, "w") as f:
+        json.dump(cfg, f, indent=2)
+
+def _tailscale_reachable():
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(2)
+        s.connect((TAILSCALE_IP, TAILSCALE_PORT))
+        s.close()
+        return True
+    except Exception:
+        return False
+
+def _tailscale_running_local():
+    try:
+        result = subprocess.run(["tailscale", "status", "--json"],
+                                capture_output=True, text=True, timeout=5)
+        if result.returncode == 0:
+            data = json.loads(result.stdout)
+            return data.get("BackendState") == "Running"
+    except Exception:
+        pass
+    try:
+        result = subprocess.run(["ip", "addr", "show"],
+                                capture_output=True, text=True, timeout=3)
+        return "100." in result.stdout
+    except Exception:
+        return False
+
 # In-memory device chat store (shared across all connected devices)
 _device_chat_messages = []
 _device_chat_lock = threading.Lock()
 _CHAT_MAX_MESSAGES = 200
 
 WHIM_ICON_B64 = ""
-_icon_path = os.path.expanduser("~/.openclaw/fire.png")
+_icon_path = os.path.expanduser("~/.openclaw/Whim.png")
 if os.path.isfile(_icon_path):
     import base64
     with open(_icon_path, "rb") as _f:
@@ -105,6 +152,17 @@ body{background:#1e1e1e;color:#dce4ee;font-family:-apple-system,system-ui,'Segoe
   font-family:'Courier New',monospace;z-index:200}
 .health-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px;vertical-align:middle}
 .health-dot.ok{background:#2fa572}.health-dot.warn{background:#e0a030}.health-dot.fail{background:#d94040}
+/* Connection mode toggle */
+.conn-toggle{position:fixed;top:0;right:8px;z-index:201;display:flex;align-items:center;gap:4px;
+  padding:4px 8px;font-size:9px;font-family:'Courier New',monospace;color:#888}
+.conn-toggle select{background:#1e1e1e;color:#2fa572;border:1px solid #3a3a3a;border-radius:4px;
+  padding:1px 4px;font-size:9px;font-family:'Courier New',monospace;outline:none;cursor:pointer}
+.conn-toggle .conn-active{color:#2fa572;font-weight:bold}
+.reconnect-banner{position:fixed;top:28px;left:0;right:0;background:#3a1a1a;color:#d94040;
+  text-align:center;padding:4px 12px;font-size:11px;font-family:'Courier New',monospace;
+  z-index:199;display:none;transition:opacity .3s}
+.reconnect-banner.active{display:block;animation:reconnect-pulse 2s infinite}
+@keyframes reconnect-pulse{0%,100%{opacity:1}50%{opacity:0.5}}
 
 /* Persistent wake word bar */
 .ww-bar{position:fixed;top:28px;left:50%;transform:translateX(-50%);z-index:250;
@@ -230,11 +288,21 @@ input[type=file]{display:none!important;width:0;height:0;overflow:hidden;positio
 .ai-msg .msg-prefix{font-weight:700;font-size:11px;opacity:.6;display:block;margin-bottom:2px}
 </style></head><body>
 
+<div class="reconnect-banner" id="reconnectBanner">Connection lost — reconnecting...</div>
+<div class="conn-toggle" id="connToggle">
+  <span id="connLabel" class="conn-active">VPS</span>
+  <select id="connMode" title="Connection mode">
+    <option value="tunnel">VPS Tunnel</option>
+    <option value="tailscale">Tailscale</option>
+    <option value="auto">Auto-detect</option>
+  </select>
+</div>
 <div class="health-bar" id="healthBar">
   <span><span class="health-dot" id="dotTunnel"></span>tunnel</span>
   <span><span class="health-dot" id="dotServer"></span>server</span>
   <span><span class="health-dot" id="dotMic"></span>mic</span>
   <span><span class="health-dot" id="dotOllama"></span>ollama</span>
+  <span><span class="health-dot" id="dotTS"></span>TS</span>
 </div>
 <div class="ww-bar" id="wwBar">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="wwBarIcon">
@@ -374,6 +442,80 @@ input[type=file]{display:none!important;width:0;height:0;overflow:hidden;positio
 </div>
 
 <script>
+// ========== RECONNECT MANAGER ==========
+const Reconnect=(function(){
+  const BASE_DELAY=3000,MAX_DELAY=30000;
+  let attempt=0,connected=false,timer=null;
+  const listeners=[];
+  function jitter(ms){return ms+Math.random()*2000}
+  function delay(){return Math.min(jitter(BASE_DELAY*Math.pow(2,attempt)),MAX_DELAY)}
+  function setConnected(ok){
+    if(ok&&!connected){connected=true;attempt=0;if(timer){clearTimeout(timer);timer=null}listeners.forEach(fn=>fn(true))}
+    if(!ok&&connected){connected=false;listeners.forEach(fn=>fn(false));scheduleRetry()}
+  }
+  function scheduleRetry(){
+    if(timer)return;
+    const d=delay();
+    console.log('[Reconnect] retry in '+Math.round(d/1000)+'s (attempt '+attempt+')');
+    timer=setTimeout(()=>{timer=null;attempt++;probe()},d);
+  }
+  async function probe(){
+    try{const ac=new AbortController();const tid=setTimeout(()=>ac.abort(),5000);
+      const r=await fetch('/health',{signal:ac.signal});clearTimeout(tid);
+      if(r.ok){setConnected(true);checkHealth()}else{setConnected(false)}
+    }catch(e){setConnected(false)}
+  }
+  function onStatusChange(fn){listeners.push(fn)}
+  function isConnected(){return connected}
+  return{setConnected,probe,onStatusChange,isConnected,scheduleRetry};
+})();
+
+async function fetchWithRetry(url,opts,retries){
+  retries=retries||3;
+  for(let i=0;i<retries;i++){
+    try{const r=await fetch(url,opts);if(r.ok||r.status<500){Reconnect.setConnected(true);return r}
+    }catch(e){if(i===retries-1){Reconnect.setConnected(false);throw e}}
+    await new Promise(res=>setTimeout(res,Math.min(3000*Math.pow(2,i)+Math.random()*2000,30000)));
+  }
+  Reconnect.setConnected(false);throw new Error('Server unreachable');
+}
+
+Reconnect.onStatusChange(function(ok){
+  document.querySelector('.health-bar').style.borderBottomColor=ok?'#3a3a3a':'#d94040';
+  var banner=document.getElementById('reconnectBanner');
+  if(ok){banner.className='reconnect-banner';if(dcPollTimer){pollDC()}}
+  else{banner.className='reconnect-banner active'}
+});
+
+// ========== CONNECTION MODE ==========
+const connMode=document.getElementById('connMode'),connLabel=document.getElementById('connLabel');
+let currentConnMode='tunnel';
+
+function loadConnMode(){
+  fetch('/connection_mode').then(r=>r.json()).then(d=>{
+    currentConnMode=d.mode||'tunnel';connMode.value=currentConnMode;
+    updateConnLabel(d);
+  }).catch(()=>{});
+}
+
+function updateConnLabel(d){
+  const labels={tunnel:'VPS',tailscale:'TS',auto:'AUTO'};
+  connLabel.textContent=labels[currentConnMode]||'VPS';
+  if(d&&d.tailscale_reachable){connLabel.style.color=currentConnMode==='tailscale'?'#00ff00':'#2fa572'}
+  else if(currentConnMode==='tailscale'){connLabel.style.color='#d94040'}
+  else{connLabel.style.color='#2fa572'}
+}
+
+connMode.addEventListener('change',function(){
+  const mode=connMode.value;
+  fetch('/connection_mode',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({mode:mode})}).then(r=>r.json()).then(d=>{
+    currentConnMode=d.mode;updateConnLabel(d);checkHealth();
+  }).catch(()=>{});
+});
+
+loadConnMode();
+
 // ========== TAB SWITCHING ==========
 const tabBtns=document.querySelectorAll('.tab-btn');
 const tabContents=document.querySelectorAll('.tab-content');
@@ -390,7 +532,7 @@ tabBtns.forEach(btn=>{btn.addEventListener('click',()=>{
 })});
 
 // ========== HEALTH ==========
-const dotTunnel=document.getElementById('dotTunnel'),dotServer=document.getElementById('dotServer'),dotMic=document.getElementById('dotMic'),dotOllama=document.getElementById('dotOllama');
+const dotTunnel=document.getElementById('dotTunnel'),dotServer=document.getElementById('dotServer'),dotMic=document.getElementById('dotMic'),dotOllama=document.getElementById('dotOllama'),dotTS=document.getElementById('dotTS');
 let _micConfirmedOk=false;
 function setMicOk(){_micConfirmedOk=true;dotMic.className='health-dot ok'}
 async function checkHealth(){
@@ -398,9 +540,9 @@ async function checkHealth(){
     const r=await fetch('/health',{signal:ac.signal});clearTimeout(tid);
     dotTunnel.className='health-dot '+(r.ok?'ok':'fail');
     dotServer.className='health-dot '+(r.ok?'ok':'warn');
-    if(r.ok){const d=await r.clone().json();dotOllama.className='health-dot '+(d.ollama?'ok':'fail');updateTabLights(true)}
-    else{dotOllama.className='health-dot fail';updateTabLights(false)}
-  }catch(e){dotTunnel.className='health-dot fail';dotServer.className='health-dot fail';dotOllama.className='health-dot fail';updateTabLights(false)}
+    if(r.ok){Reconnect.setConnected(true);const d=await r.clone().json();dotOllama.className='health-dot '+(d.ollama?'ok':'fail');dotTS.className='health-dot '+(d.tailscale?'ok':'fail');updateTabLights(true)}
+    else{dotOllama.className='health-dot fail';dotTS.className='health-dot fail';updateTabLights(false);Reconnect.setConnected(false)}
+  }catch(e){dotTunnel.className='health-dot fail';dotServer.className='health-dot fail';dotOllama.className='health-dot fail';dotTS.className='health-dot fail';updateTabLights(false);Reconnect.setConnected(false)}
   if(_micConfirmedOk){dotMic.className='health-dot ok';return}
   try{if(navigator.permissions&&navigator.permissions.query){
     const p=await navigator.permissions.query({name:'microphone'});
@@ -478,7 +620,7 @@ exportBtn.addEventListener('click',()=>{if(!audioBlob)return;
 
 function playAudio(name){audioPlayer.src='/audio/'+encodeURIComponent(name);audioPlayerWrap.style.display='block';audioPlayer.play()}
 
-function loadFiles(){fetch('/files').then(r=>r.json()).then(files=>{
+function loadFiles(){fetchWithRetry('/files',{},2).then(r=>r.json()).then(files=>{
   const c=document.getElementById('filesList');if(!files.length){c.innerHTML='';return}
   c.innerHTML='<h2>Sent to Whim</h2>'+files.slice(0,15).map(f=>
     '<div class="fitem"><span class="fname">'+f.name+'</span><span class="fsize">'+f.size+'</span>'+
@@ -512,7 +654,7 @@ libFileInput.addEventListener('change',()=>{if(!libFileInput.files.length)return
   xhr.addEventListener('error',()=>{libProgress.style.display='none';showStatus(libStatus,'Network error','err')});
   xhr.open('POST','/library/upload');xhr.send(fd)});
 
-function loadLibrary(){fetch('/library').then(r=>r.json()).then(files=>{
+function loadLibrary(){fetchWithRetry('/library',{},2).then(r=>r.json()).then(files=>{
   const c=document.getElementById('libraryList');if(!files.length){c.innerHTML='<p style="color:#555;text-align:center;margin-top:24px">No shared files yet</p>';return}
   c.innerHTML='<h2>Shared Files</h2>'+files.map(f=>
     '<div class="fitem"><span class="fname">'+f.name+'</span><span class="fsize">'+f.size+'</span>'+
@@ -683,7 +825,7 @@ const chatMessages=document.getElementById('chatMessages'),chatInput=document.ge
   chatSendBtn=document.getElementById('chatSendBtn'),activeVoiceLabel=document.getElementById('activeVoiceLabel');
 let chatHistory=[],currentVoice=null,autoSpeak=true;
 
-function loadActiveVoice(){fetch('/active_voice').then(r=>r.json()).then(d=>{
+function loadActiveVoice(){fetchWithRetry('/active_voice',{},2).then(r=>r.json()).then(d=>{
   currentVoice=d;
   activeVoiceLabel.textContent='voice: '+(d.name||'none assigned — set in AVR LAB')
 }).catch(()=>{activeVoiceLabel.textContent='voice: unavailable'})}
@@ -697,7 +839,7 @@ function sendAIChat(){
   chatHistory.push({role:'user',content:text});
   appendAIChatMsg(text,'user');
   const body=JSON.stringify({messages:chatHistory});
-  fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body})
+  fetchWithRetry('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body},2)
     .then(r=>{const reader=r.body.getReader();const decoder=new TextDecoder();let full='';
       const msgEl=appendAIChatMsg('...','assistant');
       function read(){reader.read().then(({done,value})=>{if(done){
@@ -712,8 +854,10 @@ function sendAIChat(){
         const chunk=decoder.decode(value);
         chunk.split('\n').filter(l=>l.trim()).forEach(line=>{try{const j=JSON.parse(line);
           if(j.message&&j.message.content){full+=j.message.content;msgEl.querySelector('.msg-text').textContent=full}}catch(e){}});
-        read()})}
-      read()}).catch(e=>{appendAIChatMsg('Error: '+e.message,'assistant')});
+        read()}).catch(e=>{if(full){chatHistory.push({role:'assistant',content:full})}
+          appendAIChatMsg('Connection lost during response. Reconnecting...','assistant');
+          Reconnect.setConnected(false)})}
+      read()}).catch(e=>{appendAIChatMsg('Connection lost: '+e.message+'. Retrying...','assistant');Reconnect.setConnected(false)});
 }
 
 function parseAndExecuteCommands(text,msgEl){
@@ -834,7 +978,7 @@ dcFileInput.addEventListener('change',()=>{
   }).catch(()=>{})});
 
 function pollDC(){
-  fetch('/device/chat?since='+lastMsgId).then(r=>r.json()).then(msgs=>{
+  fetch('/device/chat?since='+lastMsgId).then(r=>{Reconnect.setConnected(true);return r.json()}).then(msgs=>{
     msgs.forEach(m=>{
       lastMsgId=Math.max(lastMsgId,m.id);
       const d=document.createElement('div');
@@ -843,7 +987,7 @@ function pollDC(){
       if(m.type==='file'&&m.file_url){html+='<a class="dc-file-link" href="'+m.file_url+'" download>'+m.text+'</a>'}
       else{html+='<span>'+m.text+'</span>'}
       d.innerHTML=html;dcMessages.appendChild(d);dcMessages.scrollTop=dcMessages.scrollHeight;
-    })}).catch(()=>{})}
+    })}).catch(()=>{Reconnect.setConnected(false)})}
 
 function startDCPoll(){if(dcPollTimer)return;pollDC();dcPollTimer=setInterval(pollDC,2000)}
 
@@ -882,32 +1026,39 @@ async function sendAiChatMsg(){
   const msgEl=addAiChatMsg('assistant','');
   const pfx=msgEl.querySelector('.msg-prefix');
   try{
-    const resp=await fetch('/api/chat',{method:'POST',
+    const resp=await fetchWithRetry('/api/chat',{method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({messages:aiChatHistory})});
+      body:JSON.stringify({messages:aiChatHistory})},2);
     if(!resp.ok)throw new Error('Server error '+resp.status);
     const reader=resp.body.getReader();
     const dec=new TextDecoder();
     let buf='',full='';
-    while(true){
-      const{done,value}=await reader.read();
-      if(done)break;
-      buf+=dec.decode(value,{stream:true});
-      const lines=buf.split('\n');buf=lines.pop();
-      for(const line of lines){
-        if(!line.trim())continue;
-        try{const d=JSON.parse(line);const tk=d.message&&d.message.content||'';
-          if(tk){full+=tk;msgEl.textContent='';msgEl.appendChild(pfx);
-            msgEl.appendChild(document.createTextNode(full));
-            aiChatBox.scrollTop=aiChatBox.scrollHeight;}
-          if(d.done)break;
-        }catch(e){}
+    try{
+      while(true){
+        const{done,value}=await reader.read();
+        if(done)break;
+        buf+=dec.decode(value,{stream:true});
+        const lines=buf.split('\n');buf=lines.pop();
+        for(const line of lines){
+          if(!line.trim())continue;
+          try{const d=JSON.parse(line);const tk=d.message&&d.message.content||'';
+            if(tk){full+=tk;msgEl.textContent='';msgEl.appendChild(pfx);
+              msgEl.appendChild(document.createTextNode(full));
+              aiChatBox.scrollTop=aiChatBox.scrollHeight;}
+            if(d.done)break;
+          }catch(e){}
+        }
       }
+    }catch(streamErr){
+      if(full){msgEl.textContent='';msgEl.appendChild(pfx);
+        msgEl.appendChild(document.createTextNode(full+'\n[stream interrupted]'));}
+      Reconnect.setConnected(false);
     }
     if(full)aiChatHistory.push({role:'assistant',content:full});
   }catch(e){
     msgEl.textContent='';msgEl.appendChild(pfx);
-    msgEl.appendChild(document.createTextNode('[Error: '+e.message+']'));
+    msgEl.appendChild(document.createTextNode('[Connection lost: '+e.message+']'));
+    Reconnect.setConnected(false);
   }
   aiChatStreaming=false;aiChatSend.disabled=false;
 }
@@ -972,7 +1123,12 @@ class RecorderHandler(BaseHTTPRequestHandler):
                     ollama_ok = r.status == 200
             except Exception:
                 pass
+            ts_ok = _tailscale_running_local()
+            conn_cfg = _load_connection_mode()
             self._json_response(200, {"status": "ok", "version": "3.0", "ollama": ollama_ok,
+                                      "tailscale": ts_ok,
+                                      "connection_mode": conn_cfg.get("mode", "tunnel"),
+                                      "tailscale_ip": TAILSCALE_IP if ts_ok else None,
                                       "tail": "WHIM_M_TAIL_OK"})
         elif self.path == "/tail_verify":
             ts = datetime.now().strftime("%H:%M:%S")
@@ -1006,6 +1162,8 @@ class RecorderHandler(BaseHTTPRequestHandler):
             self._serve_device_chat()
         elif self.path.startswith("/search_files"):
             self._handle_file_search()
+        elif self.path == "/connection_mode":
+            self._serve_connection_mode()
         elif self.path == "/manifest.json":
             self._text_response(200, MANIFEST, "application/json")
         elif self.path == "/sw.js":
@@ -1064,6 +1222,8 @@ class RecorderHandler(BaseHTTPRequestHandler):
             self._handle_command()
         elif self.path == "/api/cmd_report":
             self._handle_cmd_report()
+        elif self.path == "/connection_mode":
+            self._handle_connection_mode_post()
         else:
             self.send_error(404)
 
@@ -1128,7 +1288,7 @@ class RecorderHandler(BaseHTTPRequestHandler):
     def _serve_pwa_icon(self, size):
         try:
             from PIL import Image
-            fire_path = os.path.expanduser("~/.openclaw/fire.png")
+            fire_path = os.path.expanduser("~/.openclaw/Whim.png")
             if os.path.isfile(fire_path):
                 img = Image.open(fire_path).convert("RGBA").resize((size, size), Image.LANCZOS)
                 buf = io.BytesIO()
@@ -1548,6 +1708,39 @@ class RecorderHandler(BaseHTTPRequestHandler):
                         except json.JSONDecodeError:
                             pass
         self._json_response(200, reports)
+
+    # --- Connection mode (hybrid tunnel/tailscale) ---
+    def _serve_connection_mode(self):
+        with _connection_lock:
+            cfg = _load_connection_mode()
+        ts_ok = _tailscale_reachable()
+        ts_local = _tailscale_running_local()
+        cfg["tailscale_reachable"] = ts_ok
+        cfg["tailscale_running"] = ts_local
+        cfg["tailscale_ip"] = TAILSCALE_IP
+        cfg["vps_host"] = VPS_HOST
+        self._json_response(200, cfg)
+
+    def _handle_connection_mode_post(self):
+        try:
+            content_length = int(self.headers.get("Content-Length", 0))
+            body = self.rfile.read(content_length)
+            data = json.loads(body)
+            mode = data.get("mode", "tunnel")
+            if mode not in ("tunnel", "tailscale", "auto"):
+                mode = "tunnel"
+            with _connection_lock:
+                cfg = _load_connection_mode()
+                cfg["mode"] = mode
+                cfg["auto_detect"] = (mode == "auto")
+                _save_connection_mode(cfg)
+            ts_ok = _tailscale_reachable()
+            cfg["tailscale_reachable"] = ts_ok
+            cfg["tailscale_ip"] = TAILSCALE_IP
+            cfg["vps_host"] = VPS_HOST
+            self._json_response(200, cfg)
+        except Exception as e:
+            self._json_response(500, {"error": str(e)})
 
     def _handle_upload(self):
         content_type = self.headers.get("Content-Type", "")

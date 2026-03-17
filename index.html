@@ -433,7 +433,7 @@ table tr:nth-child(even) td {
   <p style="color: var(--fg-dim); font-size: 14px; margin-top: 8px;">
     The Unified Desktop &amp; Mobile Ecosystem for Voice, AI, Connectivity, and Automation
   </p>
-  <div class="version-badge">v0.2.0 &mdash; March 2026 &mdash; CARRARA Mint</div>
+  <div class="version-badge">v0.3.0 &mdash; March 2026 &mdash; CARRARA Mint &mdash; Hybrid Connection</div>
 </header>
 
 <!-- ==================== TABLE OF CONTENTS ==================== -->
@@ -478,6 +478,10 @@ table tr:nth-child(even) td {
     </div>
     <div class="toc-item">
       <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">10</span>
+      <a href="#voiceengine">Voice Engine &mdash; Wake Word Tuning</a>
+    </div>
+    <div class="toc-item">
+      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">11</span>
       <a href="#messaging">Signal &amp; Discord Integration</a>
     </div>
     <div class="toc-item">
@@ -530,8 +534,8 @@ table tr:nth-child(even) td {
   <h3>Key Highlights</h3>
   <div class="feature-grid">
     <div class="feature-card">
-      <div class="fc-title">14 Module Tabs</div>
-      <div class="fc-desc">Chat, Whim.AI, SmartThings, Sessions, Presence, AVR Lab, Signal, TRV Cipher, Archive, Discord, RyvenCore, Ryven Editor, SS (Screen Share), Events/Debug</div>
+      <div class="fc-title">16 Module Tabs</div>
+      <div class="fc-desc">Chat, Whim.AI, SmartThings, Sessions, Presence, AVR Lab, <strong>Voice Engine</strong>, Signal, TRV Cipher, Library, Archive, Discord, RyvenCore, Ryven Editor, SS (Live), Events/Debug</div>
     </div>
     <div class="feature-card">
       <div class="fc-title">Mobile Companion</div>
@@ -567,7 +571,7 @@ table tr:nth-child(even) td {
   <div class="conn-diagram">
     <div style="margin-bottom: 16px;">
       <span class="node">Samsung Phone</span>
-      <span class="arrow">&larr; VPS Tunnel / LAN &rarr;</span>
+      <span class="arrow">&larr; VPS Tunnel (default) / Tailscale (fallback) / LAN &rarr;</span>
       <span class="node">CARRARA Desktop</span>
       <span class="arrow">&larr; WebSocket &rarr;</span>
       <span class="node">OpenClaw Gateway</span>
@@ -621,7 +625,13 @@ table tr:nth-child(even) td {
         <td>SSH Tunnel (autossh)</td>
         <td>Reverse SSH via VPS</td>
         <td>8089</td>
-        <td>Secure cross-network connectivity via VPS at 104.207.140.242</td>
+        <td>Primary: secure cross-network connectivity via VPS at 104.207.140.242</td>
+      </tr>
+      <tr>
+        <td>Tailscale (fallback)</td>
+        <td>WireGuard mesh VPN</td>
+        <td>8089</td>
+        <td>Fallback: direct connection via Tailscale IP 100.69.17.20, handles WiFi&harr;cellular handoffs</td>
       </tr>
       <tr>
         <td>Ollama</td>
@@ -690,6 +700,7 @@ table tr:nth-child(even) td {
       <tr><td><span class="badge badge-blue">SESSIONS</span></td><td>sessions</td><td>Active OpenClaw session manager with auto-refresh, presets, crash recovery, and Notion integration.</td></tr>
       <tr><td><span class="badge badge-blue">PRESENCE</span></td><td>presence</td><td>Real-time presence tracking of connected clients, heartbeat pings, and online status dashboard.</td></tr>
       <tr><td><span class="badge badge-orange">AVR LAB</span></td><td>xtts</td><td>XTTS v2 voice synthesis lab with speaker references, spectrogram visualization, and Table Reads output.</td></tr>
+      <tr><td><span class="badge badge-orange">VOICE ENGINE</span></td><td>voice_engine</td><td>Wake word tuning: live spectrogram (Whim-Scope), gain/HPF/AGC/parametric EQ, sensitivity, VAD, spectral subtraction, confidence ghost bar, intelligibility band.</td></tr>
       <tr><td><span class="badge badge-orange">SIGNAL</span></td><td>signal</td><td>Signal messenger integration for sending/receiving messages, managing contacts, and viewing conversation history.</td></tr>
       <tr><td><span class="badge badge-orange">TRV CIPHER</span></td><td>hearmeout</td><td>Audio transcription workstation with spectrogram, playback transport, Whisper transcription, ODT export, and scrub tools.</td></tr>
       <tr><td><span class="badge badge-yellow">ARCHIVE</span></td><td>archive</td><td>Rich text editor with formatting toolbar, font selection, alignment, bullet lists, find/replace, word count, and file browser.</td></tr>
@@ -800,7 +811,7 @@ table tr:nth-child(even) td {
   </div>
 
   <p>
-    Whim.m v3.2 is a full-featured mobile companion app served as a native APK or Progressive Web App (PWA) from either the desktop Whim app or a standalone Python server. It provides voice recording, AI chat (via Ollama proxy), wake word voice commands, a cross-device file library, and inter-device messaging &mdash; all organized into four dedicated bottom navigation tabs: <strong>REC</strong>, <strong>LIBRARY</strong>, <strong>CHAT</strong>, and <strong>WAKE</strong>.
+    Whim.m v3.2 is a full-featured mobile companion app served as a native APK or Progressive Web App (PWA) from either the desktop Whim app or a standalone Python server. It provides voice recording, AI chat (via Ollama proxy), wake word voice commands, a cross-device file library, and inter-device messaging &mdash; all organized into five dedicated bottom navigation tabs: <strong>REC</strong>, <strong>LIBRARY</strong>, <strong>CHAT</strong>, <strong>WAKE</strong>, and <strong>DEVICES</strong>. The app uses a hybrid connection strategy: VPS tunnel by default with Tailscale as an opt-in fallback, switchable from a dropdown in the mobile UI or from the desktop Control Panel.
   </p>
 
   <h3>v3.2 &mdash; Four-Tab Navigation</h3>
@@ -925,7 +936,9 @@ table tr:nth-child(even) td {
     <li><strong>Export to Whim</strong> &mdash; One-tap upload of recordings to the desktop ~/Journal directory with progress bar</li>
     <li><strong>File Picker</strong> &mdash; Choose existing audio files (.m4a, .aac, .ogg, .opus, .flac, .wav, .mp3, .3gp, .amr) for upload</li>
     <li><strong>Sent File List</strong> &mdash; SENT TO WHIM section showing all uploaded files with size and inline playback</li>
-    <li><strong>Health Status Bar</strong> &mdash; Top bar with dot indicators for server, nic (network), and Ollama connectivity status</li>
+    <li><strong>Health Status Bar</strong> &mdash; Top bar with dot indicators for tunnel, server, mic, ollama, and <strong>TS</strong> (Tailscale) connectivity status</li>
+    <li><strong>Hybrid Connection</strong> &mdash; Connection mode dropdown (top-right) switches between VPS Tunnel (default), Tailscale (fallback), or Auto-detect. Persists across sessions via server config.</li>
+    <li><strong>Auto-Reconnect</strong> &mdash; When connection drops, retries with exponential backoff (3s base, 30s max) with visible "Connection lost &mdash; reconnecting..." banner. All HTTP requests use retry wrappers.</li>
     <li><strong>File Library (LIBRARY)</strong> &mdash; Share files between devices; pick from gallery/screenshots or upload any file to the shared library</li>
     <li><strong>Device Chat (CHAT)</strong> &mdash; Real-time messaging between phones and tablets with "Message all devices..." input and file attachment support</li>
     <li><strong>Wake Word (WAKE)</strong> &mdash; "Hey Whim" wake word activates voice input; listens continuously and responds with MillyAl cloned voice via XTTS</li>
@@ -1017,16 +1030,59 @@ whim-cmd {"action":"open_maps","params":{}}</div>
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
     <span class="sec-num">07</span>
-    <h2>SSH Tunnel Networking</h2>
+    <h2>Hybrid Tunnel Networking</h2>
   </div>
   <p>
-    Whim uses a <strong>reverse SSH tunnel</strong> through a public VPS to connect the CARRARA desktop to mobile devices. This replaces the previous Tailscale mesh VPN, providing secure connectivity without requiring a VPN client on each phone.
+    Whim uses a <strong>hybrid two-mode connection strategy</strong>: a reverse SSH tunnel through a public VPS as the always-on primary, with <strong>Tailscale</strong> retained as an opt-in fallback for situations where rock-solid stability is needed (e.g., WiFi&harr;cellular handoffs). The mode is switchable from the mobile app or the desktop Control Panel.
   </p>
 
+  <h3>Connection Modes</h3>
+  <table>
+    <thead><tr><th>Mode</th><th>Default</th><th>How It Works</th></tr></thead>
+    <tbody>
+      <tr><td><strong>VPS Tunnel</strong></td><td><span class="badge badge-green">YES</span></td><td>Phone &rarr; VPS:8089 &rarr; SSH tunnel &rarr; PC:8089. Works everywhere, no VPN client needed on phone.</td></tr>
+      <tr><td><strong>Tailscale</strong></td><td><span class="badge badge-yellow">OPT-IN</span></td><td>Phone &rarr; 100.69.17.20:8089 direct via WireGuard mesh. Handles network transitions natively. Requires Tailscale on phone.</td></tr>
+      <tr><td><strong>Auto-detect</strong></td><td><span class="badge badge-yellow">OPT-IN</span></td><td>On connection, checks if Tailscale IP is reachable; uses it if available, otherwise falls back to VPS tunnel.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Switching Modes</h3>
+  <ul>
+    <li><strong>Mobile app</strong> &mdash; Connection mode dropdown in the top-right corner of the health bar (VPS Tunnel / Tailscale / Auto-detect)</li>
+    <li><strong>Desktop Control Panel</strong> &mdash; Whim tab &rarr; radio buttons push mode changes via <code>/connection_mode</code> API</li>
+    <li><strong>Config persistence</strong> &mdash; Mode saved to <code>config/connection_mode.json</code></li>
+  </ul>
+
+  <h3>Auto-Reconnect with Exponential Backoff</h3>
+  <p>When any connection drops, the mobile client automatically retries:</p>
+  <ul>
+    <li><strong>Base delay:</strong> 3 seconds (+ 0&ndash;2s random jitter)</li>
+    <li><strong>Backoff:</strong> Doubles each attempt: 3s &rarr; 6s &rarr; 12s &rarr; 24s &rarr; 30s (capped)</li>
+    <li><strong>Max delay:</strong> 30 seconds</li>
+    <li><strong>Visual indicator:</strong> Pulsing red "Connection lost &mdash; reconnecting..." banner</li>
+    <li><strong>All fetch calls</strong> wrapped with <code>fetchWithRetry</code> (up to 3 attempts per request)</li>
+  </ul>
+
+  <h3>Tailscale Device IPs</h3>
+  <table>
+    <thead><tr><th>Device</th><th>Tailscale IP</th><th>LAN IP</th></tr></thead>
+    <tbody>
+      <tr><td>PC (carraramint)</td><td>100.69.17.20</td><td>192.168.1.231</td></tr>
+      <tr><td>Samsung Galaxy S9</td><td>100.97.96.1</td><td>192.168.1.198</td></tr>
+      <tr><td>Samsung Galaxy S22</td><td>100.77.59.2</td><td>&mdash;</td></tr>
+      <tr><td>Lenovo TB311FU (Tablet)</td><td>100.64.255.124</td><td>192.168.1.112</td></tr>
+    </tbody>
+  </table>
+
   <h3>How It Works</h3>
-  <div class="code-block">[Whim.m on phone] &rarr; [VPS: 104.207.140.242:8089] &larr; reverse SSH tunnel &larr; [CARRAMint:8089]</div>
+  <div class="code-block">VPS MODE:       [Phone] &rarr; [VPS: 104.207.140.242:8089] &larr; SSH tunnel &larr; [PC:8089]
+TAILSCALE MODE: [Phone] &rarr; [100.69.17.20:8089] &rarr; [PC:8089] (direct WireGuard)
+AUTO MODE:      Tries Tailscale first, falls back to VPS if unreachable</div>
   <p>
-    The CARRARA desktop opens an outbound SSH connection to a public VPS. The VPS accepts inbound connections from mobile devices and forwards them through the tunnel back to the desktop. No ports need to be opened on the home router.
+    <strong>VPS Tunnel (default):</strong> The CARRARA desktop opens an outbound SSH connection to a public VPS. The VPS accepts inbound connections from mobile devices and forwards them through the tunnel back to the desktop. No ports need to be opened on the home router.
+  </p>
+  <p>
+    <strong>Tailscale (fallback):</strong> When enabled, phones connect directly to the PC's Tailscale IP (100.69.17.20) via WireGuard mesh. This is more stable during WiFi&harr;cellular transitions because Tailscale handles NAT traversal and connection migration natively.
   </p>
 
   <h3>Infrastructure</h3>
@@ -1059,10 +1115,12 @@ sudo systemctl status whim-tunnel.service</div>
     The Whim Terminal header bar displays two auto-updating status dots that poll every 10 seconds:
   </p>
   <table>
-    <thead><tr><th>Indicator</th><th>Green</th><th>Red</th></tr></thead>
+    <thead><tr><th>Indicator</th><th>Green</th><th>Red/Grey</th></tr></thead>
     <tbody>
       <tr><td><strong>Tunnel</strong></td><td>whim-tunnel.service active AND VPS:8089 reachable</td><td>Service down or VPS unreachable</td></tr>
       <tr><td><strong>Whim</strong></td><td>Whim.m server responding on localhost:8089</td><td>Server not running</td></tr>
+      <tr><td><strong>Tailscale</strong></td><td>Tailscale daemon running (BackendState: Running)</td><td>Tailscale stopped or not installed</td></tr>
+      <tr><td><strong>Ollama</strong></td><td>Ollama responding on localhost:11434</td><td>Ollama not running</td></tr>
     </tbody>
   </table>
 
@@ -1081,7 +1139,10 @@ sudo systemctl status whim-tunnel.service</div>
 
   <h3>Mobile Health Bar</h3>
   <p>
-    The Whim.m mobile app health bar shows four indicators: <strong>tunnel</strong>, <strong>server</strong>, <strong>mic</strong>, <strong>ollama</strong>. The tunnel dot turns green when the phone can reach the Whim server through the VPS, confirming end-to-end tunnel connectivity.
+    The Whim.m mobile app health bar shows five indicators: <strong>tunnel</strong>, <strong>server</strong>, <strong>mic</strong>, <strong>ollama</strong>, and <strong>TS</strong> (Tailscale). The tunnel dot turns green when the phone can reach the Whim server through the VPS, confirming end-to-end tunnel connectivity. The TS dot turns green when Tailscale is running on the PC.
+  </p>
+  <p>
+    A <strong>connection mode dropdown</strong> in the top-right corner allows switching between VPS Tunnel, Tailscale, and Auto-detect modes. When disconnected, a pulsing red banner appears: "Connection lost &mdash; reconnecting..." with automatic exponential backoff retries.
   </p>
 
   <h3>Mobile Access via Tunnel</h3>
@@ -1214,7 +1275,93 @@ sudo systemctl status whim-tunnel.service</div>
   </div>
 </section>
 
-<!-- ==================== 10 MESSAGING ==================== -->
+<!-- ==================== 10 VOICE ENGINE ==================== -->
+<section class="section" id="voiceengine">
+  <div class="section-header">
+    <img class="flame-sm" src="manual_assets/fire.png" alt="">
+    <span class="sec-num">10</span>
+    <h2>Voice Engine &mdash; Wake Word Tuning</h2>
+  </div>
+  <p>
+    The VOICE ENGINE tab is a dedicated audio diagnostics and wake word calibration environment built for use in noisy environments such as vehicles, outdoor settings, or anywhere ambient noise interferes with "Hey Whim" detection. It provides a real-time spectrogram, signal processing controls, and wake word sensitivity tuning &mdash; all in a three-column layout.
+  </p>
+
+  <h3>Whim-Scope (Live Spectrogram)</h3>
+  <p>
+    The top half of the tab displays a real-time frequency heatmap covering the <strong>300 Hz &ndash; 8 kHz</strong> range, driven by a 512-point Hanning FFT at 16 kHz mono. Key visual features:
+  </p>
+  <ul>
+    <li><strong>Frequency Heatmap</strong> &mdash; Color-coded intensity from dark (silence) to bright orange/green (loud signal), updating at ~20 FPS</li>
+    <li><strong>Confidence Ghost Bar</strong> &mdash; A vertical bar on the right edge of the scope showing wake word match confidence in real-time. <span style="color:#555">Grey</span> below 50%, <span style="color:#3388ff">Blue</span> at 50%+ match, <span style="color:#00ff00">Green</span> at 90%+ trigger threshold</li>
+    <li><strong>1&ndash;3 kHz Intelligibility Band</strong> &mdash; When enabled, the critical voice frequency band renders in a distinct cyan/blue tint with dashed boundary lines and a "1-3k" label. This is the frequency range where human voice carries the most intelligibility; if the "M" in "Whim" isn't being caught, low-end noise is masking the nasal resonance in this band.</li>
+    <li><strong>Wake Word Overlay</strong> &mdash; When the engine detects "Whim," a green "&gt;&gt;&gt; WAKE WORD DETECTED &lt;&lt;&lt;" banner flashes across the top of the scope</li>
+    <li><strong>Frequency Axis Labels</strong> &mdash; 300, 1000, 2000, 4000, 6000, 8000 Hz markers along the left edge</li>
+  </ul>
+
+  <h3>Column A: Gain &amp; Noise Floor (Pre-Amp)</h3>
+  <table>
+    <thead><tr><th>Control</th><th>Range</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Dynamic Gain</strong></td><td>0.1x &ndash; 5.0x</td><td>Adjusts input volume before processing. Drop if mic is near a vent to avoid clipping.</td></tr>
+      <tr><td><strong>Noise Floor Gate</strong></td><td>-80 to 0 dB</td><td>Silence threshold. Anything below is ignored, preventing wake word hallucinations from static.</td></tr>
+      <tr><td><strong>High-Pass Filter</strong></td><td>Toggle (150 Hz cutoff)</td><td>Cuts engine vibration and road hum. Critical for vehicles. <em>Hotkey: H</em></td></tr>
+      <tr><td><strong>Spectral Subtraction</strong></td><td>Toggle + Capture</td><td>"Capture Noise Profile" learns ambient/keyboard sound and subtracts that frequency profile from mic input.</td></tr>
+      <tr><td><strong>Automatic Gain Control</strong></td><td>Toggle</td><td>Auto-levels gain based on ambient noise. Raises gain at highway speed, lowers at idle. Smooth tracking with -20 dB target.</td></tr>
+      <tr><td><strong>Parametric EQ (400 Hz)</strong></td><td>Toggle + depth (-24 to 0 dB)</td><td>Narrow notch dip at ~400 Hz to reduce cabin reverb "boxiness" that masks the "W" sound in "Whim".</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Column B: "Hey Whim" Sensitivity</h3>
+  <table>
+    <thead><tr><th>Control</th><th>Range</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Sensitivity Threshold</strong></td><td>0.0 &ndash; 1.0</td><td>Lower = fewer false starts but must shout. Higher = hears whispers but sneezes may trigger. <em>Hotkey: S</em></td></tr>
+      <tr><td><strong>Phonetic Trigger Delay</strong></td><td>200 &ndash; 1500 ms</td><td>How long the engine waits after "Hey" to hear "Whim." Bump up to ~800 ms for slow speech.</td></tr>
+      <tr><td><strong>Voice Activity Detection</strong></td><td>Toggle</td><td>Only runs the expensive AI wake-word check when human-like speech patterns are detected. Saves CPU.</td></tr>
+      <tr><td><strong>Wake Word Engine</strong></td><td>Selector</td><td>Choose: placeholder (energy-based), openWakeWord, or Porcupine. The latter two support custom "Hey Whim" phrase.</td></tr>
+      <tr><td><strong>Intelligibility Band</strong></td><td>Toggle</td><td>Highlights 1&ndash;3 kHz on the Whim-Scope to visualize the critical voice frequency range.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Column C: Optimization &amp; Hardware</h3>
+  <table>
+    <thead><tr><th>Stat</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td>Sample Rate</td><td>16,000 Hz (16 kHz) &mdash; optimal for voice; higher wastes CPU, lower loses "s" and "sh" sounds</td></tr>
+      <tr><td>Bit Depth</td><td>16-bit PCM Mono</td></tr>
+      <tr><td>FFT Window</td><td>512-point Hanning</td></tr>
+      <tr><td>Freq Range</td><td>300 Hz &ndash; 8,000 Hz</td></tr>
+      <tr><td>Buffer Size</td><td>Adjustable 256 &ndash; 4096 frames (80&ndash;100 ms standard)</td></tr>
+    </tbody>
+  </table>
+  <p>
+    Live readouts include inference latency (ms), buffer frame count, CPU usage, and active audio device name. All settings persist across sessions to <code>~/.openclaw/voice_engine.json</code>.
+  </p>
+
+  <h3>Hotkeys</h3>
+  <table>
+    <thead><tr><th>Key</th><th>Action</th></tr></thead>
+    <tbody>
+      <tr><td><code>G</code></td><td>Cycle Gain (0.5 &rarr; 1.0 &rarr; 2.0 &rarr; 5.0)</td></tr>
+      <tr><td><code>S</code></td><td>Cycle Sensitivity (0.3 &rarr; 0.5 &rarr; 0.7 &rarr; 0.9)</td></tr>
+      <tr><td><code>H</code></td><td>Toggle High-Pass Filter on/off</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Audio Backend</h3>
+  <p>
+    Uses <code>sounddevice</code> (PortAudio) at 16 kHz mono with float32 samples. The audio callback pipeline processes in order: gain &rarr; HPF &rarr; parametric EQ &rarr; AGC &rarr; spectral subtraction &rarr; FFT &rarr; spectrogram &rarr; wake word detection. The wake word function is a placeholder (<code>_ve_detect_wake_word</code>) returning energy-based confidence, ready to swap in openWakeWord or Porcupine for actual custom "Hey Whim" inference.
+  </p>
+
+  <div class="card">
+    <div class="card-title">Vehicle Tip: Keyboard Noise</div>
+    <p style="font-size: 14px; color: var(--yellow);">
+      If mechanical keyboard clacks trigger the wake word, use "Capture Noise Profile" to learn the keyboard's frequency signature, then enable Spectral Subtraction to remove it from the mic input.
+    </p>
+  </div>
+</section>
+
+<!-- ==================== 11 MESSAGING ==================== -->
 <section class="section" id="messaging">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
@@ -1637,9 +1784,9 @@ Notes: User notes here
 <!-- ==================== FOOTER ==================== -->
 <footer class="manual-footer">
   <img src="manual_assets/fire.png" style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px; opacity: 0.6;">
-  <strong>Whim</strong> &mdash; Complete Manual v1.1 &mdash; March 2026<br>
+  <strong>Whim</strong> &mdash; Complete Manual v1.2 &mdash; March 2026<br>
   <span style="color: var(--fg-muted); font-size: 11px;">
-    Built on CARRARA &bull; Python &bull; Tkinter &bull; Ollama &bull; SSH Tunnel &bull; OpenClaw
+    Built on CARRARA &bull; Python &bull; Tkinter &bull; Ollama &bull; SSH Tunnel + Tailscale Hybrid &bull; OpenClaw
   </span>
 </footer>
 
