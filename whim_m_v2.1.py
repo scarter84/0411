@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Whim.m v2.2 — Mobile web app with recorder, file library, wake word, and cloned voice chat.
+Whim.m v3.0 — Mobile web app with recorder, file library, AI chat, wake word, device chat, and cloned voice.
 Standalone HTTP server, runs on port 8089 by default.
 Usage:
     python3 whim_m_v2.1.py [--port 8089]
@@ -38,26 +38,41 @@ _device_chat_lock = threading.Lock()
 _CHAT_MAX_MESSAGES = 200
 
 WHIM_ICON_B64 = ""
-_icon_path = os.path.expanduser("~/.openclaw/Whim.png")
+_icon_path = os.path.expanduser("~/.openclaw/fire.png")
 if os.path.isfile(_icon_path):
     import base64
     with open(_icon_path, "rb") as _f:
         WHIM_ICON_B64 = base64.b64encode(_f.read()).decode()
 
 MANIFEST = json.dumps({
-    "name": "Whim.m v2.1",
+    "name": "Whim.m v3.0",
     "short_name": "Whim.m",
     "start_url": "/",
     "display": "standalone",
     "background_color": "#1e1e1e",
     "theme_color": "#1e1e1e",
     "icons": [
-        {"src": "/icon-192.png", "sizes": "192x192", "type": "image/png"},
-        {"src": "/icon-512.png", "sizes": "512x512", "type": "image/png"},
+        {"src": "/icon-192.png?v=3.2", "sizes": "192x192", "type": "image/png"},
+        {"src": "/icon-512.png?v=3.2", "sizes": "512x512", "type": "image/png"},
     ],
 })
 
-SW_JS = "self.addEventListener('fetch',e=>e.respondWith(fetch(e.request).catch(()=>caches.match(e.request))));"
+SW_JS = """
+var CACHE_VERSION = 'whim-v3.2';
+self.addEventListener('install', function(e) {
+  self.skipWaiting();
+});
+self.addEventListener('activate', function(e) {
+  e.waitUntil(
+    caches.keys().then(function(names) {
+      return Promise.all(names.filter(function(n){return n!==CACHE_VERSION}).map(function(n){return caches.delete(n)}));
+    }).then(function(){return self.clients.claim()})
+  );
+});
+self.addEventListener('fetch', function(e) {
+  e.respondWith(fetch(e.request).catch(function(){return caches.match(e.request)}));
+});
+"""
 
 RECORDER_HTML = r"""<!DOCTYPE html>
 <html lang="en"><head>
@@ -66,7 +81,7 @@ RECORDER_HTML = r"""<!DOCTYPE html>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1e1e1e">
 <link rel="manifest" href="/manifest.json">
-<title>Whim.m v2.2</title>
+<title>Whim.m v3.0</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{--max-w:360px;--rec-size:72px;--rec-dot:28px;--rec-dot-stop:22px;--timer-sz:28px;
@@ -96,7 +111,8 @@ body{background:#1e1e1e;color:#dce4ee;font-family:-apple-system,system-ui,'Segoe
   display:flex;align-items:center;gap:6px;padding:4px 14px;
   background:rgba(30,30,30,0.92);border:1px solid #3a3a3a;border-radius:20px;
   font-family:'Courier New',monospace;font-size:11px;color:#666;
-  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);transition:all .3s}
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);transition:all .3s;
+  white-space:nowrap;max-width:92vw}
 .ww-bar.listening{border-color:#2fa572;color:#2fa572}
 .ww-bar.detected{border-color:#00ff00;color:#00ff00;box-shadow:0 0 12px rgba(0,255,0,0.25)}
 .ww-bar.error{border-color:#d94040;color:#d94040}
@@ -206,9 +222,16 @@ input[type=file]{display:none!important;width:0;height:0;overflow:hidden;positio
 .dc-mine .dc-sender{color:#88ccff}
 .dc-time{color:#555;font-size:11px}
 .dc-file-link{color:#2fa572;text-decoration:underline;word-break:break-all}
+
+/* Whim.ai chat */
+.ai-msg{margin-bottom:10px;line-height:1.5;font-size:14px;word-wrap:break-word;white-space:pre-wrap}
+.ai-msg.user{color:#00ff00}
+.ai-msg.assistant{color:#e08030}
+.ai-msg .msg-prefix{font-weight:700;font-size:11px;opacity:.6;display:block;margin-bottom:2px}
 </style></head><body>
 
 <div class="health-bar" id="healthBar">
+  <span><span class="health-dot" id="dotTunnel"></span>tunnel</span>
   <span><span class="health-dot" id="dotServer"></span>server</span>
   <span><span class="health-dot" id="dotMic"></span>mic</span>
   <span><span class="health-dot" id="dotOllama"></span>ollama</span>
@@ -223,10 +246,10 @@ input[type=file]{display:none!important;width:0;height:0;overflow:hidden;positio
 
 
 <!-- ========== TAB: RECORDER ========== -->
-<div class="tab-content active" id="tabRecorder">
+<div class="tab-content" id="tabRecorder">
   <div class="logo"><svg viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="30" stroke="#00ff00" stroke-width="2" fill="none"/><path d="M16 32 Q20 18,24 32 Q28 46,32 32 Q36 18,40 32 Q44 46,48 32" stroke="#00ff00" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg></div>
   <h1>Whim.m</h1>
-  <div class="version">v2.2</div>
+  <div class="version">v3.0</div>
   <p class="sub">voice recorder</p>
   <div class="wave-vis"><canvas id="waveCanvas"></canvas></div>
   <div class="controls">
@@ -289,6 +312,21 @@ input[type=file]{display:none!important;width:0;height:0;overflow:hidden;positio
   </div>
 </div>
 
+<!-- ========== TAB: WHIM.AI CHAT ========== -->
+<div class="tab-content active" id="tabAIChat">
+  <div style="display:flex;align-items:center;gap:12px;margin:16px 0 8px">
+    <img src="data:image/png;base64,__WHIM_ICON_B64__" style="width:48px;height:48px;border-radius:50%;border:2px solid #3a3a3a" alt="Whim">
+    <div><h1 style="font-size:20px;margin:0">Whim.ai</h1><p class="sub" style="margin:2px 0 0">powered by llama + openclaw</p></div>
+  </div>
+  <div id="aiChatBox" style="flex:1;width:90%;background:#111111;border:1px solid #3a3a3a;border-radius:10px;overflow-y:auto;padding:12px;margin-bottom:12px;min-height:200px">
+    <div class="ai-msg assistant"><span class="msg-prefix">whim.ai</span>Welcome. Ask me anything.</div>
+  </div>
+  <div style="width:90%;max-width:var(--max-w);display:flex;gap:8px;padding-bottom:env(safe-area-inset-bottom);margin:0 auto">
+    <input type="text" id="aiChatInput" placeholder="Ask anything..." style="flex:1;min-width:0;padding:12px;background:#2b2b2b;color:#dce4ee;border:1px solid #3a3a3a;border-radius:10px;font-size:15px;outline:none;font-family:inherit" autocomplete="off">
+    <button id="aiChatSend" style="padding:12px 20px;background:#2fa572;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;flex-shrink:0">Send</button>
+  </div>
+</div>
+
 <!-- ========== TAB: DEVICE CHAT ========== -->
 <div class="tab-content" id="tabDeviceChat">
   <h1 style="margin-top:16px">Device Chat</h1>
@@ -313,7 +351,7 @@ input[type=file]{display:none!important;width:0;height:0;overflow:hidden;positio
 
 <!-- ========== TAB BAR ========== -->
 <div class="tab-bar">
-  <button class="tab-btn active" data-tab="tabRecorder">
+  <button class="tab-btn" data-tab="tabRecorder">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
     REC<span class="tab-light" id="lightRec"></span>
   </button>
@@ -321,13 +359,17 @@ input[type=file]{display:none!important;width:0;height:0;overflow:hidden;positio
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
     LIBRARY<span class="tab-light" id="lightLib"></span>
   </button>
-  <button class="tab-btn" data-tab="tabDeviceChat">
+  <button class="tab-btn active" data-tab="tabAIChat">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
     CHAT<span class="tab-light" id="lightChat"></span>
   </button>
   <button class="tab-btn" data-tab="tabWakeWord">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
     WAKE<span class="tab-light" id="lightWake"></span>
+  </button>
+  <button class="tab-btn" data-tab="tabDeviceChat">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a7 7 0 0 1 7 7c0 3-2 5-4 6v2H9v-2c-2-1-4-3-4-6a7 7 0 0 1 7-7z"/><path d="M9 21h6"/></svg>
+    DEVICES<span class="tab-light" id="lightDevices"></span>
   </button>
 </div>
 
@@ -342,22 +384,29 @@ tabBtns.forEach(btn=>{btn.addEventListener('click',()=>{
   document.getElementById(btn.dataset.tab).classList.add('active');
   if(btn.dataset.tab==='tabRecorder'){setTimeout(()=>{resizeCanvas();drawIdle()},50)}
   if(btn.dataset.tab==='tabLibrary'){loadLibrary()}
-  if(btn.dataset.tab==='tabWakeWord'){loadActiveVoice()}
+  if(btn.dataset.tab==='tabWakeWord'){loadActiveVoice();wwStartMic()}
+  if(btn.dataset.tab==='tabAIChat'){}
   if(btn.dataset.tab==='tabDeviceChat'&&deviceName){startDCPoll()}
 })});
 
 // ========== HEALTH ==========
-const dotServer=document.getElementById('dotServer'),dotMic=document.getElementById('dotMic'),dotOllama=document.getElementById('dotOllama');
+const dotTunnel=document.getElementById('dotTunnel'),dotServer=document.getElementById('dotServer'),dotMic=document.getElementById('dotMic'),dotOllama=document.getElementById('dotOllama');
+let _micConfirmedOk=false;
+function setMicOk(){_micConfirmedOk=true;dotMic.className='health-dot ok'}
 async function checkHealth(){
   try{const ac=new AbortController();const tid=setTimeout(()=>ac.abort(),3000);
     const r=await fetch('/health',{signal:ac.signal});clearTimeout(tid);
+    dotTunnel.className='health-dot '+(r.ok?'ok':'fail');
     dotServer.className='health-dot '+(r.ok?'ok':'warn');
     if(r.ok){const d=await r.clone().json();dotOllama.className='health-dot '+(d.ollama?'ok':'fail');updateTabLights(true)}
     else{dotOllama.className='health-dot fail';updateTabLights(false)}
-  }catch(e){dotServer.className='health-dot fail';dotOllama.className='health-dot fail';updateTabLights(false)}
+  }catch(e){dotTunnel.className='health-dot fail';dotServer.className='health-dot fail';dotOllama.className='health-dot fail';updateTabLights(false)}
+  if(_micConfirmedOk){dotMic.className='health-dot ok';return}
   try{if(navigator.permissions&&navigator.permissions.query){
     const p=await navigator.permissions.query({name:'microphone'});
-    dotMic.className='health-dot '+(p.state==='granted'?'ok':p.state==='prompt'?'warn':'fail');
+    if(p.state==='granted'){dotMic.className='health-dot ok'}
+    else{try{const s=await navigator.mediaDevices.getUserMedia({audio:true});s.getTracks().forEach(t=>t.stop());setMicOk()}
+      catch(e2){dotMic.className='health-dot '+(p.state==='prompt'?'warn':'fail')}}
   }}catch(e){dotMic.className='health-dot warn'}
 }
 const lightRec=document.getElementById('lightRec'),lightLib=document.getElementById('lightLib'),
@@ -393,7 +442,7 @@ function fmtTime(ms){const s=Math.floor(ms/1000),m=Math.floor(s/60);return Strin
 function updateTimer(){timerEl.textContent=fmtTime(Date.now()-startTime)}
 
 async function startRec(){
-  try{stream=await navigator.mediaDevices.getUserMedia({audio:true});dotMic.className='health-dot ok';
+  try{stream=await navigator.mediaDevices.getUserMedia({audio:true});setMicOk();
     audioCtx=new(window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')await audioCtx.resume();
     const src=audioCtx.createMediaStreamSource(stream);analyser=audioCtx.createAnalyser();analyser.fftSize=2048;src.connect(analyser);
     mediaRec=new MediaRecorder(stream,{mimeType:MediaRecorder.isTypeSupported('audio/webm;codecs=opus')?'audio/webm;codecs=opus':'audio/webm'});
@@ -480,7 +529,7 @@ function wwBarState(cls,text){wwBar.className='ww-bar'+(cls?' '+cls:'');wwBarLab
 
 async function ensureMicPermission(){
   try{const s=await navigator.mediaDevices.getUserMedia({audio:true});
-    s.getTracks().forEach(t=>t.stop());return true}catch(e){return false}
+    s.getTracks().forEach(t=>t.stop());setMicOk();return true}catch(e){return false}
 }
 
 function initWakeWord(){
@@ -512,8 +561,13 @@ function initWakeWord(){
     if(e.error==='not-allowed'||e.error==='service-not-allowed'){
       wwActive=false;_wwStarting=false;
       wwCircle.className='ww-status-circle';wwIcon.setAttribute('stroke','#d94040');
-      wwLabel.textContent='Mic permission needed — open site settings';
-      wwBarState('error','Mic denied');
+      if(_micConfirmedOk){
+        wwLabel.textContent='Speech recognition blocked — check browser speech settings';
+        wwBarState('error','Speech denied');
+      }else{
+        wwLabel.textContent='Mic permission needed — open site settings';
+        wwBarState('error','Mic denied');
+      }
     } else if(e.error!=='no-speech'&&e.error!=='aborted'&&e.error!=='network'){
       showStatus(wwStatus,'Recognition error: '+e.error,'err')}
   };
@@ -543,7 +597,7 @@ async function activateWakeWord(){
     wwBarState('error','Mic denied');
     return;
   }
-  dotMic.className='health-dot ok';
+  setMicOk();
   if(!wwRecognition&&!initWakeWord())return;
   wwStartSafe();
 }
@@ -594,9 +648,14 @@ function wwDrawWave(){
   wwAnimId=requestAnimationFrame(wwDrawWave);
 }
 async function wwStartMic(){
-  if(wwMicStream)return;
+  if(wwMicStream&&wwAudioCtx&&wwAudioCtx.state!=='closed'&&wwAnalyser){
+    if(!wwAnimId){wwResizeCanvas();wwDrawWave()}
+    return;
+  }
+  wwStopMic();
   try{
     wwMicStream=await navigator.mediaDevices.getUserMedia({audio:true});
+    setMicOk();
     wwAudioCtx=new(window.AudioContext||window.webkitAudioContext)();
     if(wwAudioCtx.state==='suspended')await wwAudioCtx.resume();
     const src=wwAudioCtx.createMediaStreamSource(wwMicStream);
@@ -608,10 +667,17 @@ async function wwStartMic(){
 }
 function wwStopMic(){
   if(wwAnimId){cancelAnimationFrame(wwAnimId);wwAnimId=null}
-  if(wwAudioCtx){wwAudioCtx.close();wwAudioCtx=null;wwAnalyser=null}
+  if(wwAudioCtx){try{wwAudioCtx.close()}catch(e){};wwAudioCtx=null;wwAnalyser=null}
   if(wwMicStream){wwMicStream.getTracks().forEach(t=>t.stop());wwMicStream=null}
   wwDrawIdle();wwWaveLabel.textContent='voice profile: stopped';
 }
+document.addEventListener('visibilitychange',function(){
+  if(!document.hidden){
+    var activeTab=document.querySelector('.tab-content.active');
+    if(activeTab&&activeTab.id==='tabWakeWord'){wwStartMic()}
+    if(wwAudioCtx&&wwAudioCtx.state==='suspended'){wwAudioCtx.resume()}
+  }
+});
 // ========== WHIM.AI VOICE CHAT ==========
 const chatMessages=document.getElementById('chatMessages'),chatInput=document.getElementById('chatInput'),
   chatSendBtn=document.getElementById('chatSendBtn'),activeVoiceLabel=document.getElementById('activeVoiceLabel');
@@ -787,6 +853,67 @@ function showStatus(el,msg,type){el.className='status '+type;el.textContent=msg;
 
 if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(()=>{})}
 
+// ========== WHIM.AI CHAT TAB ==========
+const aiChatBox=document.getElementById('aiChatBox'),aiChatInput=document.getElementById('aiChatInput'),
+  aiChatSend=document.getElementById('aiChatSend');
+let aiChatHistory=[],aiChatStreaming=false;
+
+function addAiChatMsg(role,text){
+  const d=document.createElement('div');
+  d.className='ai-msg '+role;
+  const pfx=document.createElement('span');
+  pfx.className='msg-prefix';
+  pfx.textContent=role==='user'?'you':'whim.ai';
+  d.appendChild(pfx);
+  d.appendChild(document.createTextNode(text));
+  aiChatBox.appendChild(d);
+  aiChatBox.scrollTop=aiChatBox.scrollHeight;
+  return d;
+}
+
+async function sendAiChatMsg(){
+  if(aiChatStreaming)return;
+  const text=aiChatInput.value.trim();
+  if(!text)return;
+  aiChatInput.value='';
+  addAiChatMsg('user',text);
+  aiChatHistory.push({role:'user',content:text});
+  aiChatStreaming=true;aiChatSend.disabled=true;
+  const msgEl=addAiChatMsg('assistant','');
+  const pfx=msgEl.querySelector('.msg-prefix');
+  try{
+    const resp=await fetch('/api/chat',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({messages:aiChatHistory})});
+    if(!resp.ok)throw new Error('Server error '+resp.status);
+    const reader=resp.body.getReader();
+    const dec=new TextDecoder();
+    let buf='',full='';
+    while(true){
+      const{done,value}=await reader.read();
+      if(done)break;
+      buf+=dec.decode(value,{stream:true});
+      const lines=buf.split('\n');buf=lines.pop();
+      for(const line of lines){
+        if(!line.trim())continue;
+        try{const d=JSON.parse(line);const tk=d.message&&d.message.content||'';
+          if(tk){full+=tk;msgEl.textContent='';msgEl.appendChild(pfx);
+            msgEl.appendChild(document.createTextNode(full));
+            aiChatBox.scrollTop=aiChatBox.scrollHeight;}
+          if(d.done)break;
+        }catch(e){}
+      }
+    }
+    if(full)aiChatHistory.push({role:'assistant',content:full});
+  }catch(e){
+    msgEl.textContent='';msgEl.appendChild(pfx);
+    msgEl.appendChild(document.createTextNode('[Error: '+e.message+']'));
+  }
+  aiChatStreaming=false;aiChatSend.disabled=false;
+}
+aiChatSend.addEventListener('click',sendAiChatMsg);
+aiChatInput.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendAiChatMsg()}});
+
 if(typeof WhimBridge!=='undefined'&&WhimBridge.onReady){try{WhimBridge.onReady()}catch(e){}}
 </script></body></html>"""
 
@@ -802,14 +929,11 @@ def _get_lan_ip():
         return "127.0.0.1"
 
 
-def _get_tailscale_ip():
-    try:
-        out = subprocess.check_output(
-            ["tailscale", "ip", "-4"], timeout=5, stderr=subprocess.DEVNULL
-        ).decode().strip()
-        return out.splitlines()[0] if out else None
-    except Exception:
-        return None
+VPS_HOST = "104.207.140.242"
+VPS_TUNNEL_PORT = 8089
+
+def _get_vps_url():
+    return f"http://{VPS_HOST}:{VPS_TUNNEL_PORT}"
 
 
 def _human_size(nbytes):
@@ -829,6 +953,11 @@ class RecorderHandler(BaseHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
 
+    def _no_cache(self):
+        self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
+        self.send_header("Pragma", "no-cache")
+        self.send_header("Expires", "0")
+
     def do_OPTIONS(self):
         self.send_response(204)
         self._cors()
@@ -843,7 +972,7 @@ class RecorderHandler(BaseHTTPRequestHandler):
                     ollama_ok = r.status == 200
             except Exception:
                 pass
-            self._json_response(200, {"status": "ok", "version": "2.2", "ollama": ollama_ok,
+            self._json_response(200, {"status": "ok", "version": "3.0", "ollama": ollama_ok,
                                       "tail": "WHIM_M_TAIL_OK"})
         elif self.path == "/tail_verify":
             ts = datetime.now().strftime("%H:%M:%S")
@@ -881,10 +1010,11 @@ class RecorderHandler(BaseHTTPRequestHandler):
             self._text_response(200, MANIFEST, "application/json")
         elif self.path == "/sw.js":
             self._text_response(200, SW_JS, "application/javascript")
-        elif self.path in ("/icon-192.png", "/icon-512.png"):
+        elif self.path.startswith("/icon-192.png") or self.path.startswith("/icon-512.png"):
             self._serve_pwa_icon(192 if "192" in self.path else 512)
         else:
-            self._text_response(200, RECORDER_HTML, "text/html; charset=utf-8")
+            html = RECORDER_HTML.replace("__WHIM_ICON_B64__", WHIM_ICON_B64)
+            self._text_response(200, html, "text/html; charset=utf-8")
 
     _OPENCLAW_SYSTEM = (
         "You are OpenClaw, the AI assistant powering the Whim ecosystem. "
@@ -912,7 +1042,7 @@ class RecorderHandler(BaseHTTPRequestHandler):
         "VOICE & MEDIA: record, transcribe (Whisper), tts (XTTS), playback, scrub.\n"
         "SIGNAL / DISCORD: sig.send, sig.recv, sig.contacts, disc.send, disc.react, disc.search.\n"
         "ARCHIVE & FILES: archive.new, archive.save, archive.open, journal, ingest.\n"
-        "SYSTEM: read/write files, shell commands, SmartThings, Tailscale, sessions.\n\n"
+        "SYSTEM: read/write files, shell commands, SmartThings, SSH tunnel, sessions.\n\n"
         "Always respond conversationally AND include the command block when an action is needed. "
         "Be concise and direct."
     )
@@ -991,47 +1121,27 @@ class RecorderHandler(BaseHTTPRequestHandler):
         self.send_response(code)
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(data)))
+        self._no_cache()
         self.end_headers()
         self.wfile.write(data)
 
     def _serve_pwa_icon(self, size):
         try:
-            from PIL import Image, ImageDraw
-            bg = (20, 20, 22, 255)
-            accent = (200, 210, 225, 255)
-            glow = (100, 160, 220, 80)
-            ring_c = (60, 70, 85, 255)
-            img = Image.new("RGBA", (size, size), bg)
-            d = ImageDraw.Draw(img)
-            margin = max(1, int(size * 0.04))
-            d.ellipse([margin, margin, size - margin, size - margin],
-                      outline=ring_c, width=max(1, int(size * 0.015)))
-            pad = size * 0.18
-            top, bot = pad, size - pad
-            left, right = pad, size - pad
-            mid_x = size / 2.0
-            w, h = right - left, bot - top
-            pts = [(left, top), (left + w * 0.22, bot), (mid_x, top + h * 0.40),
-                   (right - w * 0.22, bot), (right, top)]
-            sw = max(2, int(size * 0.045))
-            for off in range(3, 0, -1):
-                gw = sw + off * max(2, int(size * 0.02))
-                gc = (glow[0], glow[1], glow[2], glow[3] // (off + 1))
-                for i in range(len(pts) - 1):
-                    d.line([pts[i], pts[i + 1]], fill=gc, width=gw)
-            for i in range(len(pts) - 1):
-                d.line([pts[i], pts[i + 1]], fill=accent, width=sw)
-            dr = max(1, int(size * 0.015))
-            for pt in pts:
-                d.ellipse([pt[0] - dr, pt[1] - dr, pt[0] + dr, pt[1] + dr], fill=accent)
-            buf = io.BytesIO()
-            img.save(buf, format="PNG")
-            data = buf.getvalue()
+            from PIL import Image
+            fire_path = os.path.expanduser("~/.openclaw/fire.png")
+            if os.path.isfile(fire_path):
+                img = Image.open(fire_path).convert("RGBA").resize((size, size), Image.LANCZOS)
+                buf = io.BytesIO()
+                img.save(buf, format="PNG")
+                data = buf.getvalue()
+            else:
+                data = b'\x89PNG\r\n\x1a\n'
         except Exception:
             data = b'\x89PNG\r\n\x1a\n'
         self.send_response(200)
         self.send_header("Content-Type", "image/png")
         self.send_header("Content-Length", str(len(data)))
+        self._no_cache()
         self.end_headers()
         self.wfile.write(data)
 
@@ -1047,7 +1157,7 @@ class RecorderHandler(BaseHTTPRequestHandler):
                 data = {"devices": [], "updated": ""}
             device_name = update.get("name", "")
             for i, dev in enumerate(data.get("devices", [])):
-                if dev.get("name") == device_name or dev.get("tailscale_ip") == update.get("tailscale_ip"):
+                if dev.get("name") == device_name or dev.get("ip") == update.get("ip"):
                     data["devices"][i]["gps"] = update.get("gps")
                     break
             else:
@@ -1147,7 +1257,7 @@ class RecorderHandler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(fsize))
-        self.send_header("Content-Disposition", f'inline; filename="{fname}"')
+        self.send_header("Content-Disposition", f'attachment; filename="{fname}"')
         self._cors()
         self.end_headers()
         with open(fpath, "rb") as f:
@@ -1471,12 +1581,9 @@ class RecorderHandler(BaseHTTPRequestHandler):
 
 
 def preflight_checks():
-    ts_ip = _get_tailscale_ip()
+    vps_url = _get_vps_url()
     lan_ip = _get_lan_ip()
-    if ts_ip:
-        print(f"  Tailscale IP : {ts_ip}")
-    else:
-        print("  Tailscale    : not detected (LAN-only mode)")
+    print(f"  VPS Tunnel   : {vps_url}")
     print(f"  LAN IP       : {lan_ip}")
     for d, label in [(UPLOAD_DIR, "Upload dir"), (SHARED_DIR, "Shared dir"), (TTS_OUTPUT_DIR, "TTS cache")]:
         if not os.path.isdir(d):
@@ -1484,28 +1591,27 @@ def preflight_checks():
             print(f"  Created {label}: {d}")
         else:
             print(f"  {label:12s} : {d}")
-    return ts_ip, lan_ip
+    return vps_url, lan_ip
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Whim.m v2.2 — mobile server with recorder, library, TTS")
+    parser = argparse.ArgumentParser(description="Whim.m v3.0 — mobile server with recorder, library, AI chat, TTS")
     parser.add_argument("--port", type=int, default=DEFAULT_PORT)
     args = parser.parse_args()
 
     print("=" * 50)
-    print("  Whim.m v2.2 — Recorder + Library + Voice")
+    print("  Whim.m v3.0 — Recorder + Library + AI Chat + Voice")
     print("=" * 50)
-    ts_ip, lan_ip = preflight_checks()
+    vps_url, lan_ip = preflight_checks()
     port = args.port
 
     server = HTTPServer(("0.0.0.0", port), RecorderHandler)
     print(f"\n  Listening on  : 0.0.0.0:{port}")
     print(f"  Open on phone : http://{lan_ip}:{port}")
-    if ts_ip:
-        print(f"  Via Tailscale : http://{ts_ip}:{port}")
+    print(f"  Via VPS tunnel: {vps_url}")
     print(f"\n  NOTE: Use COLON before port, not a dot!")
-    print(f"        Correct : http://{ts_ip or lan_ip}:{port}")
-    print(f"        Wrong   : http://{ts_ip or lan_ip}.{port}")
+    print(f"        Correct : http://{lan_ip}:{port}")
+    print(f"        Wrong   : http://{lan_ip}.{port}")
     print("=" * 50)
 
     try:

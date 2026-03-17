@@ -466,7 +466,7 @@ table tr:nth-child(even) td {
     </div>
     <div class="toc-item">
       <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">07</span>
-      <a href="#tailscale">Tailscale VPN Integration</a>
+      <a href="#tunnel">SSH Tunnel Networking</a>
     </div>
     <div class="toc-item">
       <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">08</span>
@@ -519,12 +519,12 @@ table tr:nth-child(even) td {
     <h2>Application Overview</h2>
   </div>
   <p>
-    <strong>Whim</strong> is a comprehensive desktop and mobile ecosystem built in Python (Tkinter) that unifies voice recording, AI-powered conversation, messaging, IoT automation, screen sharing, and document editing into a single dark-themed application. It runs on Linux (CARRARA Mint) and connects to Samsung Android devices via LAN, Tailscale VPN, or USB/ADB.
+    <strong>Whim</strong> is a comprehensive desktop and mobile ecosystem built in Python (Tkinter) that unifies voice recording, AI-powered conversation, messaging, IoT automation, screen sharing, and document editing into a single dark-themed application. It runs on Linux (CARRARA Mint) and connects to Samsung Android devices via a reverse SSH tunnel through a public VPS, LAN, or USB/ADB.
   </p>
 
   <div class="screenshot-container">
-    <img src="manual_assets/whim_sessions_tab.png" alt="Whim Terminal — Sessions Tab">
-    <div class="screenshot-caption">Whim Terminal application showing the Sessions tab with all 14 module tabs visible across the header.</div>
+    <img src="manual_assets/whim_sessions_tab.png" alt="Whim Desktop — Sessions Tab">
+    <div class="screenshot-caption">Whim desktop application showing the Sessions tab with all 14 module tabs visible across the header.</div>
   </div>
 
   <h3>Key Highlights</h3>
@@ -535,7 +535,7 @@ table tr:nth-child(even) td {
     </div>
     <div class="feature-card">
       <div class="fc-title">Mobile Companion</div>
-      <div class="fc-desc">Whim.m v3.2 provides a four-tab mobile experience (REC, LIBRARY, CHAT, WAKE) with voice recording, AI chat, wake word commands, cross-device file sharing, and inter-device messaging &mdash; accessible over LAN or Tailscale.</div>
+      <div class="fc-desc">Whim.m v3.1 provides a five-tab mobile experience (REC, LIBRARY, CHAT, WAKE, DEVICES) with voice recording, AI chat, wake word commands, cross-device file sharing, and inter-device messaging &mdash; accessible over LAN or VPS reverse SSH tunnel.</div>
     </div>
     <div class="feature-card">
       <div class="fc-title">Local-First AI</div>
@@ -543,7 +543,7 @@ table tr:nth-child(even) td {
     </div>
     <div class="feature-card">
       <div class="fc-title">System Tray Integration</div>
-      <div class="fc-desc">Minimizes to system tray with a dynamic Tailscale status icon (grey/yellow/green) showing connection health at a glance.</div>
+      <div class="fc-desc">Minimizes to system tray with a dynamic tunnel status icon (grey/yellow/green) showing connection health at a glance. Header bar shows real-time Tunnel and Whim status dots.</div>
     </div>
   </div>
 </section>
@@ -567,7 +567,7 @@ table tr:nth-child(even) td {
   <div class="conn-diagram">
     <div style="margin-bottom: 16px;">
       <span class="node">Samsung Phone</span>
-      <span class="arrow">&larr; Tailscale / LAN &rarr;</span>
+      <span class="arrow">&larr; VPS Tunnel / LAN &rarr;</span>
       <span class="node">CARRARA Desktop</span>
       <span class="arrow">&larr; WebSocket &rarr;</span>
       <span class="node">OpenClaw Gateway</span>
@@ -618,10 +618,10 @@ table tr:nth-child(even) td {
         <td>Desktop-to-phone screen share + phone camera feed</td>
       </tr>
       <tr>
-        <td>Tailscale VPN</td>
-        <td>WireGuard mesh</td>
-        <td>--</td>
-        <td>Secure cross-network connectivity for all services</td>
+        <td>SSH Tunnel (autossh)</td>
+        <td>Reverse SSH via VPS</td>
+        <td>8089</td>
+        <td>Secure cross-network connectivity via VPS at 104.207.140.242</td>
       </tr>
       <tr>
         <td>Ollama</td>
@@ -659,8 +659,8 @@ table tr:nth-child(even) td {
     <li><strong>Token</strong> &mdash; Authentication token for gateway access (masked input)</li>
     <li><strong>Approvals</strong> &mdash; Toggle operator approval scope for sensitive actions</li>
     <li><strong>Journal Ingest</strong> &mdash; Shows the LAN IP and port for the upload server with Start/Stop controls</li>
-    <li><strong>Tailscale Toggle</strong> &mdash; Enable/disable Tailscale VPN with visual switch</li>
-    <li><strong>Whim Toggle</strong> &mdash; Enable/disable Whim mobile connectivity with visual switch</li>
+    <li><strong>Tunnel Status Dot</strong> &mdash; Green/red indicator showing reverse SSH tunnel health (auto-updates every 10s)</li>
+    <li><strong>Whim Status Dot</strong> &mdash; Green/red indicator showing Whim.m server reachability on localhost:8089</li>
   </ul>
 </section>
 
@@ -700,69 +700,6 @@ table tr:nth-child(even) td {
       <tr><td><span class="badge badge-yellow">EVENTS/DEBUG</span></td><td>events</td><td>Structured event log with module/level/session/request filtering, regex search, saved queries, and JSON/text export.</td></tr>
     </tbody>
   </table>
-
-  <h3>Tab Screenshots</h3>
-
-  <div class="screenshot-container">
-    <img src="manual_assets/desktop_chat_tab.png" alt="Desktop — Chat Tab">
-    <div class="screenshot-caption">CHAT tab — Cross-Device Chat for direct command-line communication with the OpenClaw gateway.</div>
-  </div>
-
-  <div class="screenshot-container">
-    <img src="manual_assets/desktop_smartthings_tab.png" alt="Desktop — SmartThings Tab">
-    <div class="screenshot-caption">SMARTTHINGS tab — Samsung SmartThings device browser with scan, filter, favorites, and device detail panel.</div>
-  </div>
-
-  <div class="screenshot-container">
-    <img src="manual_assets/desktop_sys_status_tab.png" alt="Desktop — Sys Status Tab">
-    <div class="screenshot-caption">SYS STATUS tab — Real-time system health monitoring with CPU, RAM, GPU, and network diagnostics.</div>
-  </div>
-
-  <div class="screenshot-container">
-    <img src="manual_assets/desktop_avatar_tab.png" alt="Desktop — Avatar Tab">
-    <div class="screenshot-caption">AVATAR tab — XTTS v2 voice synthesis lab with speaker references and TTS configuration.</div>
-  </div>
-
-  <div class="screenshot-container">
-    <img src="manual_assets/desktop_live_tab.png" alt="Desktop — Live Tab">
-    <div class="screenshot-caption">LIVE tab — Screen Share server with desktop-to-phone streaming and phone camera feed.</div>
-  </div>
-
-  <div class="screenshot-container">
-    <img src="manual_assets/desktop_trv_cipher_tab.png" alt="Desktop — TRV Cipher Tab">
-    <div class="screenshot-caption">TRV CIPHER tab — Audio transcription workstation with file browser, spectrogram, playback transport, and Whisper transcription.</div>
-  </div>
-
-  <div class="screenshot-container">
-    <img src="manual_assets/desktop_archive_tab.png" alt="Desktop — Archive Tab">
-    <div class="screenshot-caption">ARCHIVE tab — Rich text editor with formatting toolbar, font selection, bullet lists, find/replace, and file browser.</div>
-  </div>
-
-  <div class="screenshot-container">
-    <img src="manual_assets/desktop_discord_tab.png" alt="Desktop — Discord Tab">
-    <div class="screenshot-caption">DISCORD tab — OpenClaw bot management with action toggles, channel config, and desktop client launch controls.</div>
-  </div>
-
-  <div class="screenshot-container">
-    <img src="manual_assets/desktop_signal_tab.png" alt="Desktop — Signal Tab">
-    <div class="screenshot-caption">SIGNAL tab — Signal messenger integration for sending/receiving messages and viewing conversation history.</div>
-  </div>
-
-  <div class="screenshot-container">
-    <img src="manual_assets/desktop_ryvencore_tab.png" alt="Desktop — RyvenCore Tab">
-    <div class="screenshot-caption">RYVENCORE tab — Visual node-based programming environment with design settings, flows, variables, and stylus controls.</div>
-  </div>
-
-  <div class="screenshot-container">
-    <img src="manual_assets/desktop_ryven_editor_tab.png" alt="Desktop — Ryven Editor Tab">
-    <div class="screenshot-caption">RYVEN EDITOR tab — Advanced Ryven flow editor for building visual automation pipelines.</div>
-  </div>
-
-  <div class="screenshot-container">
-    <img src="manual_assets/desktop_events_debug_tab.png" alt="Desktop — Events/Debug Tab">
-    <div class="screenshot-caption">EVENTS/DEBUG tab — Structured event log with module/level filtering, regex search, saved queries, and JSON/text export.</div>
-  </div>
-
 </section>
 
 <!-- ==================== 04 WHIM.AI ==================== -->
@@ -870,30 +807,30 @@ table tr:nth-child(even) td {
 
   <div class="phone-screenshot-row">
     <div class="screenshot-container">
-      <img src="manual_assets/phone_rec_tab.png" alt="Whim.m REC Tab">
+      <img src="manual_assets/phone_rec_tab.jpg" alt="Whim.m REC Tab">
       <div class="screenshot-caption">REC tab &mdash; Whim.m v3.2 voice recorder with record button, EXPORT TO WHIM, file list with play buttons, and status bar showing server/nic/ollama indicators</div>
     </div>
     <div class="screenshot-container">
-      <img src="manual_assets/phone_library_tab.png" alt="Whim.m Library Tab">
+      <img src="manual_assets/phone_library_tab.jpg" alt="Whim.m Library Tab">
       <div class="screenshot-caption">LIBRARY tab &mdash; Shared files across devices with "Pick from Gallery / Screenshots" and "Upload any file to library"</div>
     </div>
     <div class="screenshot-container">
-      <img src="manual_assets/phone_chat_tab.png" alt="Whim.m Chat Tab">
+      <img src="manual_assets/phone_chat_tab.jpg" alt="Whim.m Chat Tab">
       <div class="screenshot-caption">CHAT tab &mdash; Device Chat for talking between your devices with message input and attachment button</div>
     </div>
   </div>
 
   <div class="phone-screenshot-row">
     <div class="screenshot-container">
-      <img src="manual_assets/phone_wake_tab.png" alt="Whim.m Wake Tab">
+      <img src="manual_assets/phone_wake_tab.jpg" alt="Whim.m Wake Tab">
       <div class="screenshot-caption">WAKE tab &mdash; Wake Word "Hey Whim" listening mode with microphone, voice chat using MillyAl voice, and text input</div>
     </div>
     <div class="screenshot-container">
-      <img src="manual_assets/phone_whimai_chat_v3.png" alt="Whim.ai Chat Screen">
+      <img src="manual_assets/phone_whimai_chat_v3.jpg" alt="Whim.ai Chat Screen">
       <div class="screenshot-caption">Whim.ai standalone chat screen powered by Llama + OpenClaw with "Welcome. Ask me anything." prompt</div>
     </div>
     <div class="screenshot-container">
-      <img src="manual_assets/phone_rec_tab_files.png" alt="Whim.m REC Tab File List">
+      <img src="manual_assets/phone_rec_tab_files.jpg" alt="Whim.m REC Tab File List">
       <div class="screenshot-caption">REC tab showing the SENT TO WHIM file list with recordings (RevyMillyA.mp3, MillyAl.mp3, .webm recordings) and status bar indicators</div>
     </div>
   </div>
@@ -943,14 +880,14 @@ table tr:nth-child(even) td {
   <div class="phone-screenshot-row">
     <div class="screenshot-container">
       <img src="manual_assets/phone_whim_apk_connecting.jpg" alt="Whim APK Connecting">
-      <div class="screenshot-caption">Whim.m APK splash screen connecting to the desktop via Tailscale (100.69.17.20:8088)</div>
+      <div class="screenshot-caption">Whim.m APK splash screen connecting to the desktop via VPS tunnel (104.207.140.242:8089)</div>
     </div>
     <div class="screenshot-container">
       <img src="manual_assets/phone_whim_m_recorder.jpg" alt="Whim.m Voice Recorder">
       <div class="screenshot-caption">Whim.m voice recorder in action with 00:23 timer, "EXPORT TO WHIM" button, and list of sent recordings</div>
     </div>
     <div class="screenshot-container">
-      <img src="manual_assets/phone_whimai_welcome.png" alt="Whim.ai Welcome">
+      <img src="manual_assets/phone_whimai_welcome.jpg" alt="Whim.ai Welcome">
       <div class="screenshot-caption">Whim.ai mobile chat overlay showing the welcome screen with Screen Share and location FABs</div>
     </div>
   </div>
@@ -1015,15 +952,14 @@ whim-cmd {"action":"open_maps","params":{}}</div>
 
   <h3>Running Whim.m Standalone</h3>
   <div class="code-block">python3 ~/vaults/WHIM/mobile/whim_m_v2.1.py --port 8089</div>
-  <p>Output will show LAN IP and Tailscale IP (if available) for connecting from your phone.</p>
+  <p>Output will show LAN IP and VPS tunnel URL for connecting from your phone.</p>
 
   <h3>APK Variants</h3>
   <table>
     <thead><tr><th>File</th><th>Size</th><th>Description</th></tr></thead>
     <tbody>
-      <tr><td>whim_m.apk</td><td>~21 KB</td><td>WebView wrapper for the Whim.m PWA</td></tr>
-      <tr><td>whim_recorder.apk</td><td>~21 KB</td><td>Standalone recorder APK</td></tr>
-      <tr><td>tailscale.apk</td><td>~96 MB</td><td>Tailscale VPN client for Android</td></tr>
+      <tr><td>whim_m_v3.1_phone.apk</td><td>~61 KB</td><td>WebView wrapper for phones (connects via VPS tunnel)</td></tr>
+      <tr><td>whim_m_v3.1_tablet.apk</td><td>~61 KB</td><td>WebView wrapper for tablet (connects via VPS tunnel)</td></tr>
     </tbody>
   </table>
 </section>
@@ -1061,7 +997,7 @@ whim-cmd {"action":"open_maps","params":{}}</div>
   <h3>How to Use</h3>
   <ol>
     <li>Start the relevant server (Journal Ingest or Screen Share)</li>
-    <li>Ensure your phone is on the same WiFi network or connected via Tailscale</li>
+    <li>Ensure your phone is on the same WiFi network or connected via the VPS tunnel</li>
     <li>Scan the QR code with your phone camera or QR scanner</li>
     <li>The browser opens the Whim.m PWA or Screen Share page</li>
   </ol>
@@ -1076,53 +1012,95 @@ whim-cmd {"action":"open_maps","params":{}}</div>
   </div>
 </section>
 
-<!-- ==================== 07 TAILSCALE ==================== -->
-<section class="section" id="tailscale">
+<!-- ==================== 07 SSH TUNNEL ==================== -->
+<section class="section" id="tunnel">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
     <span class="sec-num">07</span>
-    <h2>Tailscale VPN Integration</h2>
+    <h2>SSH Tunnel Networking</h2>
   </div>
   <p>
-    Tailscale provides secure mesh VPN connectivity between the CARRARA desktop and mobile devices, enabling all Whim services to work across different networks without port forwarding.
+    Whim uses a <strong>reverse SSH tunnel</strong> through a public VPS to connect the CARRARA desktop to mobile devices. This replaces the previous Tailscale mesh VPN, providing secure connectivity without requiring a VPN client on each phone.
   </p>
+
+  <h3>How It Works</h3>
+  <div class="code-block">[Whim.m on phone] &rarr; [VPS: 104.207.140.242:8089] &larr; reverse SSH tunnel &larr; [CARRAMint:8089]</div>
+  <p>
+    The CARRARA desktop opens an outbound SSH connection to a public VPS. The VPS accepts inbound connections from mobile devices and forwards them through the tunnel back to the desktop. No ports need to be opened on the home router.
+  </p>
+
+  <h3>Infrastructure</h3>
+  <table>
+    <thead><tr><th>Item</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td>VPS</td><td>104.207.140.242 (Vultr)</td></tr>
+      <tr><td>Tunnel port</td><td>8089</td></tr>
+      <tr><td>Service</td><td><code>whim-tunnel.service</code> (systemd, starts on boot)</td></tr>
+      <tr><td>Tool</td><td>autossh (auto-reconnects on failure)</td></tr>
+      <tr><td>Auth</td><td>SSH key only (<code>~/.ssh/id_ed25519</code>), passwords disabled</td></tr>
+      <tr><td>Firewall</td><td>ufw: ports 22 (SSH) + 8089 (tunnel)</td></tr>
+      <tr><td>sshd config</td><td><code>GatewayPorts yes</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3>Tunnel Service</h3>
+  <p>
+    The tunnel runs as a persistent systemd service on CARRARA:
+  </p>
+  <div class="code-block"># Service file: /etc/systemd/system/whim-tunnel.service
+ExecStart=/usr/bin/autossh -M 0 -N -R 8089:localhost:8089 root@104.207.140.242 \
+  -o "ServerAliveInterval 30" -o "ServerAliveCountMax 3"
+
+# Check status:
+sudo systemctl status whim-tunnel.service</div>
+
+  <h3>Desktop Status Indicators</h3>
+  <p>
+    The Whim Terminal header bar displays two auto-updating status dots that poll every 10 seconds:
+  </p>
+  <table>
+    <thead><tr><th>Indicator</th><th>Green</th><th>Red</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Tunnel</strong></td><td>whim-tunnel.service active AND VPS:8089 reachable</td><td>Service down or VPS unreachable</td></tr>
+      <tr><td><strong>Whim</strong></td><td>Whim.m server responding on localhost:8089</td><td>Server not running</td></tr>
+    </tbody>
+  </table>
 
   <h3>System Tray Status</h3>
   <p>
-    Whim polls Tailscale status every 10 seconds and displays a system tray icon with three states:
+    Whim also displays a system tray icon with three states:
   </p>
   <table>
     <thead><tr><th>State</th><th>Icon Color</th><th>Tray Tooltip</th></tr></thead>
     <tbody>
-      <tr><td>Tailscale down</td><td><span class="badge badge-red">Grey</span></td><td>Tailscale: Disconnected | Whim: Disconnected</td></tr>
-      <tr><td>Tailscale up, Whim unreachable</td><td><span class="badge badge-yellow">Yellow</span></td><td>Tailscale: Verified | Whim: Disconnected</td></tr>
-      <tr><td>Both connected</td><td><span class="badge badge-green">Green</span></td><td>Tailscale: Verified | Whim: Connected</td></tr>
+      <tr><td>Tunnel down</td><td><span class="badge badge-red">Grey</span></td><td>Tunnel: Down | Whim: Offline</td></tr>
+      <tr><td>Tunnel up, Whim unreachable</td><td><span class="badge badge-yellow">Yellow</span></td><td>Tunnel: Connected | Whim: Offline</td></tr>
+      <tr><td>Both connected</td><td><span class="badge badge-green">Green</span></td><td>Tunnel: Connected | Whim: Online</td></tr>
     </tbody>
   </table>
 
-  <h3>How It Works</h3>
-  <ol>
-    <li>Whim runs <code>tailscale status --json</code> to check if BackendState is "Running"</li>
-    <li>Extracts the Tailscale IP from <code>Self.TailscaleIPs[0]</code></li>
-    <li>Tests Whim reachability by attempting a TCP connection to the Tailscale IP on the Ingest port (8088)</li>
-    <li>Updates the tray icon color and tooltip accordingly</li>
-    <li>The tray icon only appears when Tailscale is connected; it hides when disconnected</li>
-  </ol>
-
-  <h3>Toggle Controls</h3>
+  <h3>Mobile Health Bar</h3>
   <p>
-    The header bar includes custom toggle switches for Tailscale and Whim connectivity with an "Apply" button that runs <code>tailscale up</code> or <code>tailscale down</code> commands.
+    The Whim.m mobile app health bar shows four indicators: <strong>tunnel</strong>, <strong>server</strong>, <strong>mic</strong>, <strong>ollama</strong>. The tunnel dot turns green when the phone can reach the Whim server through the VPS, confirming end-to-end tunnel connectivity.
   </p>
 
-  <h3>Mobile Access via Tailscale</h3>
+  <h3>Mobile Access via Tunnel</h3>
   <p>
-    When Tailscale is active, the Whim.m standalone server prints the Tailscale IP alongside the LAN IP:
+    When the tunnel is active, the Whim.m standalone server prints the VPS URL alongside the LAN IP:
   </p>
-  <div class="code-block">  Tailscale IP : 100.64.x.x
-  LAN IP       : 192.168.1.100
+  <div class="code-block">  VPS Tunnel   : http://104.207.140.242:8089
+  LAN IP       : 192.168.1.231
   Listening on  : 0.0.0.0:8089
-  Open on phone : http://192.168.1.100:8089
-  Via Tailscale : http://100.64.x.x:8089</div>
+  Open on phone : http://192.168.1.231:8089
+  Via VPS tunnel: http://104.207.140.242:8089</div>
+
+  <h3>Troubleshooting</h3>
+  <ul>
+    <li><strong>Tunnel not connecting:</strong> <code>ssh -v -R 8089:localhost:8089 root@104.207.140.242 -N</code></li>
+    <li><strong>Port in use on VPS:</strong> <code>sudo lsof -i :8089</code></li>
+    <li><strong>Service status:</strong> <code>sudo systemctl status whim-tunnel.service</code></li>
+    <li><strong>Restart tunnel:</strong> <code>sudo systemctl restart whim-tunnel.service</code></li>
+  </ul>
 </section>
 
 <!-- ==================== 08 LLMs ==================== -->
@@ -1198,12 +1176,6 @@ whim-cmd {"action":"open_maps","params":{}}</div>
   </div>
 
   <h3>AVR Lab (XTTS Voice Synthesis)</h3>
-
-  <div class="screenshot-container">
-    <img src="manual_assets/desktop_avatar_tab.png" alt="Desktop Avatar/AVR Lab Tab">
-    <div class="screenshot-caption">AVATAR tab — XTTS v2 voice synthesis lab with speaker references, voice profiles, and TTS configuration.</div>
-  </div>
-
   <p>
     The AVR Lab tab provides text-to-speech synthesis using Coqui XTTS v2 running in a dedicated conda environment (<code>xtts</code>).
   </p>
@@ -1215,12 +1187,6 @@ whim-cmd {"action":"open_maps","params":{}}</div>
   </ul>
 
   <h3>TRV Cipher (Hear Me Out)</h3>
-
-  <div class="screenshot-container">
-    <img src="manual_assets/desktop_trv_cipher_tab.png" alt="Desktop TRV Cipher Tab">
-    <div class="screenshot-caption">TRV CIPHER tab — Audio transcription workstation with file browser, spectrogram visualization, playback transport, and Whisper transcription tools.</div>
-  </div>
-
   <p>
     The TRV Cipher tab is a complete audio transcription workstation:
   </p>
@@ -1254,16 +1220,6 @@ whim-cmd {"action":"open_maps","params":{}}</div>
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
     <span class="sec-num">10</span>
     <h2>Signal &amp; Discord Integration</h2>
-  </div>
-
-  <div class="screenshot-container">
-    <img src="manual_assets/desktop_signal_tab.png" alt="Desktop Signal Tab">
-    <div class="screenshot-caption">Signal desktop tab showing messenger integration for sending/receiving messages and conversation history.</div>
-  </div>
-
-  <div class="screenshot-container">
-    <img src="manual_assets/desktop_discord_tab.png" alt="Desktop Discord Tab">
-    <div class="screenshot-caption">Discord desktop tab with OpenClaw bot management, action toggles, channel config, and desktop client controls.</div>
   </div>
 
   <h3>Signal on the Phone</h3>
@@ -1316,11 +1272,6 @@ whim-cmd {"action":"open_maps","params":{}}</div>
     The SmartThings tab provides a complete dashboard for Samsung SmartThings device management via the OpenClaw gateway.
   </p>
 
-  <div class="screenshot-container">
-    <img src="manual_assets/desktop_smartthings_tab.png" alt="Desktop SmartThings Tab">
-    <div class="screenshot-caption">SmartThings desktop tab showing device browser with scan, filter, favorites, device detail, and recently-controlled history.</div>
-  </div>
-
   <div class="screenshot-row">
     <div class="screenshot-container">
       <img src="manual_assets/phone_smartthings_hub.jpg" alt="SmartThings Hub">
@@ -1350,11 +1301,6 @@ whim-cmd {"action":"open_maps","params":{}}</div>
   <p>
     The Archive tab is a full-featured document editor that saves files to <code>~/ARCHIVE</code>. All documents created in Whim are stored in this directory.
   </p>
-
-  <div class="screenshot-container">
-    <img src="manual_assets/desktop_archive_tab.png" alt="Desktop Archive Tab">
-    <div class="screenshot-caption">Archive tab with rich text editor, formatting toolbar, font selection, bullet lists, find/replace, and file browser.</div>
-  </div>
 
   <h3>Document Actions</h3>
   <ul>
@@ -1404,11 +1350,6 @@ Notes: User notes here
   <p>
     The SS (Screen Share) tab enables bidirectional visual communication between the desktop and mobile devices.
   </p>
-
-  <div class="screenshot-container">
-    <img src="manual_assets/desktop_live_tab.png" alt="Desktop Screen Share Tab">
-    <div class="screenshot-caption">Live/SS tab showing screen share server with desktop-to-phone streaming and phone camera feed capabilities.</div>
-  </div>
 
   <h3>Architecture</h3>
   <ul>
@@ -1492,7 +1433,7 @@ Notes: User notes here
     <h2>OpenClaw Gateway</h2>
   </div>
   <p>
-    The OpenClaw Gateway is the central command bus that connects the Whim Terminal client to the AI agent infrastructure via WebSocket.
+    The OpenClaw Gateway is the central command bus that connects the Whim desktop client to the AI agent infrastructure via WebSocket.
   </p>
 
   <h3>Protocol</h3>
@@ -1520,12 +1461,6 @@ Notes: User notes here
   </p>
 
   <h3>Events/Debug Log</h3>
-
-  <div class="screenshot-container">
-    <img src="manual_assets/desktop_events_debug_tab.png" alt="Desktop Events/Debug Tab">
-    <div class="screenshot-caption">EVENTS/DEBUG tab — Structured event log with module/level filtering, regex search, saved queries, and export options.</div>
-  </div>
-
   <p>
     The Events/Debug tab provides a structured, filterable event log with:
   </p>
@@ -1559,7 +1494,7 @@ Notes: User notes here
       <tr><td>AI Runtime</td><td>Ollama (local GPU inference)</td></tr>
       <tr><td>Voice Synthesis</td><td>Coqui XTTS v2 (conda env: xtts)</td></tr>
       <tr><td>Transcription</td><td>OpenAI Whisper</td></tr>
-      <tr><td>VPN</td><td>Tailscale (WireGuard mesh)</td></tr>
+      <tr><td>Networking</td><td>Reverse SSH tunnel via VPS (autossh + systemd)</td></tr>
       <tr><td>Messaging</td><td>signal-cli (Signal) + discord.py/nextcord (Discord)</td></tr>
       <tr><td>IoT</td><td>Samsung SmartThings via OpenClaw gateway</td></tr>
       <tr><td>Android</td><td>ADB + Android SDK command-line tools</td></tr>
@@ -1578,7 +1513,7 @@ Notes: User notes here
     <tbody>
       <tr><td><code>~/vaults/WHIM/</code></td><td>Main Whim project vault</td></tr>
       <tr><td><code>~/vaults/WHIM/app/</code></td><td>Desktop application source code</td></tr>
-      <tr><td><code>~/vaults/WHIM/mobile/</code></td><td>Mobile app, APKs, Tailscale APK</td></tr>
+      <tr><td><code>~/vaults/WHIM/mobile/</code></td><td>Mobile app, APKs, build artifacts</td></tr>
       <tr><td><code>~/vaults/WHIM/assets/</code></td><td>Fonts, icons, logos</td></tr>
       <tr><td><code>~/.openclaw/</code></td><td>OpenClaw config, Whim icon, sessions store</td></tr>
       <tr><td><code>~/.openclaw/WhimUI/</code></td><td>Custom fonts and icon packs (Papirus, Mint-Y)</td></tr>
@@ -1704,7 +1639,7 @@ Notes: User notes here
   <img src="manual_assets/fire.png" style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px; opacity: 0.6;">
   <strong>Whim</strong> &mdash; Complete Manual v1.1 &mdash; March 2026<br>
   <span style="color: var(--fg-muted); font-size: 11px;">
-    Built on CARRARA &bull; Python &bull; Tkinter &bull; Ollama &bull; Tailscale &bull; OpenClaw
+    Built on CARRARA &bull; Python &bull; Tkinter &bull; Ollama &bull; SSH Tunnel &bull; OpenClaw
   </span>
 </footer>
 

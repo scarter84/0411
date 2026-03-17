@@ -1,9 +1,6 @@
 package com.whim.recorder;
 
 import android.app.Activity;
-import android.app.Notification;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
@@ -16,13 +13,21 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
+import android.webkit.DownloadListener;
 import android.webkit.JavascriptInterface;
 import android.webkit.PermissionRequest;
+import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
+
+import android.app.DownloadManager;
+import android.content.Context;
+import android.os.Environment;
+import android.webkit.URLUtil;
+import android.widget.Toast;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -31,12 +36,15 @@ import java.net.URL;
 
 public class MainActivity extends Activity {
 
-    private static final String SERVER_URL = "http://100.69.17.20:8089";
+    private static final String SERVER_URL = "http://104.207.140.242:8089";
     private static final int CONNECT_TIMEOUT = 4000;
     private static final int READ_TIMEOUT = 4000;
     private static final int MAX_RETRIES = 5;
     private static final int MIC_PERMISSION_CODE = 1001;
     private static final int SPEECH_REQUEST_CODE = 1002;
+    private static final int FILE_CHOOSER_CODE = 1003;
+
+    private ValueCallback<Uri[]> fileUploadCallback;
 
     private WebView webView;
 
@@ -62,7 +70,7 @@ public class MainActivity extends Activity {
         "<path d=\"M16 32 Q20 18,24 32 Q28 46,32 32 Q36 18,40 32 Q44 46,48 32\" " +
         "stroke=\"#d94040\" stroke-width=\"2.5\" fill=\"none\" stroke-linecap=\"round\"/></svg>" +
         "<h2 style=\"color:#d94040;margin-top:24px;font-size:28px\">Cannot reach Whim</h2>" +
-        "<p style=\"color:#888;font-size:18px;margin-top:12px\">Make sure Whim is running on your PC and Tailscale is connected.</p>" +
+        "<p style=\"color:#888;font-size:18px;margin-top:12px\">Make sure Whim is running on your PC and the SSH tunnel is active.</p>" +
         "<p style=\"color:#555;font-size:16px;margin-top:8px\">" + SERVER_URL + "</p>" +
         "<button onclick=\"WhimBridge.retry()\" style=\"margin-top:32px;padding:24px 60px;" +
         "background:#2fa572;color:#fff;border:none;border-radius:16px;font-size:24px;" +
@@ -107,9 +115,54 @@ public class MainActivity extends Activity {
                     }
                 });
             }
+
+            @Override
+            public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> callback,
+                                             FileChooserParams params) {
+                if (fileUploadCallback != null) {
+                    fileUploadCallback.onReceiveValue(null);
+                }
+                fileUploadCallback = callback;
+                Intent intent = params.createIntent();
+                intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+                try {
+                    startActivityForResult(intent, FILE_CHOOSER_CODE);
+                } catch (Exception e) {
+                    fileUploadCallback = null;
+                    return false;
+                }
+                return true;
+            }
         });
 
         webView.setWebViewClient(new WebViewClient());
+
+        webView.setDownloadListener(new DownloadListener() {
+            @Override
+            public void onDownloadStart(String url, String userAgent, String contentDisposition,
+                                        String mimetype, long contentLength) {
+                try {
+                    DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url));
+                    String filename = URLUtil.guessFileName(url, contentDisposition, mimetype);
+                    request.setMimeType(mimetype);
+                    request.addRequestHeader("User-Agent", userAgent);
+                    request.setTitle(filename);
+                    request.setDescription("Downloading from Whim.m");
+                    request.setNotificationVisibility(
+                        DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+                    request.setDestinationInExternalPublicDir(
+                        Environment.DIRECTORY_DOWNLOADS, filename);
+                    DownloadManager dm = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
+                    dm.enqueue(request);
+                    Toast.makeText(getApplicationContext(),
+                        "Downloading " + filename, Toast.LENGTH_SHORT).show();
+                } catch (Exception e) {
+                    Toast.makeText(getApplicationContext(),
+                        "Download failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                }
+            }
+        });
+
         webView.addJavascriptInterface(new WhimBridge(), "WhimBridge");
 
         root.addView(webView);
@@ -222,6 +275,25 @@ public class MainActivity extends Activity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == FILE_CHOOSER_CODE) {
+            if (fileUploadCallback != null) {
+                Uri[] results = null;
+                if (resultCode == RESULT_OK && data != null) {
+                    if (data.getClipData() != null) {
+                        int count = data.getClipData().getItemCount();
+                        results = new Uri[count];
+                        for (int i = 0; i < count; i++) {
+                            results[i] = data.getClipData().getItemAt(i).getUri();
+                        }
+                    } else if (data.getData() != null) {
+                        results = new Uri[]{data.getData()};
+                    }
+                }
+                fileUploadCallback.onReceiveValue(results);
+                fileUploadCallback = null;
+            }
+            return;
+        }
         if (requestCode == SPEECH_REQUEST_CODE && resultCode == RESULT_OK && data != null) {
             java.util.ArrayList<String> results = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
             if (results != null && !results.isEmpty()) {

@@ -13,17 +13,7 @@ public class BootReceiver extends BroadcastReceiver {
             launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             context.startActivity(launch);
 
-            // Prompt Tailscale to connect (opens Tailscale app intent)
-            try {
-                Intent tailscale = context.getPackageManager()
-                    .getLaunchIntentForPackage("com.tailscale.ipn");
-                if (tailscale != null) {
-                    tailscale.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    context.startActivity(tailscale);
-                }
-            } catch (Exception e) {
-                // Tailscale not installed or can't be launched
-            }
+            // No longer needs Tailscale — connects via VPS reverse SSH tunnel
         }
     }
 }
