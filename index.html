@@ -482,6 +482,10 @@ table tr:nth-child(even) td {
     </div>
     <div class="toc-item">
       <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">11</span>
+      <a href="#persona">Persona &mdash; Voice Personalities</a>
+    </div>
+    <div class="toc-item">
+      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">12</span>
       <a href="#messaging">Signal &amp; Discord Integration</a>
     </div>
     <div class="toc-item">
@@ -542,7 +546,7 @@ table tr:nth-child(even) td {
   <h3>Key Highlights</h3>
   <div class="feature-grid">
     <div class="feature-card">
-      <div class="fc-title">17 Module Tabs (2 Rows)</div>
+      <div class="fc-title">18 Module Tabs (2 Rows)</div>
       <div class="fc-desc">Chat, Whim.AI, SmartThings, Sys Status, AVR Lab, Voice Engine, Live, TRV Cipher, Library | Archive, Discord, Signal, RyvenCore, Ryven Editor, Sessions, Events/Debug, <strong>Settings</strong></div>
     </div>
     <div class="feature-card">
@@ -716,6 +720,7 @@ table tr:nth-child(even) td {
       <tr><td><span class="badge badge-blue">PRESENCE</span></td><td>presence</td><td>Real-time presence tracking of connected clients, heartbeat pings, and online status dashboard.</td></tr>
       <tr><td><span class="badge badge-orange">AVR LAB</span></td><td>xtts</td><td>XTTS v2 voice synthesis lab with speaker references, spectrogram visualization, and Table Reads output.</td></tr>
       <tr><td><span class="badge badge-orange">VOICE ENGINE</span></td><td>voice_engine</td><td>Wake word tuning: live spectrogram (Whim-Scope), gain/HPF/AGC/parametric EQ, sensitivity, VAD, spectral subtraction, confidence ghost bar, intelligibility band.</td></tr>
+      <tr><td><span class="badge badge-orange">PERSONA</span></td><td>persona</td><td>Voice personality manager: coined response playlists per voice clone, confidence-gated, context-aware, XTTS pre-render pipeline, behavioral categories.</td></tr>
       <tr><td><span class="badge badge-orange">SIGNAL</span></td><td>signal</td><td>Signal messenger integration for sending/receiving messages, managing contacts, and viewing conversation history.</td></tr>
       <tr><td><span class="badge badge-orange">TRV CIPHER</span></td><td>hearmeout</td><td>Audio transcription workstation with spectrogram, playback transport, Whisper transcription, ODT export, and scrub tools.</td></tr>
       <tr><td><span class="badge badge-yellow">ARCHIVE</span></td><td>archive</td><td>Rich text editor with formatting toolbar, font selection, alignment, bullet lists, find/replace, word count, and file browser.</td></tr>
@@ -1377,7 +1382,67 @@ sudo systemctl status whim-tunnel.service</div>
   </div>
 </section>
 
-<!-- ==================== 11 MESSAGING ==================== -->
+<!-- ==================== 11 PERSONA ==================== -->
+<section class="section" id="persona">
+  <div class="section-header">
+    <img class="flame-sm" src="manual_assets/fire.png" alt="">
+    <span class="sec-num">11</span>
+    <h2>Persona &mdash; Voice Personalities</h2>
+  </div>
+  <p>
+    The PERSONA tab is a voice personality manager that treats coined responses like playlists. Each voice clone (MillyAI, Revy, future voices) gets its own persona profile with a curated set of responses organized by behavioral situation. When Whim needs to respond to a trigger &mdash; wake word, command acknowledgment, error, idle chatter &mdash; it pulls from that persona's playlist instead of generating a generic response.
+  </p>
+
+  <h3>Three-Column Layout</h3>
+  <ul>
+    <li><strong>Column 1: VOICES</strong> &mdash; Persona selector linked to voice clones from <code>~/voices/</code>. Create, duplicate, delete personas. The active persona (starred) is what Whim uses for all responses.</li>
+    <li><strong>Column 2: RESPONSE PLAYLIST</strong> &mdash; Filterable list of coined responses with trigger name, category, response text, and cached audio status. Category filter narrows the view. Add, edit, remove, preview, and batch-render all entries.</li>
+    <li><strong>Column 3: RESPONSE EDITOR + STATS</strong> &mdash; Edit individual entries: trigger, category, response text, confidence range, context. Render single entries via XTTS. Stats show total/cached counts, voice clone, cache size.</li>
+  </ul>
+
+  <h3>Behavioral Categories</h3>
+  <table>
+    <thead><tr><th>Category</th><th>Color</th><th>When It Fires</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Wake Word</strong></td><td style="color:#00ff00">Green</td><td>Immediately after "Hey Whim" is detected (e.g., "Yeah?")</td></tr>
+      <tr><td><strong>Acknowledgment</strong></td><td style="color:#40e0d0">Cyan</td><td>After a command is successfully parsed (e.g., "On it.")</td></tr>
+      <tr><td><strong>Misheard</strong></td><td style="color:#ffaa00">Orange</td><td>When confidence is below threshold (e.g., "The road's loud. One more time?")</td></tr>
+      <tr><td><strong>Error</strong></td><td style="color:#ff4444">Red</td><td>When a command fails (e.g., "Can't reach the PC. Tunnel might be down.")</td></tr>
+      <tr><td><strong>Narrative</strong></td><td style="color:#cc66ff">Purple</td><td>During table read sessions in AVR Lab (e.g., "Rolling.")</td></tr>
+      <tr><td><strong>Ambient</strong></td><td style="color:#888888">Grey</td><td>System events: boot, reconnect, idle timeout (e.g., "Tunnel's back up.")</td></tr>
+      <tr><td><strong>Custom</strong></td><td style="color:#3388ff">Blue</td><td>User-defined triggers for future expansion</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Confidence-Gated Selection</h3>
+  <p>
+    Each response has a confidence range (e.g., 40&ndash;60%). The Voice Engine's wake word confidence score determines which response fires. At 90%+ confidence, wake responses fire. At 40&ndash;60%, partial-match misheard responses fire. Below 20%, the strongest "speak up" responses fire. This maps directly to the Confidence Ghost Bar in the Voice Engine tab.
+  </p>
+
+  <h3>Context-Aware Selection</h3>
+  <p>
+    The context field enables situational awareness. A response tagged "driving" only fires when connected via VPS tunnel (implying mobile/vehicle use). "Morning" fires between 5&ndash;10am. "table_read" only fires when AVR Lab is active. Multiple responses matching the same trigger + context are selected randomly to prevent repetition.
+  </p>
+
+  <h3>Pre-Render Pipeline</h3>
+  <p>
+    Responses are pre-rendered as cached WAV files via the XTTS conda environment (same GPU-accelerated pipeline as AVR Lab). <strong>Render All</strong> batch-processes every unrendered entry, skipping existing cache. Cached clips play in &lt;100ms instead of waiting 2&ndash;5 seconds for live XTTS generation. Cache is stored at <code>~/voices/personas/[name]/cache/</code>.
+  </p>
+
+  <h3>Default Persona: MillyAI</h3>
+  <p>
+    Ships with 42 coined responses across all 7 categories: 6 wake word, 8 acknowledgment, 8 misheard, 7 error, 6 narrative, 7 ambient. Ready to render with the MillyAI voice clone.
+  </p>
+
+  <div class="card">
+    <div class="card-title">Why Not Just Prompt the LLM?</div>
+    <p style="font-size: 14px; color: var(--yellow);">
+      Coined responses are deterministic &mdash; they fire the same way every time. LLMs drift, get verbose, add qualifiers. The LLM handles open conversation; the persona handles mechanical reflexes. "Hey Whim" &rarr; "Yeah?" is not a conversation, it's a reflex. Reflexes should be fast, consistent, and characteristic.
+    </p>
+  </div>
+</section>
+
+<!-- ==================== 12 MESSAGING ==================== -->
 <section class="section" id="messaging">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
