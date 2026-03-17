@@ -506,10 +506,14 @@ table tr:nth-child(even) td {
     </div>
     <div class="toc-item">
       <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">16</span>
-      <a href="#tech">Technical Stack &amp; Config</a>
+      <a href="#settingstab">Settings Tab</a>
     </div>
     <div class="toc-item">
       <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">17</span>
+      <a href="#tech">Technical Stack &amp; Config</a>
+    </div>
+    <div class="toc-item">
+      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">18</span>
       <a href="#desktop-env">Desktop Environment Customizations</a>
     </div>
   </div>
@@ -534,8 +538,8 @@ table tr:nth-child(even) td {
   <h3>Key Highlights</h3>
   <div class="feature-grid">
     <div class="feature-card">
-      <div class="fc-title">16 Module Tabs</div>
-      <div class="fc-desc">Chat, Whim.AI, SmartThings, Sessions, Presence, AVR Lab, <strong>Voice Engine</strong>, Signal, TRV Cipher, Library, Archive, Discord, RyvenCore, Ryven Editor, SS (Live), Events/Debug</div>
+      <div class="fc-title">17 Module Tabs (2 Rows)</div>
+      <div class="fc-desc">Chat, Whim.AI, SmartThings, Sys Status, AVR Lab, Voice Engine, Live, TRV Cipher, Library | Archive, Discord, Signal, RyvenCore, Ryven Editor, Sessions, Events/Debug, <strong>Settings</strong></div>
     </div>
     <div class="feature-card">
       <div class="fc-title">Mobile Companion</div>
@@ -671,7 +675,13 @@ table tr:nth-child(even) td {
     <li><strong>Journal Ingest</strong> &mdash; Shows the LAN IP and port for the upload server with Start/Stop controls</li>
     <li><strong>Tunnel Status Dot</strong> &mdash; Green/red indicator showing reverse SSH tunnel health (auto-updates every 10s)</li>
     <li><strong>Whim Status Dot</strong> &mdash; Green/red indicator showing Whim.m server reachability on localhost:8089</li>
+    <li><strong>LLM Model Dropdown</strong> &mdash; Selects the active Ollama model for Whim.AI (llama3.1:8b-16k, deepseek-r1:32b, etc.). Refresh button fetches available models from Ollama.</li>
   </ul>
+
+  <h3>Two-Row Tab Layout</h3>
+  <p>
+    All 17 module tabs are split across two rows for better visibility and click targets. Row 1 contains the primary workflow tabs (Chat through TRV Cipher). Row 2 contains utility and configuration tabs (Library through Settings). The active tab is highlighted in green with a border accent. Tabs are button-based with hover effects.
+  </p>
 </section>
 
 <!-- ==================== 03 TABS ==================== -->
@@ -709,6 +719,7 @@ table tr:nth-child(even) td {
       <tr><td><span class="badge badge-red">RYVEN EDITOR</span></td><td>ryven_editor</td><td>Advanced Ryven flow editor for building visual automation pipelines.</td></tr>
       <tr><td><span class="badge badge-blue">SS</span></td><td>ss</td><td>Screen share server with QR code, phone camera feed, desktop preview, FPS/quality settings, and MJPEG streaming.</td></tr>
       <tr><td><span class="badge badge-yellow">EVENTS/DEBUG</span></td><td>events</td><td>Structured event log with module/level/session/request filtering, regex search, saved queries, and JSON/text export.</td></tr>
+      <tr><td><span class="badge badge-yellow">SETTINGS</span></td><td>settings</td><td>API keys &amp; endpoints (Ollama, OpenAI, SmartThings, Notion), model management (pull/delete from Ollama), app preferences, theme, paths.</td></tr>
     </tbody>
   </table>
 </section>
@@ -1623,11 +1634,65 @@ Notes: User notes here
   </ul>
 </section>
 
-<!-- ==================== 16 TECH STACK ==================== -->
-<section class="section" id="tech">
+<!-- ==================== 16 SETTINGS ==================== -->
+<section class="section" id="settingstab">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
     <span class="sec-num">16</span>
+    <h2>Settings Tab</h2>
+  </div>
+  <p>
+    The SETTINGS tab provides a three-column configuration panel for managing API keys, LLM models, and application preferences. All settings persist to <code>~/.openclaw/whim_settings.json</code>.
+  </p>
+
+  <h3>Column 1: API Keys &amp; Endpoints</h3>
+  <table>
+    <thead><tr><th>Field</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Ollama URL</strong></td><td>Base URL for the local Ollama LLM server (default: <code>http://localhost:11434</code>)</td></tr>
+      <tr><td><strong>OpenAI API Key</strong></td><td>API key for optional OpenAI integration (masked input, stored locally)</td></tr>
+      <tr><td><strong>SmartThings</strong></td><td>Personal access token for Samsung SmartThings API</td></tr>
+      <tr><td><strong>Notion Token</strong></td><td>Integration token for Notion session tracking</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Column 2: Model Management</h3>
+  <p>
+    Manages Ollama models directly from the Whim Terminal:
+  </p>
+  <ul>
+    <li><strong>Default Model</strong> &mdash; Dropdown to select which model Whim.AI uses (synced with header dropdown)</li>
+    <li><strong>Available Models</strong> &mdash; Lists all models loaded in Ollama with their sizes</li>
+    <li><strong>Pull Model</strong> &mdash; Download a new model by name (e.g. <code>mistral:7b</code>)</li>
+    <li><strong>Delete Model</strong> &mdash; Remove a model from Ollama to free disk space</li>
+    <li><strong>Refresh</strong> &mdash; Re-query Ollama for the current model list</li>
+  </ul>
+
+  <h3>Column 3: App Preferences</h3>
+  <ul>
+    <li><strong>Auto-start Journal Ingest</strong> &mdash; Launch the upload server on app start</li>
+    <li><strong>Auto-connect to Gateway</strong> &mdash; Connect to OpenClaw WebSocket on launch</li>
+    <li><strong>Monitor tunnel &amp; Whim.m status</strong> &mdash; Background polling for SSH tunnel and Whim.m health</li>
+    <li><strong>Theme</strong> &mdash; Visual theme selector (Dark, Midnight, Solarized Dark)</li>
+    <li><strong>Paths</strong> &mdash; Shows configured directories for Journal, Archive, Config, and Voice Engine</li>
+  </ul>
+
+  <h3>LLM Model Dropdown (Header Bar)</h3>
+  <p>
+    A global model selector in the header bar lets you switch between local LLMs at any time without opening Settings. It shows all models available in Ollama (fetched on startup and via the refresh button). Selecting a model immediately updates Whim.AI's active model for the next prompt. Currently available:
+  </p>
+  <ul>
+    <li><code>llama3.1:8b-16k</code> &mdash; 4.9 GB, 16K context (default, fast)</li>
+    <li><code>llama3.1:8b</code> &mdash; 4.9 GB, standard context</li>
+    <li><code>deepseek-r1:32b</code> &mdash; 19.9 GB, reasoning model (slower, smarter)</li>
+  </ul>
+</section>
+
+<!-- ==================== 17 TECH STACK ==================== -->
+<section class="section" id="tech">
+  <div class="section-header">
+    <img class="flame-sm" src="manual_assets/fire.png" alt="">
+    <span class="sec-num">17</span>
     <h2>Technical Stack &amp; Configuration</h2>
   </div>
 
@@ -1692,11 +1757,11 @@ Notes: User notes here
   </p>
 </section>
 
-<!-- ==================== 17 DESKTOP ENV ==================== -->
+<!-- ==================== 18 DESKTOP ENV ==================== -->
 <section class="section" id="desktop-env">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">17</span>
+    <span class="sec-num">18</span>
     <h2>Desktop Environment Customizations</h2>
   </div>
   <p>
