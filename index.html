@@ -510,10 +510,14 @@ table tr:nth-child(even) td {
     </div>
     <div class="toc-item">
       <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">17</span>
-      <a href="#tech">Technical Stack &amp; Config</a>
+      <a href="#audiocapture">Audio Capture Tool</a>
     </div>
     <div class="toc-item">
       <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">18</span>
+      <a href="#tech">Technical Stack &amp; Config</a>
+    </div>
+    <div class="toc-item">
+      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">19</span>
       <a href="#desktop-env">Desktop Environment Customizations</a>
     </div>
   </div>
@@ -676,6 +680,7 @@ table tr:nth-child(even) td {
     <li><strong>Tunnel Status Dot</strong> &mdash; Green/red indicator showing reverse SSH tunnel health (auto-updates every 10s)</li>
     <li><strong>Whim Status Dot</strong> &mdash; Green/red indicator showing Whim.m server reachability on localhost:8089</li>
     <li><strong>LLM Model Dropdown</strong> &mdash; Selects the active Ollama model for Whim.AI (llama3.1:8b-16k, deepseek-r1:32b, etc.). Refresh button fetches available models from Ollama.</li>
+    <li><strong>Audio Capture button</strong> &mdash; Opens a floating always-on-top tool for capturing system audio (HDMI, speakers) as lightweight audio files. See section below.</li>
   </ul>
 
   <h3>Two-Row Tab Layout</h3>
@@ -1688,11 +1693,64 @@ Notes: User notes here
   </ul>
 </section>
 
-<!-- ==================== 17 TECH STACK ==================== -->
-<section class="section" id="tech">
+<!-- ==================== 17 AUDIO CAPTURE ==================== -->
+<section class="section" id="audiocapture">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
     <span class="sec-num">17</span>
+    <h2>Audio Capture Tool</h2>
+  </div>
+  <p>
+    A floating always-on-top tool window for capturing system audio output as lightweight audio files &mdash; no video, just audio. Designed for the use case of turning YouTube videos, podcasts, or any playing audio into portable files you can listen to in the car.
+  </p>
+
+  <h3>How It Works</h3>
+  <p>
+    Clicking the <strong>&#127911; Capture</strong> button in the header bar opens a compact floating window that stays on top of all other windows. It captures audio from PipeWire/PulseAudio <em>monitor sources</em> &mdash; virtual loopback devices that tap into whatever audio is playing through your speakers or HDMI output. No screen recording, no video &mdash; just the audio stream, encoded to a small file.
+  </p>
+
+  <h3>Controls</h3>
+  <table>
+    <thead><tr><th>Control</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Source</strong></td><td>Dropdown listing all PipeWire monitor sources. Auto-selects HDMI if available. Options include USB speakers, headphones, S/PDIF, and HDMI.</td></tr>
+      <tr><td><strong>Format</strong></td><td>Output codec: MP3 (default, car-compatible), Opus, OGG Vorbis, M4A (AAC), WAV (lossless)</td></tr>
+      <tr><td><strong>Bitrate</strong></td><td>64k &ndash; 320k. Default 128k gives ~1 MB/min for MP3 (good for podcasts/speech).</td></tr>
+      <tr><td><strong>Record / Stop</strong></td><td>Start/stop capture. Header button flashes red while recording.</td></tr>
+      <tr><td><strong>VU Meter</strong></td><td>Live level indicator (green/yellow/red).</td></tr>
+      <tr><td><strong>Timer</strong></td><td>Running elapsed time (HH:MM:SS) and live file size.</td></tr>
+      <tr><td><strong>Name / Rename</strong></td><td>Inline rename of the output file after stopping.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Output</h3>
+  <p>
+    Files save to <code>~/Journal/audio_captures/</code> with timestamps (e.g. <code>capture_20260317_143022.mp3</code>). The folder link in the tool opens the directory in the file manager. At 128k MP3, a 1-hour podcast capture is roughly 60 MB.
+  </p>
+
+  <h3>Typical Workflow</h3>
+  <ol>
+    <li>Start playing a YouTube video or podcast in the browser</li>
+    <li>Click <strong>&#127911; Capture</strong> in the Whim header bar</li>
+    <li>Select the HDMI or speaker monitor source</li>
+    <li>Click <strong>Record</strong> &mdash; the tool captures audio while you watch/listen</li>
+    <li>Click <strong>Stop</strong> when done &mdash; rename the file to something meaningful</li>
+    <li>Transfer the MP3 to your phone (via Whim.m Library, ADB, or file share) for car listening</li>
+  </ol>
+
+  <div class="card">
+    <div class="card-title">Audio Backend</div>
+    <p style="font-size: 14px; color: var(--yellow);">
+      Uses <code>ffmpeg -f pulse</code> to read from PipeWire/PulseAudio monitor sources. The monitor sources are virtual loopback devices created automatically by PipeWire for every output sink. No additional driver or loopback configuration is needed.
+    </p>
+  </div>
+</section>
+
+<!-- ==================== 18 TECH STACK ==================== -->
+<section class="section" id="tech">
+  <div class="section-header">
+    <img class="flame-sm" src="manual_assets/fire.png" alt="">
+    <span class="sec-num">18</span>
     <h2>Technical Stack &amp; Configuration</h2>
   </div>
 
@@ -1757,11 +1815,11 @@ Notes: User notes here
   </p>
 </section>
 
-<!-- ==================== 18 DESKTOP ENV ==================== -->
+<!-- ==================== 19 DESKTOP ENV ==================== -->
 <section class="section" id="desktop-env">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">18</span>
+    <span class="sec-num">19</span>
     <h2>Desktop Environment Customizations</h2>
   </div>
   <p>
