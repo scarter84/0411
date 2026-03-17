@@ -28,6 +28,7 @@ XTTS_MODEL = "tts_models/multilingual/multi-dataset/xtts_v2"
 VOICES_DIR = os.path.expanduser("~/voices")
 ACTIVE_VOICE_FILE = os.path.join(VOICES_DIR, "active_voice.json")
 TTS_OUTPUT_DIR = os.path.expanduser("~/xtts_tts_cache")
+CMD_REPORT_LOG = os.path.expanduser("~/vaults/WHIM/mobile/cmd_reports.jsonl")
 LOCATION_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config", "device_locations.json")
 DEFAULT_PORT = 8089
 
@@ -90,11 +91,18 @@ body{background:#1e1e1e;color:#dce4ee;font-family:-apple-system,system-ui,'Segoe
 .health-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px;vertical-align:middle}
 .health-dot.ok{background:#2fa572}.health-dot.warn{background:#e0a030}.health-dot.fail{background:#d94040}
 
-/* SS fab */
-.ss-fab{position:fixed;top:8px;right:12px;z-index:300;width:var(--fab-sz);height:var(--fab-sz);
-  border-radius:50%;background:#2b2b2b;border:1.5px solid #3a3a3a;cursor:pointer;display:flex;
-  align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.4)}
-.ss-fab svg{width:var(--fab-icon);height:var(--fab-icon)}
+/* Persistent wake word bar */
+.ww-bar{position:fixed;top:28px;left:50%;transform:translateX(-50%);z-index:250;
+  display:flex;align-items:center;gap:6px;padding:4px 14px;
+  background:rgba(30,30,30,0.92);border:1px solid #3a3a3a;border-radius:20px;
+  font-family:'Courier New',monospace;font-size:11px;color:#666;
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);transition:all .3s}
+.ww-bar.listening{border-color:#2fa572;color:#2fa572}
+.ww-bar.detected{border-color:#00ff00;color:#00ff00;box-shadow:0 0 12px rgba(0,255,0,0.25)}
+.ww-bar.error{border-color:#d94040;color:#d94040}
+.ww-bar svg{width:14px;height:14px;flex-shrink:0}
+
+
 
 /* Tab bar */
 .tab-bar{display:flex;position:fixed;bottom:0;left:0;right:0;background:#2b2b2b;
@@ -103,7 +111,9 @@ body{background:#1e1e1e;color:#dce4ee;font-family:-apple-system,system-ui,'Segoe
   background:none;border:none;color:#666;font-size:10px;cursor:pointer;font-family:inherit}
 .tab-btn.active{color:#00ff00}
 .tab-btn svg{width:20px;height:20px;margin-bottom:2px}
-@media(min-width:600px){.tab-btn{font-size:14px;padding:12px 4px}.tab-btn svg{width:28px;height:28px}}
+.tab-btn .tab-light{display:inline-block;width:6px;height:6px;border-radius:50%;background:#555;margin-left:4px;vertical-align:middle;transition:background .3s}
+.tab-btn .tab-light.on{background:#e0a030}
+@media(min-width:600px){.tab-btn{font-size:14px;padding:12px 4px}.tab-btn svg{width:28px;height:28px}.tab-btn .tab-light{width:8px;height:8px}}
 
 /* Tab content */
 .tab-content{display:none;flex:1;overflow-y:auto;padding:48px 16px 72px;align-items:center}
@@ -153,10 +163,10 @@ h1{color:#00ff00;font-size:var(--h1-sz);font-family:'Courier New',monospace;marg
 .fbtn{background:#333;border:1px solid #3a3a3a;border-radius:6px;padding:6px 10px;cursor:pointer;color:#aaa;font-size:12px}
 .fbtn:active{background:#444}
 .pick-section{width:100%;max-width:var(--max-w);margin-bottom:12px}
-.pick-btn{width:100%;padding:var(--pick-pad);background:#2b2b2b;color:#888;border:1px dashed #3a3a3a;
-  border-radius:10px;font-size:var(--pick-sz);cursor:pointer;text-align:center}
+.pick-btn{display:block;width:100%;padding:var(--pick-pad);background:#2b2b2b;color:#888;border:1px dashed #3a3a3a;
+  border-radius:10px;font-size:var(--pick-sz);cursor:pointer;text-align:center;-webkit-tap-highlight-color:transparent}
 .pick-btn:active{background:#333}
-input[type=file]{display:none}
+input[type=file]{display:none!important;width:0;height:0;overflow:hidden;position:absolute;opacity:0}
 
 /* Wake word tab */
 .ww-status-circle{width:120px;height:120px;border-radius:50%;border:3px solid #3a3a3a;
@@ -177,6 +187,9 @@ input[type=file]{display:none}
   border:1px solid #3a3a3a;border-radius:6px;cursor:pointer;color:#2fa572;font-size:12px}
 .chat-msg .speak-btn:active{background:#444}
 .chat-msg .speak-btn.loading{color:#e0a030}
+.cmd-status{display:inline-block;margin-top:6px;font-size:12px;font-family:'Courier New',monospace}
+.cmd-tag{color:#e0a030;font-weight:bold}
+.cmd-pending{color:#888}
 .chat-input-row{display:flex;gap:8px;width:100%;max-width:var(--max-w)}
 .chat-input-row input{flex:1;padding:12px;background:#2b2b2b;border:1px solid #3a3a3a;border-radius:10px;
   color:#dce4ee;font-size:14px;outline:none}
@@ -198,11 +211,16 @@ input[type=file]{display:none}
 <div class="health-bar" id="healthBar">
   <span><span class="health-dot" id="dotServer"></span>server</span>
   <span><span class="health-dot" id="dotMic"></span>mic</span>
+  <span><span class="health-dot" id="dotOllama"></span>ollama</span>
 </div>
-<div class="ss-fab" id="ssFab" title="Screen Share">
-  <svg viewBox="0 0 24 24" fill="none" stroke="#14507a" stroke-width="2">
-  <path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+<div class="ww-bar" id="wwBar">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="wwBarIcon">
+    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+    <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+  </svg>
+  <span id="wwBarLabel">Initializing...</span>
 </div>
+
 
 <!-- ========== TAB: RECORDER ========== -->
 <div class="tab-content active" id="tabRecorder">
@@ -218,7 +236,7 @@ input[type=file]{display:none}
   <button class="action-btn inactive" id="exportBtn" disabled>EXPORT TO WHIM</button>
   <div class="pick-section">
     <input type="file" id="fileInput" accept="audio/*,.m4a,.aac,.ogg,.opus,.flac,.wav,.mp3,.3gp,.amr">
-    <div class="pick-btn" onclick="document.getElementById('fileInput').click()">or choose an existing file</div>
+    <label for="fileInput" class="pick-btn">or choose an existing file</label>
   </div>
   <div class="progress" id="progress"><div class="progress-bar" id="progressBar"></div></div>
   <div class="status" id="recStatus"></div>
@@ -233,8 +251,12 @@ input[type=file]{display:none}
   <h1 style="margin-top:16px">Library</h1>
   <p class="sub">shared files across devices</p>
   <div class="pick-section">
+    <input type="file" id="libImageInput" accept="image/*,video/*" multiple>
+    <label for="libImageInput" class="pick-btn" style="margin-bottom:8px">📷 Pick from Gallery / Screenshots</label>
+  </div>
+  <div class="pick-section">
     <input type="file" id="libFileInput" multiple>
-    <div class="pick-btn" onclick="document.getElementById('libFileInput').click()">Upload file to library</div>
+    <label for="libFileInput" class="pick-btn">Upload any file to library</label>
   </div>
   <div class="progress" id="libProgress"><div class="progress-bar" id="libProgressBar"></div></div>
   <div class="status" id="libStatus"></div>
@@ -252,9 +274,10 @@ input[type=file]{display:none}
       <line x1="8" y1="23" x2="16" y2="23"/>
     </svg>
   </div>
-  <div class="ww-label" id="wwLabel">Tap to enable</div>
-  <button class="action-btn blue" id="wwToggle" style="max-width:var(--max-w)">ENABLE WAKE WORD</button>
+  <div class="ww-label" id="wwLabel">Initializing...</div>
   <div class="status" id="wwStatus"></div>
+  <div class="wave-vis" style="margin-top:16px"><canvas id="wwWaveCanvas"></canvas></div>
+  <div style="color:#555;font-size:11px;text-align:center;margin-bottom:8px;font-family:'Courier New',monospace" id="wwWaveLabel">voice profile: waiting for mic</div>
   <div style="max-width:var(--max-w);width:100%;margin-top:24px">
     <h2 style="color:#555;font-size:var(--fsize-sz);text-transform:uppercase;letter-spacing:2px;margin-bottom:8px">Voice Chat</h2>
     <div class="voice-label" id="activeVoiceLabel">voice: loading...</div>
@@ -292,19 +315,19 @@ input[type=file]{display:none}
 <div class="tab-bar">
   <button class="tab-btn active" data-tab="tabRecorder">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
-    REC
+    REC<span class="tab-light" id="lightRec"></span>
   </button>
   <button class="tab-btn" data-tab="tabLibrary">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-    LIBRARY
+    LIBRARY<span class="tab-light" id="lightLib"></span>
   </button>
   <button class="tab-btn" data-tab="tabDeviceChat">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-    CHAT
+    CHAT<span class="tab-light" id="lightChat"></span>
   </button>
   <button class="tab-btn" data-tab="tabWakeWord">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
-    WAKE
+    WAKE<span class="tab-light" id="lightWake"></span>
   </button>
 </div>
 
@@ -324,17 +347,24 @@ tabBtns.forEach(btn=>{btn.addEventListener('click',()=>{
 })});
 
 // ========== HEALTH ==========
-const dotServer=document.getElementById('dotServer'),dotMic=document.getElementById('dotMic');
+const dotServer=document.getElementById('dotServer'),dotMic=document.getElementById('dotMic'),dotOllama=document.getElementById('dotOllama');
 async function checkHealth(){
   try{const ac=new AbortController();const tid=setTimeout(()=>ac.abort(),3000);
     const r=await fetch('/health',{signal:ac.signal});clearTimeout(tid);
     dotServer.className='health-dot '+(r.ok?'ok':'warn');
-  }catch(e){dotServer.className='health-dot fail'}
+    if(r.ok){const d=await r.clone().json();dotOllama.className='health-dot '+(d.ollama?'ok':'fail');updateTabLights(true)}
+    else{dotOllama.className='health-dot fail';updateTabLights(false)}
+  }catch(e){dotServer.className='health-dot fail';dotOllama.className='health-dot fail';updateTabLights(false)}
   try{if(navigator.permissions&&navigator.permissions.query){
     const p=await navigator.permissions.query({name:'microphone'});
     dotMic.className='health-dot '+(p.state==='granted'?'ok':p.state==='prompt'?'warn':'fail');
   }}catch(e){dotMic.className='health-dot warn'}
 }
+const lightRec=document.getElementById('lightRec'),lightLib=document.getElementById('lightLib'),
+  lightChat=document.getElementById('lightChat'),lightWake=document.getElementById('lightWake');
+function updateTabLights(serverOk){
+  const cls=serverOk?'tab-light on':'tab-light';
+  lightRec.className=cls;lightLib.className=cls;lightChat.className=cls;lightWake.className=cls}
 checkHealth();setInterval(checkHealth,15000);
 
 // ========== RECORDER ==========
@@ -411,6 +441,18 @@ loadFiles();
 const libFileInput=document.getElementById('libFileInput'),libProgress=document.getElementById('libProgress'),
   libProgressBar=document.getElementById('libProgressBar'),libStatus=document.getElementById('libStatus');
 
+const libImageInput=document.getElementById('libImageInput');
+libImageInput.addEventListener('change',()=>{if(!libImageInput.files.length)return;
+  const total=libImageInput.files.length;let uploaded=0;
+  Array.from(libImageInput.files).forEach(file=>{
+    const fd=new FormData();fd.append('file',file);
+    const xhr=new XMLHttpRequest();libProgress.style.display='block';
+    xhr.upload.addEventListener('progress',e=>{if(e.lengthComputable)libProgressBar.style.width=Math.round(e.loaded/e.total*100)+'%'});
+    xhr.addEventListener('load',()=>{uploaded++;if(uploaded>=total){libProgress.style.display='none';
+      showStatus(libStatus,uploaded+' file(s) uploaded!','ok');loadLibrary();libImageInput.value=''}});
+    xhr.addEventListener('error',()=>{libProgress.style.display='none';showStatus(libStatus,'Upload failed','err')});
+    xhr.open('POST','/library/upload');xhr.send(fd)})});
+
 libFileInput.addEventListener('change',()=>{if(!libFileInput.files.length)return;
   const fd=new FormData();fd.append('file',libFileInput.files[0]);
   const xhr=new XMLHttpRequest();libProgress.style.display='block';
@@ -428,15 +470,22 @@ function loadLibrary(){fetch('/library').then(r=>r.json()).then(files=>{
     '<a class="fbtn" href="/library/download/'+encodeURIComponent(f.name)+'" download>DL</a></div>'
   ).join('')}).catch(()=>{})}
 
-// ========== WAKE WORD ==========
+// ========== WAKE WORD (always-on) ==========
 const wwCircle=document.getElementById('wwCircle'),wwLabel=document.getElementById('wwLabel'),
-  wwToggle=document.getElementById('wwToggle'),wwStatus=document.getElementById('wwStatus'),
-  wwIcon=document.getElementById('wwIcon');
-let wwActive=false,wwRecognition=null,wwContinuous=false;
+  wwStatus=document.getElementById('wwStatus'),
+  wwIcon=document.getElementById('wwIcon'),
+  wwBar=document.getElementById('wwBar'),wwBarLabel=document.getElementById('wwBarLabel');
+let wwActive=false,wwRecognition=null,_wwStarting=false,_wwRestartTimer=null;
+function wwBarState(cls,text){wwBar.className='ww-bar'+(cls?' '+cls:'');wwBarLabel.textContent=text}
+
+async function ensureMicPermission(){
+  try{const s=await navigator.mediaDevices.getUserMedia({audio:true});
+    s.getTracks().forEach(t=>t.stop());return true}catch(e){return false}
+}
 
 function initWakeWord(){
   if(!('webkitSpeechRecognition' in window)&&!('SpeechRecognition' in window)){
-    showStatus(wwStatus,'Speech recognition not supported on this browser','err');return false}
+    wwLabel.textContent='Speech recognition not supported';return false}
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   wwRecognition=new SR();wwRecognition.continuous=true;wwRecognition.interimResults=true;wwRecognition.lang='en-US';
   wwRecognition.onresult=e=>{
@@ -445,45 +494,124 @@ function initWakeWord(){
       if(t.includes('hey whim')){
         wwCircle.className='ww-status-circle detected';wwLabel.textContent='Detected! Listening...';
         wwIcon.setAttribute('stroke','#00ff00');
+        wwBarState('detected','Detected!');
         setTimeout(()=>{if(wwActive){wwCircle.className='ww-status-circle listening';
-          wwLabel.textContent='Listening for "Hey Whim"...';wwIcon.setAttribute('stroke','#2fa572')}},2000);
+          wwLabel.textContent='Listening for "Hey Whim"...';wwIcon.setAttribute('stroke','#2fa572');
+          wwBarState('listening','Listening for "Hey Whim"')}},2000);
         if(typeof WhimBridge!=='undefined'&&WhimBridge.onWakeWord){WhimBridge.onWakeWord()}
         startSpeechInput();
       }
     }
   };
-  wwRecognition.onend=()=>{if(wwActive){try{wwRecognition.start()}catch(e){}}};
-  wwRecognition.onerror=e=>{if(e.error!=='no-speech'&&e.error!=='aborted'){
-    showStatus(wwStatus,'Recognition error: '+e.error,'err')}};
+  wwRecognition.onend=()=>{
+    if(!wwActive)return;
+    if(_wwRestartTimer)clearTimeout(_wwRestartTimer);
+    _wwRestartTimer=setTimeout(()=>{_wwStarting=false;wwStartSafe()},3000);
+  };
+  wwRecognition.onerror=e=>{
+    if(e.error==='not-allowed'||e.error==='service-not-allowed'){
+      wwActive=false;_wwStarting=false;
+      wwCircle.className='ww-status-circle';wwIcon.setAttribute('stroke','#d94040');
+      wwLabel.textContent='Mic permission needed — open site settings';
+      wwBarState('error','Mic denied');
+    } else if(e.error!=='no-speech'&&e.error!=='aborted'&&e.error!=='network'){
+      showStatus(wwStatus,'Recognition error: '+e.error,'err')}
+  };
   return true;
 }
 
+function wwStartSafe(){
+  if(_wwStarting||!wwRecognition||wwActive)return;
+  _wwStarting=true;
+  try{wwRecognition.start();
+    wwActive=true;wwCircle.className='ww-status-circle listening';
+    wwLabel.textContent='Listening for "Hey Whim"...';wwIcon.setAttribute('stroke','#2fa572');
+    wwBarState('listening','Listening for "Hey Whim"');
+    if(typeof wwStartMic==='function')wwStartMic();
+  }catch(e){
+    if(e.message&&e.message.includes('already started')){wwActive=true}
+  }
+  _wwStarting=false;
+}
+
+async function activateWakeWord(){
+  if(wwActive)return;
+  const micOk=await ensureMicPermission();
+  if(!micOk){
+    wwLabel.textContent='Grant mic permission in browser settings';
+    wwCircle.className='ww-status-circle';wwIcon.setAttribute('stroke','#d94040');
+    wwBarState('error','Mic denied');
+    return;
+  }
+  dotMic.className='health-dot ok';
+  if(!wwRecognition&&!initWakeWord())return;
+  wwStartSafe();
+}
+
 function startSpeechInput(){
+  wwActive=false;
+  if(_wwRestartTimer)clearTimeout(_wwRestartTimer);
+  try{wwRecognition.stop()}catch(e){}
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   const cmd=new SR();cmd.continuous=false;cmd.interimResults=false;cmd.lang='en-US';
   cmd.onresult=e=>{const t=e.results[0][0].transcript;
-    document.getElementById('chatInput').value=t;sendChat()};
-  cmd.onerror=()=>{};cmd.onend=()=>{};
-  try{wwRecognition.stop()}catch(e){}
-  setTimeout(()=>{try{cmd.start()}catch(e){}},300);
-  cmd.onend=()=>{if(wwActive){setTimeout(()=>{try{wwRecognition.start()}catch(e){}},300)}};
+    document.getElementById('chatInput').value=t;sendAIChat()};
+  cmd.onerror=()=>{};
+  cmd.onend=()=>{setTimeout(()=>{activateWakeWord()},1000)};
+  setTimeout(()=>{try{cmd.start()}catch(e){activateWakeWord()}},500);
 }
 
-wwToggle.addEventListener('click',()=>{
-  if(!wwActive){
-    if(!wwRecognition&&!initWakeWord())return;
-    wwActive=true;wwToggle.textContent='DISABLE WAKE WORD';wwToggle.className='action-btn red';
-    wwCircle.className='ww-status-circle listening';wwLabel.textContent='Listening for "Hey Whim"...';
-    wwIcon.setAttribute('stroke','#2fa572');
-    try{wwRecognition.start()}catch(e){}
-  }else{
-    wwActive=false;wwToggle.textContent='ENABLE WAKE WORD';wwToggle.className='action-btn blue';
-    wwCircle.className='ww-status-circle';wwLabel.textContent='Tap to enable';
-    wwIcon.setAttribute('stroke','#666');
-    try{wwRecognition.stop()}catch(e){}
-  }
-});
+// Auto-start: try on every user interaction until successful
+function _wwTryStart(){activateWakeWord()}
+document.addEventListener('click',_wwTryStart);
+document.addEventListener('touchend',_wwTryStart);
+// Also try after page load in case mic is already permitted (installed PWA)
+setTimeout(()=>{activateWakeWord()},2000);
 
+// ========== WAKE WORD WAVEFORM ==========
+const wwCanvas=document.getElementById('wwWaveCanvas'),wwCtx=wwCanvas.getContext('2d'),
+  wwWaveLabel=document.getElementById('wwWaveLabel');
+let wwAudioCtx=null,wwAnalyser=null,wwAnimId=null,wwMicStream=null;
+
+function wwResizeCanvas(){const ow=wwCanvas.offsetWidth||360,oh=wwCanvas.offsetHeight||80;
+  const dpr=window.devicePixelRatio||1;wwCanvas.width=ow*dpr;wwCanvas.height=oh*dpr;wwCtx.setTransform(dpr,0,0,dpr,0,0)}
+function wwLogical(){const d=window.devicePixelRatio||1;return{w:wwCanvas.width/d,h:wwCanvas.height/d}}
+function wwDrawIdle(){wwResizeCanvas();const{w,h}=wwLogical();wwCtx.clearRect(0,0,w,h);
+  wwCtx.strokeStyle='#3a3a3a';wwCtx.lineWidth=1;wwCtx.beginPath();wwCtx.moveTo(0,h/2);wwCtx.lineTo(w,h/2);wwCtx.stroke()}
+function wwDrawWave(){
+  if(!wwAnalyser){wwDrawIdle();return}
+  const{w,h}=wwLogical();const buf=wwAnalyser.frequencyBinCount;const data=new Uint8Array(buf);
+  wwAnalyser.getByteTimeDomainData(data);
+  wwCtx.clearRect(0,0,w,h);
+  wwCtx.lineWidth=1.5;wwCtx.strokeStyle='#2fa572';wwCtx.beginPath();
+  const step=w/buf;let x=0;
+  for(let i=0;i<buf;i++){const v=data[i]/128.0;const y=(v*h)/2;
+    if(i===0)wwCtx.moveTo(x,y);else wwCtx.lineTo(x,y);x+=step}
+  wwCtx.lineTo(w,h/2);wwCtx.stroke();
+  let peak=0;for(let i=0;i<buf;i++){const v=Math.abs(data[i]-128);if(v>peak)peak=v}
+  const db=peak>0?Math.round(20*Math.log10(peak/128)):0;
+  wwWaveLabel.textContent='voice profile: '+(peak>8?'hearing you ('+db+' dB)':'quiet');
+  wwAnimId=requestAnimationFrame(wwDrawWave);
+}
+async function wwStartMic(){
+  if(wwMicStream)return;
+  try{
+    wwMicStream=await navigator.mediaDevices.getUserMedia({audio:true});
+    wwAudioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    if(wwAudioCtx.state==='suspended')await wwAudioCtx.resume();
+    const src=wwAudioCtx.createMediaStreamSource(wwMicStream);
+    wwAnalyser=wwAudioCtx.createAnalyser();wwAnalyser.fftSize=2048;
+    src.connect(wwAnalyser);
+    wwResizeCanvas();wwDrawWave();
+    wwWaveLabel.textContent='voice profile: listening';
+  }catch(e){wwWaveLabel.textContent='voice profile: mic unavailable'}
+}
+function wwStopMic(){
+  if(wwAnimId){cancelAnimationFrame(wwAnimId);wwAnimId=null}
+  if(wwAudioCtx){wwAudioCtx.close();wwAudioCtx=null;wwAnalyser=null}
+  if(wwMicStream){wwMicStream.getTracks().forEach(t=>t.stop());wwMicStream=null}
+  wwDrawIdle();wwWaveLabel.textContent='voice profile: stopped';
+}
 // ========== WHIM.AI VOICE CHAT ==========
 const chatMessages=document.getElementById('chatMessages'),chatInput=document.getElementById('chatInput'),
   chatSendBtn=document.getElementById('chatSendBtn'),activeVoiceLabel=document.getElementById('activeVoiceLabel');
@@ -508,7 +636,7 @@ function sendAIChat(){
       const msgEl=appendAIChatMsg('...','assistant');
       function read(){reader.read().then(({done,value})=>{if(done){
         chatHistory.push({role:'assistant',content:full});
-        const displayText=full.replace(/```whim-cmd[\s\S]*?```/g,'').trim();
+        const displayText=full.replace(/[`']{3}whim-cmd[\s\S]*?[`']{3}/g,'').trim();
         msgEl.querySelector('.msg-text').textContent=displayText;
         const sb=document.createElement('span');sb.className='speak-btn';sb.textContent='Speak';
         sb.onclick=()=>speakText(displayText,sb);msgEl.appendChild(sb);
@@ -523,19 +651,35 @@ function sendAIChat(){
 }
 
 function parseAndExecuteCommands(text,msgEl){
-  const cmdMatch=text.match(/```whim-cmd\s*\n?([\s\S]*?)\n?```/);
+  let cmdMatch=text.match(/[`']{3}whim-cmd\s*\n?([\s\S]*?)\n?[`']{3}/);
+  if(!cmdMatch){cmdMatch=text.match(/whim-cmd\s*\n?\{([\s\S]*?)\}/);if(cmdMatch)cmdMatch[1]='{'+cmdMatch[1]+'}'}
   if(!cmdMatch)return;
   try{
-    const cmd=JSON.parse(cmdMatch[1].trim());
+    let raw=cmdMatch[1].trim();
+    raw=raw.replace(/"acttion"/g,'"action"');
+    raw=raw.replace(/"params"\s*,\s*\{/g,'"params":{');
+    raw=raw.replace(/"params"\s*,\s*"/g,'"params":{"');
+    const cmd=JSON.parse(raw);
     executeCommand(cmd,msgEl);
   }catch(e){}
 }
 
 function executeCommand(cmd,msgEl){
   const action=cmd.action,params=cmd.params||{};
+  const row=document.createElement('div');row.className='cmd-status';
+  const tag=document.createElement('span');tag.className='cmd-tag';tag.textContent='[CMD] ';
+  const dots=document.createElement('span');dots.className='cmd-pending';dots.textContent='...';
+  row.appendChild(tag);row.appendChild(dots);msgEl.appendChild(row);
+  const t0=Date.now();
   fetch('/api/command',{method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify(cmd)})
     .then(r=>r.json()).then(d=>{
+      const ok=d.status==='ok';const ms=Date.now()-t0;
+      dots.textContent=ok?'\u{1F44D}':'\u{1F44E}';
+      dots.className=ok?'cmd-ok':'cmd-fail';
+      fetch('/api/cmd_report',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({action,params,status:ok?'ok':'fail',response:d,duration_ms:ms,
+          timestamp:new Date().toISOString()})}).catch(()=>{});
       if(d.action==='play_music'&&d.intent_url){
         if(typeof WhimBridge!=='undefined'&&WhimBridge.openUrl){WhimBridge.openUrl(d.intent_url)}
         else{window.open(d.intent_url,'_blank')}
@@ -546,15 +690,22 @@ function executeCommand(cmd,msgEl){
         link.onclick=()=>{window.open(d.download_url,'_blank')};
         msgEl.appendChild(link);
       }
-      if(d.action==='open_maps'&&params.destination){
-        if(typeof WhimBridge!=='undefined'&&WhimBridge.openMaps){
-          WhimBridge.openMaps(params.destination)}
+      if(d.action==='open_maps'){
+        const dest=params.destination||d.destination||'';
+        const geoUrl='geo:0,0?q='+encodeURIComponent(dest);
+        window.location.href=geoUrl;
       }
       if(d.message){
         const info=document.createElement('div');
         info.style.cssText='color:#2fa572;font-size:12px;margin-top:4px';
         info.textContent=d.message;msgEl.appendChild(info)}
-    }).catch(()=>{});
+    }).catch(err=>{
+      const ms=Date.now()-t0;
+      dots.textContent='\u{1F44E}';dots.className='cmd-fail';
+      fetch('/api/cmd_report',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({action,params,status:'fail',error:err.message,duration_ms:ms,
+          timestamp:new Date().toISOString()})}).catch(()=>{});
+    });
 }
 
 function appendAIChatMsg(text,role){
@@ -635,7 +786,7 @@ function showStatus(el,msg,type){el.className='status '+type;el.textContent=msg;
   setTimeout(()=>{el.style.display='none'},4000)}
 
 if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(()=>{})}
-document.getElementById('ssFab').addEventListener('click',()=>{window.location.href='http://'+location.hostname+':8091'});
+
 if(typeof WhimBridge!=='undefined'&&WhimBridge.onReady){try{WhimBridge.onReady()}catch(e){}}
 </script></body></html>"""
 
@@ -718,6 +869,8 @@ class RecorderHandler(BaseHTTPRequestHandler):
             self._serve_voices()
         elif self.path == "/active_voice":
             self._serve_active_voice()
+        elif self.path == "/cmd_reports":
+            self._serve_cmd_reports()
         elif self.path.startswith("/tts_audio/"):
             self._serve_tts_audio()
         elif self.path == "/device/chat":
@@ -737,8 +890,15 @@ class RecorderHandler(BaseHTTPRequestHandler):
         "You are OpenClaw, the AI assistant powering the Whim ecosystem. "
         "You have FULL tool access and can execute any command the user requests.\n\n"
         "IMPORTANT: When the user asks you to perform an ACTION, you MUST include a JSON command "
-        "block at the END of your response using this exact format:\n"
-        '```whim-cmd\n{"action":"ACTION_NAME","params":{...}}\n```\n\n'
+        "block at the END of your response. Use EXACTLY three backticks and the tag whim-cmd. "
+        "The JSON inside MUST be valid with correct spelling of keys.\n\n"
+        "EXACT FORMAT (copy this structure precisely):\n"
+        '```whim-cmd\n{"action":"ACTION_NAME","params":{"key":"value"}}\n```\n\n'
+        "EXAMPLE — if user says 'open organic maps':\n"
+        'Sure, opening Organic Maps now.\n```whim-cmd\n{"action":"open_maps","params":{"destination":""}}\n```\n\n'
+        "EXAMPLE — if user says 'play some jazz':\n"
+        'Playing jazz for you.\n```whim-cmd\n{"action":"play_music","params":{"query":"jazz"}}\n```\n\n'
+        "KEY SPELLING: action (NOT acttion), params (followed by colon, NOT comma).\n\n"
         "Available actions:\n"
         '- open_maps: Open Organic Maps. params: {"destination":"address or place name"}\n'
         '- play_music: Play music on device. params: {"query":"song or artist name"}\n'
@@ -772,6 +932,8 @@ class RecorderHandler(BaseHTTPRequestHandler):
             self._handle_device_chat_post()
         elif self.path == "/api/command":
             self._handle_command()
+        elif self.path == "/api/cmd_report":
+            self._handle_cmd_report()
         else:
             self.send_error(404)
 
@@ -1188,7 +1350,8 @@ class RecorderHandler(BaseHTTPRequestHandler):
                 except Exception:
                     pass
                 self._json_response(200, {"status": "ok", "action": "open_maps",
-                    "message": f"Opened Organic Maps" + (f" (destination: {dest})" if dest else "")})
+                    "destination": dest,
+                    "message": f"Opening Organic Maps" + (f" — {dest}" if dest else "")})
 
             elif action == "play_music":
                 query = params.get("query", "")
@@ -1251,6 +1414,30 @@ class RecorderHandler(BaseHTTPRequestHandler):
 
         except Exception as e:
             self._json_response(500, {"error": str(e)})
+
+    def _handle_cmd_report(self):
+        try:
+            content_length = int(self.headers.get("Content-Length", 0))
+            body = self.rfile.read(content_length)
+            report = json.loads(body)
+            with open(CMD_REPORT_LOG, "a") as f:
+                f.write(json.dumps(report) + "\n")
+            self._json_response(200, {"status": "logged"})
+        except Exception as e:
+            self._json_response(500, {"error": str(e)})
+
+    def _serve_cmd_reports(self):
+        reports = []
+        if os.path.isfile(CMD_REPORT_LOG):
+            with open(CMD_REPORT_LOG, "r") as f:
+                for line in f:
+                    line = line.strip()
+                    if line:
+                        try:
+                            reports.append(json.loads(line))
+                        except json.JSONDecodeError:
+                            pass
+        self._json_response(200, reports)
 
     def _handle_upload(self):
         content_type = self.headers.get("Content-Type", "")
