@@ -336,7 +336,7 @@ body.kb-open .tab-bar{display:none}
   </div>
   <div class="progress" id="progress"><div class="progress-bar" id="progressBar"></div></div>
   <div class="status" id="recStatus"></div>
-  <div class="flist" id="filesList"></div>
+  <div class="flist" id="filesList" style="flex-shrink:0;min-height:0;padding-bottom:16px"></div>
   <div id="audioPlayerWrap" style="width:100%;max-width:var(--max-w);margin-top:8px;display:none">
     <audio id="audioPlayer" controls style="width:100%;border-radius:8px"></audio>
   </div>
@@ -349,13 +349,10 @@ body.kb-open .tab-bar{display:none}
   <div style="display:flex;gap:8px;margin:12px 0 8px;width:100%;max-width:var(--max-w);justify-content:center">
     <a href="https://scarter84.github.io/0411/" target="_blank" rel="noopener"
        style="display:inline-block;padding:10px 20px;background:#F5A623;color:#000;font-weight:700;font-size:13px;border-radius:10px;text-decoration:none;font-family:'Courier New',monospace;letter-spacing:1px;text-align:center">GITHUB MANUAL</a>
-    <button id="tsUpdateBtn" onclick="triggerTailscaleUpdate()"
-       style="padding:10px 20px;background:#14507a;color:#fff;font-weight:700;font-size:13px;border:none;border-radius:10px;cursor:pointer;font-family:'Courier New',monospace;letter-spacing:1px">UPDATE APP</button>
   </div>
-  <div class="status" id="tsUpdateStatus" style="margin-bottom:8px"></div>
   <div class="pick-section">
     <input type="file" id="libImageInput" accept="image/*,video/*" multiple>
-    <label for="libImageInput" class="pick-btn" style="margin-bottom:8px">\U0001f4f7 Pick from Gallery / Screenshots</label>
+    <label for="libImageInput" class="pick-btn" style="margin-bottom:8px">&#128247; Pick from Gallery / Screenshots</label>
   </div>
   <div class="pick-section">
     <input type="file" id="libFileInput" multiple>
@@ -365,7 +362,7 @@ body.kb-open .tab-bar{display:none}
   <div class="status" id="libStatus"></div>
   <div style="width:100%;max-width:var(--max-w);display:flex;justify-content:space-between;align-items:center;margin:8px 0 4px">
     <span style="color:#555;font-size:12px;text-transform:uppercase;letter-spacing:2px" id="libCount"></span>
-    <button onclick="loadLibrary()" style="background:#333;border:1px solid #3a3a3a;border-radius:6px;padding:6px 14px;cursor:pointer;color:#aaa;font-size:12px;font-family:'Courier New',monospace">\u21bb Refresh</button>
+    <button onclick="loadLibrary()" style="background:#333;border:1px solid #3a3a3a;border-radius:6px;padding:6px 14px;cursor:pointer;color:#aaa;font-size:12px;font-family:'Courier New',monospace">&#8635; Refresh</button>
   </div>
   <div class="flist" id="libraryList" style="flex-shrink:0;min-height:0;padding-bottom:24px"></div>
 </div>
@@ -405,7 +402,7 @@ body.kb-open .tab-bar{display:none}
   <div id="aiChatBox" style="flex:1;width:90%;background:#111111;border:1px solid #3a3a3a;border-radius:10px;overflow-y:auto;padding:12px;margin-bottom:12px;min-height:60px">
     <div class="ai-msg assistant"><span class="msg-prefix">whim.ai</span>Welcome. Ask me anything.</div>
   </div>
-  <div class="kb-input-row" id="aiInputRow" style="width:90%;max-width:var(--max-w);display:flex;gap:8px;padding-bottom:env(safe-area-inset-bottom);margin:0 auto;flex-shrink:0">
+  <div class="kb-input-row" id="aiInputRow" style="width:90%;max-width:var(--max-w);display:flex;gap:8px;padding-bottom:env(safe-area-inset-bottom);margin:0 auto 16px;flex-shrink:0">
     <input type="text" id="aiChatInput" placeholder="Ask anything..." style="flex:1;min-width:0;padding:12px;background:#2b2b2b;color:#dce4ee;border:1px solid #3a3a3a;border-radius:10px;font-size:15px;outline:none;font-family:inherit" autocomplete="off">
     <button id="aiChatSend" style="padding:12px 20px;background:#2fa572;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;flex-shrink:0">Send</button>
   </div>
@@ -415,14 +412,17 @@ body.kb-open .tab-bar{display:none}
 <div class="tab-content" id="tabDeviceChat">
   <h1 style="margin-top:16px">Device Chat</h1>
   <p class="sub">talk between your devices</p>
-  <p style="color:#555;font-size:11px;font-family:'Courier New',monospace;margin:4px 0 8px">Whim.m v__WHIM_M_VERSION__</p>
   <div id="dcNameSetup" style="width:100%;max-width:var(--max-w);text-align:center">
     <p style="color:#888;margin-bottom:12px">Set your device name to start chatting</p>
     <input type="text" id="dcNameInput" placeholder="e.g. Galaxy S9, Tablet..." style="width:100%;padding:12px;background:#2b2b2b;border:1px solid #3a3a3a;border-radius:10px;color:#dce4ee;font-size:14px;outline:none;margin-bottom:8px">
     <button class="action-btn blue" id="dcSaveBtn">JOIN CHAT</button>
   </div>
   <div id="dcChatArea" style="display:none;flex-direction:column;width:100%;max-width:var(--max-w);flex:1">
-    <div id="dcMessages" style="flex:1;overflow-y:auto;max-height:50vh;margin-bottom:8px"></div>
+    <div id="dcInfoBar" style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#2b2b2b;border:1px solid #3a3a3a;border-radius:10px;margin-bottom:8px">
+      <span style="color:#2fa572;font-size:12px;font-weight:600;font-family:'Courier New',monospace" id="dcDeviceName"></span>
+      <button onclick="dcChangeName()" style="background:none;border:1px solid #3a3a3a;border-radius:6px;padding:4px 10px;color:#888;font-size:11px;cursor:pointer">Change</button>
+    </div>
+    <div id="dcMessages" style="flex:1;overflow-y:auto;max-height:50vh;margin-bottom:8px;min-height:100px"></div>
     <div class="kb-input-row" id="dcInputRow" style="display:flex;gap:8px;align-items:center">
       <input type="text" id="dcInput" placeholder="Message all devices..." style="flex:1;padding:12px;background:#2b2b2b;border:1px solid #3a3a3a;border-radius:10px;color:#dce4ee;font-size:14px;outline:none" autocomplete="off">
       <label style="cursor:pointer;padding:10px;background:#333;border:1px solid #3a3a3a;border-radius:10px;display:flex;align-items:center">
@@ -432,8 +432,6 @@ body.kb-open .tab-bar{display:none}
       <button id="dcSendBtn" style="padding:12px 16px;background:#2fa572;border:none;border-radius:10px;color:#fff;font-weight:600;cursor:pointer;font-size:14px">Send</button>
     </div>
   </div>
-  <button id="dcUpdateBtn" style="margin-top:16px;padding:12px 24px;background:#14507a;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;display:none" onclick="requestDeviceUpdate()">Update Device</button>
-  <div id="dcUpdateStatus" style="color:#888;font-size:12px;font-family:'Courier New',monospace;margin-top:8px;display:none"></div>
 </div>
 
 <!-- ========== TAB BAR ========== -->
@@ -680,7 +678,7 @@ function loadLibrary(){fetchWithRetry('/library',{},2).then(r=>r.json()).then(fi
   if(countEl)countEl.textContent=files.length+' file'+(files.length!==1?'s':'');
   c.innerHTML='<h2>Shared Files</h2>'+files.map(f=>
     '<div class="fitem"><span class="fname">'+f.name+'</span><span class="fsize">'+f.size+'</span>'+
-    '<a class="fbtn" href="/library/download/'+encodeURIComponent(f.name)+'" download="\u200b'+f.name+'" style="text-decoration:none">\u2b07 DL</a></div>'
+    '<a class="fbtn" href="/library/download/'+encodeURIComponent(f.name)+'" download="'+f.name+'" style="text-decoration:none">&#11015; DL</a></div>'
   ).join('')}).catch(e=>{
   const c=document.getElementById('libraryList');c.innerHTML='<p style="color:#d94040;text-align:center;margin-top:24px">Failed to load library</p>'})}
 
@@ -976,10 +974,15 @@ const dcNameInput=document.getElementById('dcNameInput'),dcSaveBtn=document.getE
   dcSendBtn=document.getElementById('dcSendBtn'),dcFileInput=document.getElementById('dcFileInput'),
   dcNameSetup=document.getElementById('dcNameSetup'),dcChatArea=document.getElementById('dcChatArea');
 
-var dcUpdateBtn=document.getElementById('dcUpdateBtn');
 function showDCChat(){
   dcNameSetup.style.display='none';dcChatArea.style.display='flex';
-  if(dcUpdateBtn)dcUpdateBtn.style.display='block';startDCPoll();
+  var nameEl=document.getElementById('dcDeviceName');
+  if(nameEl)nameEl.textContent='Chatting as: '+deviceName;
+  startDCPoll();
+}
+function dcChangeName(){
+  dcChatArea.style.display='none';dcNameSetup.style.display='block';
+  dcNameInput.value=deviceName;dcNameInput.focus();
 }
 if(deviceName){showDCChat()}
 
@@ -1105,6 +1108,7 @@ function requestDeviceUpdate(){
 
 function triggerTailscaleUpdate(){
   var st=document.getElementById('tsUpdateStatus');
+  if(!st)return;
   st.textContent='Checking for update...';st.style.color='#e0a030';
   fetch('/update/check').then(r=>r.json()).then(d=>{
     if(d.update_available){
@@ -1156,6 +1160,12 @@ if(typeof WhimBridge!=='undefined'&&WhimBridge.onReady){try{WhimBridge.onReady()
     fullH=Math.max(fullH,vv.height);
     onResize();
   });
+  vv.addEventListener('scroll',function(){
+    if(kbOpen){
+      var ae=document.activeElement;
+      if(ae){var row=ae.closest('.kb-input-row');if(row)row.scrollIntoView({block:'end',behavior:'smooth'})}
+    }
+  });
   ['aiChatInput','chatInput','dcInput'].forEach(function(id){
     var el=document.getElementById(id);
     if(el){
@@ -1163,6 +1173,13 @@ if(typeof WhimBridge!=='undefined'&&WhimBridge.onReady){try{WhimBridge.onReady()
         setTimeout(function(){
           var row=el.closest('.kb-input-row');
           if(row)row.scrollIntoView({block:'end',behavior:'smooth'});
+          var activeTC=document.querySelector('.tab-content.active');
+          if(activeTC&&vv.height<fullH){
+            activeTC.style.height=vv.height+'px';
+            activeTC.style.maxHeight=vv.height+'px';
+            activeTC.style.overflow='hidden';
+            activeTC.style.paddingBottom='8px';
+          }
         },350);
       });
     }
