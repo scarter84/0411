@@ -31,6 +31,7 @@ TTS_OUTPUT_DIR = os.path.expanduser("~/xtts_tts_cache")
 CMD_REPORT_LOG = os.path.expanduser("~/vaults/WHIM/mobile/cmd_reports.jsonl")
 LOCATION_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config", "device_locations.json")
 DEFAULT_PORT = 8089
+WHIM_M_VERSION = "3.2.0"
 
 # Hybrid connection: VPS tunnel (default) + Tailscale (fallback)
 TAILSCALE_IP = "100.69.17.20"
@@ -286,6 +287,10 @@ input[type=file]{display:none!important;width:0;height:0;overflow:hidden;positio
 .ai-msg.user{color:#00ff00}
 .ai-msg.assistant{color:#e08030}
 .ai-msg .msg-prefix{font-weight:700;font-size:11px;opacity:.6;display:block;margin-bottom:2px}
+
+/* Keyboard-aware input rows */
+.kb-input-row{transition:transform 0.15s ease-out;will-change:transform;z-index:100}
+body.kb-open .tab-bar{display:none}
 </style></head><body>
 
 <div class="reconnect-banner" id="reconnectBanner">Connection lost — reconnecting...</div>
@@ -317,7 +322,7 @@ input[type=file]{display:none!important;width:0;height:0;overflow:hidden;positio
 <div class="tab-content" id="tabRecorder">
   <div class="logo"><svg viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="30" stroke="#00ff00" stroke-width="2" fill="none"/><path d="M16 32 Q20 18,24 32 Q28 46,32 32 Q36 18,40 32 Q44 46,48 32" stroke="#00ff00" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg></div>
   <h1>Whim.m</h1>
-  <div class="version">v3.0</div>
+  <div class="version" id="whimVersion">v__WHIM_M_VERSION__</div>
   <p class="sub">voice recorder</p>
   <div class="wave-vis"><canvas id="waveCanvas"></canvas></div>
   <div class="controls">
@@ -373,7 +378,7 @@ input[type=file]{display:none!important;width:0;height:0;overflow:hidden;positio
     <h2 style="color:#555;font-size:var(--fsize-sz);text-transform:uppercase;letter-spacing:2px;margin-bottom:8px">Voice Chat</h2>
     <div class="voice-label" id="activeVoiceLabel">voice: loading...</div>
     <div class="chat-messages" id="chatMessages"></div>
-    <div class="chat-input-row">
+    <div class="chat-input-row kb-input-row" id="vcInputRow">
       <input type="text" id="chatInput" placeholder="Type or speak..." autocomplete="off">
       <button id="chatSendBtn">Send</button>
     </div>
@@ -382,14 +387,14 @@ input[type=file]{display:none!important;width:0;height:0;overflow:hidden;positio
 
 <!-- ========== TAB: WHIM.AI CHAT ========== -->
 <div class="tab-content active" id="tabAIChat">
-  <div style="display:flex;align-items:center;gap:12px;margin:16px 0 8px">
+  <div id="aiHeader" style="display:flex;align-items:center;gap:12px;margin:16px 0 8px;flex-shrink:0">
     <img src="data:image/png;base64,__WHIM_ICON_B64__" style="width:48px;height:48px;border-radius:50%;border:2px solid #3a3a3a" alt="Whim">
     <div><h1 style="font-size:20px;margin:0">Whim.ai</h1><p class="sub" style="margin:2px 0 0">powered by llama + openclaw</p></div>
   </div>
-  <div id="aiChatBox" style="flex:1;width:90%;background:#111111;border:1px solid #3a3a3a;border-radius:10px;overflow-y:auto;padding:12px;margin-bottom:12px;min-height:200px">
+  <div id="aiChatBox" style="flex:1;width:90%;background:#111111;border:1px solid #3a3a3a;border-radius:10px;overflow-y:auto;padding:12px;margin-bottom:12px;min-height:60px">
     <div class="ai-msg assistant"><span class="msg-prefix">whim.ai</span>Welcome. Ask me anything.</div>
   </div>
-  <div style="width:90%;max-width:var(--max-w);display:flex;gap:8px;padding-bottom:env(safe-area-inset-bottom);margin:0 auto">
+  <div class="kb-input-row" id="aiInputRow" style="width:90%;max-width:var(--max-w);display:flex;gap:8px;padding-bottom:env(safe-area-inset-bottom);margin:0 auto;flex-shrink:0">
     <input type="text" id="aiChatInput" placeholder="Ask anything..." style="flex:1;min-width:0;padding:12px;background:#2b2b2b;color:#dce4ee;border:1px solid #3a3a3a;border-radius:10px;font-size:15px;outline:none;font-family:inherit" autocomplete="off">
     <button id="aiChatSend" style="padding:12px 20px;background:#2fa572;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;flex-shrink:0">Send</button>
   </div>
@@ -399,6 +404,7 @@ input[type=file]{display:none!important;width:0;height:0;overflow:hidden;positio
 <div class="tab-content" id="tabDeviceChat">
   <h1 style="margin-top:16px">Device Chat</h1>
   <p class="sub">talk between your devices</p>
+  <p style="color:#555;font-size:11px;font-family:'Courier New',monospace;margin:4px 0 8px">Whim.m v__WHIM_M_VERSION__</p>
   <div id="dcNameSetup" style="width:100%;max-width:var(--max-w);text-align:center">
     <p style="color:#888;margin-bottom:12px">Set your device name to start chatting</p>
     <input type="text" id="dcNameInput" placeholder="e.g. Galaxy S9, Tablet..." style="width:100%;padding:12px;background:#2b2b2b;border:1px solid #3a3a3a;border-radius:10px;color:#dce4ee;font-size:14px;outline:none;margin-bottom:8px">
@@ -406,7 +412,7 @@ input[type=file]{display:none!important;width:0;height:0;overflow:hidden;positio
   </div>
   <div id="dcChatArea" style="display:none;flex-direction:column;width:100%;max-width:var(--max-w);flex:1">
     <div id="dcMessages" style="flex:1;overflow-y:auto;max-height:50vh;margin-bottom:8px"></div>
-    <div style="display:flex;gap:8px;align-items:center">
+    <div class="kb-input-row" id="dcInputRow" style="display:flex;gap:8px;align-items:center">
       <input type="text" id="dcInput" placeholder="Message all devices..." style="flex:1;padding:12px;background:#2b2b2b;border:1px solid #3a3a3a;border-radius:10px;color:#dce4ee;font-size:14px;outline:none" autocomplete="off">
       <label style="cursor:pointer;padding:10px;background:#333;border:1px solid #3a3a3a;border-radius:10px;display:flex;align-items:center">
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#888" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
@@ -415,6 +421,8 @@ input[type=file]{display:none!important;width:0;height:0;overflow:hidden;positio
       <button id="dcSendBtn" style="padding:12px 16px;background:#2fa572;border:none;border-radius:10px;color:#fff;font-weight:600;cursor:pointer;font-size:14px">Send</button>
     </div>
   </div>
+  <button id="dcUpdateBtn" style="margin-top:16px;padding:12px 24px;background:#14507a;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;display:none" onclick="requestDeviceUpdate()">Update Device</button>
+  <div id="dcUpdateStatus" style="color:#888;font-size:12px;font-family:'Courier New',monospace;margin-top:8px;display:none"></div>
 </div>
 
 <!-- ========== TAB BAR ========== -->
@@ -953,11 +961,16 @@ const dcNameInput=document.getElementById('dcNameInput'),dcSaveBtn=document.getE
   dcSendBtn=document.getElementById('dcSendBtn'),dcFileInput=document.getElementById('dcFileInput'),
   dcNameSetup=document.getElementById('dcNameSetup'),dcChatArea=document.getElementById('dcChatArea');
 
-if(deviceName){dcNameSetup.style.display='none';dcChatArea.style.display='flex';startDCPoll()}
+var dcUpdateBtn=document.getElementById('dcUpdateBtn');
+function showDCChat(){
+  dcNameSetup.style.display='none';dcChatArea.style.display='flex';
+  if(dcUpdateBtn)dcUpdateBtn.style.display='block';startDCPoll();
+}
+if(deviceName){showDCChat()}
 
 dcSaveBtn.addEventListener('click',()=>{
   const n=dcNameInput.value.trim();if(!n)return;deviceName=n;localStorage.setItem('whim_device_name',n);
-  dcNameSetup.style.display='none';dcChatArea.style.display='flex';startDCPoll()});
+  showDCChat()});
 
 dcSendBtn.addEventListener('click',sendDCMsg);
 dcInput.addEventListener('keydown',e=>{if(e.key==='Enter')sendDCMsg()});
@@ -1065,7 +1078,66 @@ async function sendAiChatMsg(){
 aiChatSend.addEventListener('click',sendAiChatMsg);
 aiChatInput.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendAiChatMsg()}});
 
+function requestDeviceUpdate(){
+  var st=document.getElementById('dcUpdateStatus');
+  if(st){st.style.display='block';st.textContent='Requesting update from server...';}
+  fetch('/device/update',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({device:deviceName||'unknown'})})
+  .then(function(r){return r.json()})
+  .then(function(d){if(st)st.textContent=d.message||'Update requested.';})
+  .catch(function(e){if(st)st.textContent='Error: '+e.message;});
+}
+
 if(typeof WhimBridge!=='undefined'&&WhimBridge.onReady){try{WhimBridge.onReady()}catch(e){}}
+
+// ========== KEYBOARD-AWARE INPUT ==========
+(function(){
+  var vv=window.visualViewport;
+  if(!vv)return;
+  var fullH=vv.height;
+  var KB_THRESH=100;
+  var kbOpen=false;
+  function onResize(){
+    var kbH=fullH-vv.height;
+    if(kbH>KB_THRESH){
+      if(!kbOpen){kbOpen=true;document.body.classList.add('kb-open');}
+      var activeTC=document.querySelector('.tab-content.active');
+      if(activeTC){
+        activeTC.style.height=vv.height+'px';
+        activeTC.style.maxHeight=vv.height+'px';
+        activeTC.style.overflow='hidden';
+        activeTC.style.paddingBottom='8px';
+      }
+      var ae=document.activeElement;
+      if(ae){
+        var row=ae.closest('.kb-input-row');
+        if(row)setTimeout(function(){row.scrollIntoView({block:'end',behavior:'smooth'});},100);
+      }
+    }else{
+      if(kbOpen){
+        kbOpen=false;document.body.classList.remove('kb-open');
+        document.querySelectorAll('.tab-content').forEach(function(tc){
+          tc.style.height='';tc.style.maxHeight='';tc.style.overflow='';tc.style.paddingBottom='';
+        });
+      }
+    }
+  }
+  vv.addEventListener('resize',function(){
+    fullH=Math.max(fullH,vv.height);
+    onResize();
+  });
+  ['aiChatInput','chatInput','dcInput'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el){
+      el.addEventListener('focus',function(){
+        setTimeout(function(){
+          var row=el.closest('.kb-input-row');
+          if(row)row.scrollIntoView({block:'end',behavior:'smooth'});
+        },350);
+      });
+    }
+  });
+})();
 </script></body></html>"""
 
 
@@ -1125,7 +1197,7 @@ class RecorderHandler(BaseHTTPRequestHandler):
                 pass
             ts_ok = _tailscale_running_local()
             conn_cfg = _load_connection_mode()
-            self._json_response(200, {"status": "ok", "version": "3.0", "ollama": ollama_ok,
+            self._json_response(200, {"status": "ok", "version": WHIM_M_VERSION, "ollama": ollama_ok,
                                       "tailscale": ts_ok,
                                       "connection_mode": conn_cfg.get("mode", "tunnel"),
                                       "tailscale_ip": TAILSCALE_IP if ts_ok else None,
@@ -1171,7 +1243,7 @@ class RecorderHandler(BaseHTTPRequestHandler):
         elif self.path.startswith("/icon-192.png") or self.path.startswith("/icon-512.png"):
             self._serve_pwa_icon(192 if "192" in self.path else 512)
         else:
-            html = RECORDER_HTML.replace("__WHIM_ICON_B64__", WHIM_ICON_B64)
+            html = RECORDER_HTML.replace("__WHIM_ICON_B64__", WHIM_ICON_B64).replace("__WHIM_M_VERSION__", WHIM_M_VERSION)
             self._text_response(200, html, "text/html; charset=utf-8")
 
     _OPENCLAW_SYSTEM = (
@@ -1224,6 +1296,8 @@ class RecorderHandler(BaseHTTPRequestHandler):
             self._handle_cmd_report()
         elif self.path == "/connection_mode":
             self._handle_connection_mode_post()
+        elif self.path == "/device/update":
+            self._handle_device_update()
         else:
             self.send_error(404)
 
@@ -1739,6 +1813,20 @@ class RecorderHandler(BaseHTTPRequestHandler):
             cfg["tailscale_ip"] = TAILSCALE_IP
             cfg["vps_host"] = VPS_HOST
             self._json_response(200, cfg)
+        except Exception as e:
+            self._json_response(500, {"error": str(e)})
+
+    def _handle_device_update(self):
+        try:
+            content_length = int(self.headers.get("Content-Length", 0))
+            body = self.rfile.read(content_length)
+            data = json.loads(body) if body else {}
+            device = data.get("device", "unknown")
+            self._json_response(200, {
+                "message": f"Update request received from {device}. "
+                           f"Please use Whim Terminal 'Update Devices' button to push new APKs via ADB.",
+                "current_version": WHIM_M_VERSION
+            })
         except Exception as e:
             self._json_response(500, {"error": str(e)})
 

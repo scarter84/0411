@@ -1,4 +1,4 @@
-package com.whim.recorder;
+package com.whim.m;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
