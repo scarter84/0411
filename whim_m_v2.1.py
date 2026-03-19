@@ -34,7 +34,7 @@ DEFAULT_PORT = 8089
 WHIM_M_VERSION = "3.3.0"
 
 # Hybrid connection: VPS tunnel (default) + Tailscale (fallback)
-TAILSCALE_IP = "100.69.17.20"
+TAILSCALE_IP = "YOUR_TAILSCALE_PC_IP"
 TAILSCALE_PORT = 8089
 CONNECTION_CONFIG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "config", "connection_mode.json")
 
@@ -1199,7 +1199,7 @@ def _get_lan_ip():
         return "127.0.0.1"
 
 
-VPS_HOST = "104.207.140.242"
+VPS_HOST = "YOUR_VPS_IP"
 VPS_TUNNEL_PORT = 8089
 
 def _get_vps_url():

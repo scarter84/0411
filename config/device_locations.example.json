@@ -1,0 +1,14 @@
+{
+  "devices": [
+    {
+      "name": "PC",
+      "tailscale_ip": "",
+      "lan_ip": ""
+    },
+    {
+      "name": "Phone",
+      "tailscale_ip": "",
+      "lan_ip": ""
+    }
+  ]
+}

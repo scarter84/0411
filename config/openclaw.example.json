@@ -1,0 +1,37 @@
+{
+  "models": {
+    "mode": "merge",
+    "providers": {
+      "ollama": {
+        "baseUrl": "http://127.0.0.1:11434",
+        "api": "ollama"
+      }
+    }
+  },
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "ollama/llama3.1:8b-16k",
+        "fallbacks": []
+      }
+    }
+  },
+  "channels": {
+    "signal": {
+      "enabled": false,
+      "account": "",
+      "httpUrl": "http://127.0.0.1:8080"
+    },
+    "discord": {
+      "enabled": false,
+      "token": ""
+    }
+  },
+  "gateway": {
+    "mode": "local",
+    "auth": {
+      "mode": "token",
+      "token": ""
+    }
+  }
+}

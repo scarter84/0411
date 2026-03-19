@@ -1,0 +1,79 @@
+# ── Python ──
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# ── AI Model Weights (install separately via scripts/setup_models.sh) ──
+*.pth
+*.pt
+*.gguf
+*.bin
+*.safetensors
+*.onnx
+*.h5
+*.tflite
+*.ckpt
+.local/share/tts/
+
+# ── Conda / pip ──
+miniconda3/
+*.whl
+
+# ── APK build artifacts ──
+*.apk
+*.idsig
+*.keystore
+*.dex
+*.class
+obj/
+gen/
+
+# ── Audio / media (user data, not code) ──
+*.wav
+*.mp3
+*.ogg
+*.flac
+*.m4a
+*.aac
+*.webm
+*.opus
+*.mp4
+*.mkv
+*.avi
+*.mov
+
+# ── Images (keep only assets/icons committed) ──
+screenshots/
+
+# ── Config with secrets (template provided) ──
+config/openclaw.json
+config/device_locations.json
+config/connection_mode.json
+
+# ── User data directories ──
+Journal/
+ARCHIVE/
+TRANSCRIPT/
+TableReads/
+voices/
+Shared/
+Incoming/
+
+# ── OS / editor ──
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# ── Tailscale APK (93 MB) ──
+mobile/tailscale.apk
+
+# ── Logs ──
+*.log
+cmd_reports.jsonl
