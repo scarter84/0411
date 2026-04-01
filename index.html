@@ -581,10 +581,6 @@ table code {
       <a href="#persona">Persona &mdash; Voice Personalities</a>
     </div>
     <div class="toc-item">
-      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">12</span>
-      <a href="#messaging">Signal &amp; Discord Integration</a>
-    </div>
-    <div class="toc-item">
       <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">11</span>
       <a href="#smartthings">SmartThings IoT Control</a>
     </div>
@@ -635,15 +631,15 @@ table code {
   </p>
 
   <div class="screenshot-container">
-    <img src="manual_assets/whim_sessions_tab.png" alt="Whim Desktop — Sessions Tab">
-    <div class="screenshot-caption">Whim desktop application showing the Sessions tab with all 14 module tabs visible across the header.</div>
+    <img src="manual_assets/desktop_whimai_tab_v2.png" alt="Whim Desktop — Whim.AI Tab">
+    <div class="screenshot-caption">Whim desktop application showing the Whim.AI console with all module tabs visible across the header.</div>
   </div>
 
   <h3>Key Highlights</h3>
   <div class="feature-grid">
     <div class="feature-card">
-      <div class="fc-title">18 Module Tabs (2 Rows)</div>
-      <div class="fc-desc">Chat, Whim.AI, SmartThings, Sys Status, AVR Lab, Voice Engine, Live, TRV Cipher, Library | Archive, Discord, Signal, RyvenCore, Ryven Editor, Sessions, Events/Debug, <strong>Settings</strong></div>
+      <div class="fc-title">11 Module Tabs (2 Rows)</div>
+      <div class="fc-desc">Chat, Whim.AI, SmartThings, AVR Lab, Voice Engine, Live, TRV Cipher, Library, Archive, Persona, <strong>Settings</strong></div>
     </div>
     <div class="feature-card">
       <div class="fc-title">Mobile Companion</div>
@@ -748,12 +744,6 @@ table code {
         <td>Local LLM inference (streaming chat completions)</td>
       </tr>
       <tr>
-        <td>Signal CLI</td>
-        <td>HTTP</td>
-        <td>8080</td>
-        <td>Signal messenger send/receive via signal-cli</td>
-      </tr>
-      <tr>
         <td>ADB</td>
         <td>USB / TCP</td>
         <td>5555</td>
@@ -785,7 +775,7 @@ table code {
 
   <h3>Two-Row Tab Layout</h3>
   <p>
-    All 17 module tabs are split across two rows for better visibility and click targets. Row 1 contains the primary workflow tabs (Chat through TRV Cipher). Row 2 contains utility and configuration tabs (Library through Settings). The active tab is highlighted in green with a border accent. Tabs are button-based with hover effects.
+    All 11 module tabs are split across two rows for better visibility and click targets. Row 1 contains the primary workflow tabs (Chat through TRV Cipher). Row 2 contains utility and configuration tabs (Library through Settings). The active tab is highlighted in green with a border accent. Tabs are button-based with hover effects.
   </p>
 </section>
 
@@ -800,6 +790,17 @@ table code {
     Whim organizes its functionality into 14 dedicated tabs, each serving a specific domain within the ecosystem.
   </p>
 
+  <div class="screenshot-row">
+    <div class="screenshot-container">
+      <img src="manual_assets/desktop_chat_tab_v2.png" alt="Whim Desktop — Chat Tab">
+      <div class="screenshot-caption">CHAT tab — Direct command-line chat with the OpenClaw gateway, real-time WebSocket traffic view.</div>
+    </div>
+    <div class="screenshot-container">
+      <img src="manual_assets/desktop_library_tab.png" alt="Whim Desktop — Library Tab">
+      <div class="screenshot-caption">LIBRARY tab — Shared files across devices with upload, download, preview, and folder management.</div>
+    </div>
+  </div>
+
   <table>
     <thead>
       <tr>
@@ -812,19 +813,16 @@ table code {
       <tr><td><span class="badge badge-green">CHAT</span></td><td>chat</td><td>Direct command-line chat with the OpenClaw gateway. Send messages, abort tasks, view real-time WebSocket traffic.</td></tr>
       <tr><td><span class="badge badge-green">WHIM.AI</span></td><td>whimai</td><td>Full AI console with local Ollama LLM, presets, observability, context metering, tool trace, output templates, and capture tools.</td></tr>
       <tr><td><span class="badge badge-blue">SMARTTHINGS</span></td><td>smartthings</td><td>Samsung SmartThings device browser with scan, filter, favorites, device detail, and recently-controlled history.</td></tr>
-      <tr><td><span class="badge badge-blue">SESSIONS</span></td><td>sessions</td><td>Active OpenClaw session manager with auto-refresh, presets, crash recovery, and Notion integration.</td></tr>
       <tr><td><span class="badge badge-blue">PRESENCE</span></td><td>presence</td><td>Real-time presence tracking of connected clients, heartbeat pings, and online status dashboard.</td></tr>
       <tr><td><span class="badge badge-orange">AVR LAB</span></td><td>xtts</td><td>XTTS v2 voice synthesis lab with speaker references, spectrogram visualization, and Table Reads output.</td></tr>
       <tr><td><span class="badge badge-orange">VOICE ENGINE</span></td><td>voice_engine</td><td>Wake word tuning: live spectrogram (Whim-Scope), gain/HPF/AGC/parametric EQ, sensitivity, VAD, spectral subtraction, confidence ghost bar, intelligibility band.</td></tr>
       <tr><td><span class="badge badge-orange">PERSONA</span></td><td>persona</td><td>Voice personality manager: coined response playlists per voice clone, confidence-gated, context-aware, XTTS pre-render pipeline, behavioral categories.</td></tr>
-      <tr><td><span class="badge badge-orange">SIGNAL</span></td><td>signal</td><td>Signal messenger integration for sending/receiving messages, managing contacts, and viewing conversation history.</td></tr>
+
       <tr><td><span class="badge badge-orange">TRV CIPHER</span></td><td>hearmeout</td><td>Audio transcription workstation with spectrogram, playback transport, Whisper transcription, ODT export, and scrub tools.</td></tr>
       <tr><td><span class="badge badge-yellow">ARCHIVE</span></td><td>archive</td><td>Rich text editor with formatting toolbar, font selection, alignment, bullet lists, find/replace, word count, and file browser.</td></tr>
-      <tr><td><span class="badge badge-yellow">DISCORD</span></td><td>discord</td><td>Discord bot management with desktop launch/stop, OpenClaw bot config, action toggles, and channel management.</td></tr>
-      <tr><td><span class="badge badge-red">RYVENCORE</span></td><td>ryvencore</td><td>Visual node-based programming environment (RyvenCore integration).</td></tr>
-      <tr><td><span class="badge badge-red">RYVEN EDITOR</span></td><td>ryven_editor</td><td>Advanced Ryven flow editor for building visual automation pipelines.</td></tr>
+
       <tr><td><span class="badge badge-blue">SS</span></td><td>ss</td><td>Screen share server with QR code, phone camera feed, desktop preview, FPS/quality settings, and MJPEG streaming.</td></tr>
-      <tr><td><span class="badge badge-yellow">EVENTS/DEBUG</span></td><td>events</td><td>Structured event log with module/level/session/request filtering, regex search, saved queries, and JSON/text export.</td></tr>
+
       <tr><td><span class="badge badge-yellow">SETTINGS</span></td><td>settings</td><td>API keys &amp; endpoints (Ollama, OpenAI, SmartThings, Notion), model management (pull/delete from Ollama), app preferences, theme, paths.</td></tr>
     </tbody>
   </table>
@@ -839,7 +837,7 @@ table code {
   </div>
 
   <div class="screenshot-container">
-    <img src="manual_assets/whimai_console.png" alt="Whim.AI Console">
+    <img src="manual_assets/desktop_whimai_tab_v2.png" alt="Whim.AI Console">
     <div class="screenshot-caption">The Whim.AI console showing the AI chat panel, presets, observability metrics, and tool command reference.</div>
   </div>
 
@@ -907,10 +905,6 @@ table code {
     <div class="feature-card">
       <div class="fc-title">Voice &amp; Media</div>
       <div class="fc-desc">record, transcribe, tts, playback, scrub</div>
-    </div>
-    <div class="feature-card">
-      <div class="fc-title">Signal / Discord</div>
-      <div class="fc-desc">sig.send, sig.recv, sig.contacts, disc.send, disc.react, disc.search</div>
     </div>
     <div class="feature-card">
       <div class="fc-title">Archive &amp; Files</div>
@@ -1354,6 +1348,12 @@ sudo systemctl status whim-tunnel.service</div>
   </div>
 
   <h3>AVR Lab (XTTS Voice Synthesis)</h3>
+
+  <div class="screenshot-container">
+    <img src="manual_assets/desktop_avrlab_tab.png" alt="Whim Desktop — AVR Lab Tab">
+    <div class="screenshot-caption">AVR Lab — XTTS v2 voice synthesis with speaker references, spectrogram visualization, and Table Reads output.</div>
+  </div>
+
   <p>
     The AVR Lab tab provides text-to-speech synthesis using Coqui XTTS v2 running in a dedicated conda environment (<code>xtts</code>).
   </p>
@@ -1365,6 +1365,12 @@ sudo systemctl status whim-tunnel.service</div>
   </ul>
 
   <h3>TRV Cipher (Hear Me Out)</h3>
+
+  <div class="screenshot-container">
+    <img src="manual_assets/desktop_trvcipher_tab.png" alt="Whim Desktop — TRV Cipher Tab">
+    <div class="screenshot-caption">TRV Cipher — Audio transcription workstation with file browser, spectrogram, playback transport, and transcript export.</div>
+  </div>
+
   <p>
     The TRV Cipher tab is a complete audio transcription workstation:
   </p>
@@ -1399,6 +1405,12 @@ sudo systemctl status whim-tunnel.service</div>
     <span class="sec-num">10</span>
     <h2>Voice Engine &mdash; Wake Word Tuning</h2>
   </div>
+
+  <div class="screenshot-container">
+    <img src="manual_assets/desktop_voiceengine_tab.png" alt="Whim Desktop — Voice Engine Tab">
+    <div class="screenshot-caption">Voice Engine — Real-time Whim-Scope spectrogram, gain/noise floor controls, wake word sensitivity tuning, and hardware optimization.</div>
+  </div>
+
   <p>
     The VOICE ENGINE tab is a dedicated audio diagnostics and wake word calibration environment built for use in noisy environments such as vehicles, outdoor settings, or anywhere ambient noise interferes with "Hey Whim" detection. It provides a real-time spectrogram, signal processing controls, and wake word sensitivity tuning &mdash; all in a three-column layout.
   </p>
@@ -1485,6 +1497,12 @@ sudo systemctl status whim-tunnel.service</div>
     <span class="sec-num">11</span>
     <h2>Persona &mdash; Voice Personalities</h2>
   </div>
+
+  <div class="screenshot-container">
+    <img src="manual_assets/desktop_persona_tab.png" alt="Whim Desktop — Persona Tab">
+    <div class="screenshot-caption">Persona — Voice personality manager with coined response playlists, confidence-gated selection, and XTTS pre-render pipeline.</div>
+  </div>
+
   <p>
     The PERSONA tab is a voice personality manager that treats coined responses like playlists. Each voice clone (MillyAI, Revy, future voices) gets its own persona profile with a curated set of responses organized by behavioral situation. When Whim needs to respond to a trigger &mdash; wake word, command acknowledgment, error, idle chatter &mdash; it pulls from that persona's playlist instead of generating a generic response.
   </p>
@@ -1538,53 +1556,6 @@ sudo systemctl status whim-tunnel.service</div>
   </div>
 </section>
 
-<!-- ==================== 12 MESSAGING ==================== -->
-<section class="section" id="messaging">
-  <div class="section-header">
-    <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">10</span>
-    <h2>Signal &amp; Discord Integration</h2>
-  </div>
-
-  <h3>Signal on the Phone</h3>
-  <div class="phone-screenshot-row">
-    <div class="screenshot-container">
-      <img src="manual_assets/phone_signal_chat1.jpg" alt="Signal Chat 1">
-      <div class="screenshot-caption">Signal messenger on Samsung phone showing an active conversation linked to the Whim ecosystem</div>
-    </div>
-    <div class="screenshot-container">
-      <img src="manual_assets/phone_signal_chat2.jpg" alt="Signal Chat 2">
-      <div class="screenshot-caption">Signal conversation thread on the phone demonstrating the bridge between mobile messaging and desktop Whim</div>
-    </div>
-  </div>
-
-  <h3>Signal Messenger</h3>
-  <p>
-    Whim integrates with Signal via signal-cli running as a local HTTP service:
-  </p>
-  <ul>
-    <li><strong>Account:</strong> Linked phone number for sending/receiving</li>
-    <li><strong>HTTP Endpoint:</strong> <code>http://127.0.0.1:8080</code></li>
-    <li><strong>Features:</strong> Send messages (sig.send), receive messages (sig.recv), list contacts (sig.contacts)</li>
-    <li><strong>Desktop App:</strong> Signal Desktop can be launched from <code>/opt/Signal/signal-desktop</code></li>
-    <li><strong>DM Policy:</strong> Pairing mode for direct messages</li>
-    <li><strong>Group Policy:</strong> Open for group messages</li>
-  </ul>
-
-  <h3>Discord (OpenClaw Bot)</h3>
-  <p>
-    The Discord tab manages the OpenClaw bot (Enoch persona) with full action control:
-  </p>
-  <ul>
-    <li><strong>Desktop Launch:</strong> Start/stop Discord desktop client from <code>/usr/share/discord/Discord</code></li>
-    <li><strong>Bot Config:</strong> View and edit OpenClaw bot configuration from <code>openclaw.json</code></li>
-    <li><strong>Action Toggles:</strong> Individual switches for reactions, stickers, emoji uploads, sticker uploads, messages, search, channel info, voice status, moderation, and presence</li>
-    <li><strong>Voice TTS:</strong> Text-to-speech model overrides for Discord voice channels</li>
-    <li><strong>Heartbeat:</strong> Show OK heartbeat status</li>
-    <li><strong>Group Policy:</strong> Open access for all guilds</li>
-  </ul>
-</section>
-
 <!-- ==================== 11 SMARTTHINGS ==================== -->
 <section class="section" id="smartthings">
   <div class="section-header">
@@ -1595,6 +1566,11 @@ sudo systemctl status whim-tunnel.service</div>
   <p>
     The SmartThings tab provides a complete dashboard for Samsung SmartThings device management via the OpenClaw gateway.
   </p>
+
+  <div class="screenshot-container">
+    <img src="manual_assets/desktop_smartthings_tab_v2.png" alt="Whim Desktop — SmartThings Tab">
+    <div class="screenshot-caption">SmartThings tab — Device browser with scan, filter, favorites, device detail, and recently-controlled history.</div>
+  </div>
 
   <div class="screenshot-row">
     <div class="screenshot-container">
@@ -1622,6 +1598,12 @@ sudo systemctl status whim-tunnel.service</div>
     <span class="sec-num">12</span>
     <h2>Archive Tab Editor</h2>
   </div>
+
+  <div class="screenshot-container">
+    <img src="manual_assets/desktop_archive_tab_v2.png" alt="Whim Desktop — Archive Tab">
+    <div class="screenshot-caption">Archive — Rich text editor with formatting toolbar, file browser, changelog, and document management.</div>
+  </div>
+
   <p>
     The Archive tab is a full-featured document editor that saves files to <code>~/ARCHIVE</code>. All documents created in Whim are stored in this directory.
   </p>
@@ -1671,6 +1653,12 @@ Notes: User notes here
     <span class="sec-num">13</span>
     <h2>Screen Share System</h2>
   </div>
+
+  <div class="screenshot-container">
+    <img src="manual_assets/desktop_screenshare_tab.png" alt="Whim Desktop — Screen Share Tab">
+    <div class="screenshot-caption">Screen Share (LIVE) — Phone camera feed, desktop preview, FPS/quality settings, and QR code for phone connection.</div>
+  </div>
+
   <p>
     The SS (Screen Share) tab enables bidirectional visual communication between the desktop and mobile devices.
   </p>
@@ -1776,28 +1764,8 @@ Notes: User notes here
     <li>Connect to WebSocket URL (default: <code>ws://127.0.0.1:18789</code>)</li>
     <li>Receive challenge with nonce and timestamp</li>
     <li>Send connect request with protocol version, client info, auth token, and device signature</li>
-    <li>Enter bidirectional message loop (incoming events displayed in Events/Debug tab)</li>
+    <li>Enter bidirectional message loop</li>
   </ol>
-
-  <h3>Sessions &amp; Presence</h3>
-  <p>
-    The Sessions tab manages active OpenClaw sessions with auto-refresh, presets, crash recovery, and a Notion integration for session notes. The Presence tab shows real-time online status with heartbeat pings to each connected component.
-  </p>
-
-  <h3>Events/Debug Log</h3>
-  <p>
-    The Events/Debug tab provides a structured, filterable event log with:
-  </p>
-  <ul>
-    <li>Module filter: ALL, WS, Gateway, AVR, TRV, Signal, Discord, Whim.ai, UI, Ingest, System</li>
-    <li>Level filter: ALL, TRACE, DEBUG, INFO, WARN, ERROR</li>
-    <li>Session ID and Request ID filtering</li>
-    <li>Regex pattern search with history</li>
-    <li>Saved queries for common filters</li>
-    <li>JSON and text export</li>
-    <li>Auto-scroll toggle and pause functionality</li>
-    <li>Maximum 5000 entries with automatic cleanup</li>
-  </ul>
 </section>
 
 <!-- ==================== 16 SETTINGS ==================== -->
@@ -1807,6 +1775,12 @@ Notes: User notes here
     <span class="sec-num">16</span>
     <h2>Settings Tab</h2>
   </div>
+
+  <div class="screenshot-container">
+    <img src="manual_assets/desktop_settings_tab.png" alt="Whim Desktop — Settings Tab">
+    <div class="screenshot-caption">Settings — API keys &amp; endpoints, Ollama model management (pull/delete), app preferences, theme, and configured paths.</div>
+  </div>
+
   <p>
     The SETTINGS tab provides a three-column configuration panel for managing API keys, LLM models, and application preferences. All settings persist to <code>~/.openclaw/whim_settings.json</code>.
   </p>
@@ -1926,7 +1900,7 @@ Notes: User notes here
       <tr><td>Voice Synthesis</td><td>Coqui XTTS v2 (conda env: xtts)</td></tr>
       <tr><td>Transcription</td><td>OpenAI Whisper</td></tr>
       <tr><td>Networking</td><td>Reverse SSH tunnel via VPS (autossh + systemd)</td></tr>
-      <tr><td>Messaging</td><td>signal-cli (Signal) + discord.py/nextcord (Discord)</td></tr>
+
       <tr><td>IoT</td><td>Samsung SmartThings via OpenClaw gateway</td></tr>
       <tr><td>Android</td><td>ADB + Android SDK command-line tools</td></tr>
       <tr><td>Screen Capture</td><td>mss (Python)</td></tr>
@@ -1964,8 +1938,7 @@ Notes: User notes here
   <ul>
     <li>Model providers and fallback chains</li>
     <li>Gateway mode, auth tokens, and control UI settings</li>
-    <li>Signal channel config (account, HTTP URL, auto-start, DM/group policies)</li>
-    <li>Discord channel config (bot token, action toggles, voice TTS, heartbeat)</li>
+
     <li>Command settings (native commands, skill commands, restart behavior)</li>
     <li>Tool deny lists and message acknowledgment scopes</li>
   </ul>
@@ -2003,7 +1976,7 @@ Notes: User notes here
     </tbody>
   </table>
   <p>
-    Removed .desktop overrides are backed up at <code>~/.local/share/applications/_backup_removed/</code>. Custom app entries removed include: OpenClaw, Whim ADB Portal, Control Panel, Droid, Revy Acousto, and OnlineChat webapp. System app overrides (Discord, Signal, Audacity, LibreOffice, etc.) were also removed, reverting them to default system entries.
+    Removed .desktop overrides are backed up at <code>~/.local/share/applications/_backup_removed/</code>. Custom app entries removed include: OpenClaw, Whim ADB Portal, Control Panel, Droid, Revy Acousto, and OnlineChat webapp. System app overrides (Audacity, LibreOffice, etc.) were also removed, reverting them to default system entries.
   </p>
   <p>
     Additionally, all <strong>Preferences</strong> and <strong>Administration</strong> category entries (65 items) have been hidden from the start menu via <code>NoDisplay=true</code> overrides. This includes all Cinnamon settings sub-panels (Backgrounds, Themes, Keyboard, Display, etc.), system tools (Firewall, Timeshift, Driver Manager, Update Manager, etc.), and utility launchers. The main <em>System Settings</em> app remains accessible from the pinned taskbar for when settings changes are needed.
