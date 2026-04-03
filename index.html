@@ -647,7 +647,7 @@ table code {
   </p>
 
   <div class="screenshot-container">
-    <img src="manual_assets/whim_sessions_tab.png" alt="Whim Desktop — Sessions Tab">
+    <img src="manual_assets/Whimai.png" alt="Whim Desktop — Sessions Tab">
     <div class="screenshot-caption">Whim desktop application showing the Sessions tab with all 14 module tabs visible across the header.</div>
   </div>
 
@@ -837,6 +837,28 @@ table code {
       <tr><td><span class="badge badge-yellow">SETTINGS</span></td><td>settings</td><td>API keys &amp; endpoints (Ollama, OpenAI, SmartThings, Notion), model management (pull/delete from Ollama), app preferences, theme, paths.</td></tr>
     </tbody>
   </table>
+
+  <h3>Desktop Tab Screenshots</h3>
+  <div class="screenshot-row">
+    <div class="screenshot-container">
+      <img src="manual_assets/Chat.png" alt="Chat Desktop Tab">
+      <div class="screenshot-caption">Chat Tab</div>
+    </div>
+    <div class="screenshot-container">
+      <img src="manual_assets/LIBRARY.png" alt="Library Desktop Tab">
+      <div class="screenshot-caption">Library Tab</div>
+    </div>
+  </div>
+  <div class="screenshot-row">
+    <div class="screenshot-container">
+      <img src="manual_assets/AVRLAB.png" alt="AVR Lab Desktop Tab">
+      <div class="screenshot-caption">AVR Lab Tab</div>
+    </div>
+    <div class="screenshot-container">
+      <img src="manual_assets/TRVCIPHER.png" alt="TRV Cipher Desktop Tab">
+      <div class="screenshot-caption">TRV Cipher Tab</div>
+    </div>
+  </div>
 </section>
 
 <!-- ==================== 04 WHIM.AI ==================== -->
@@ -848,7 +870,7 @@ table code {
   </div>
 
   <div class="screenshot-container">
-    <img src="manual_assets/whimai_console.png" alt="Whim.AI Console">
+    <img src="manual_assets/Whimai.png" alt="Whim.AI Desktop Tab">
     <div class="screenshot-caption">The Whim.AI console showing the AI chat panel, presets, observability metrics, and tool command reference.</div>
   </div>
 
@@ -1358,6 +1380,10 @@ sudo systemctl status whim-tunnel.service</div>
     The VOICE ENGINE tab is a dedicated audio diagnostics and wake word calibration environment built for use in noisy environments such as vehicles, outdoor settings, or anywhere ambient noise interferes with "Hey Whim" detection. It provides a real-time spectrogram, signal processing controls, and wake word sensitivity tuning &mdash; all in a three-column layout.
   </p>
 
+  <div class="screenshot-container">
+    <img src="manual_assets/VOICEENGINE.png" alt="Voice Engine Desktop Tab">
+  </div>
+
   <h3>Whim-Scope (Live Spectrogram)</h3>
   <p>
     The top half of the tab displays a real-time frequency heatmap covering the <strong>300 Hz &ndash; 8 kHz</strong> range, driven by a 512-point Hanning FFT at 16 kHz mono. Key visual features:
@@ -1443,6 +1469,10 @@ sudo systemctl status whim-tunnel.service</div>
   <p>
     The PERSONA tab is a voice personality manager that treats coined responses like playlists. Each voice clone (MillyAI, Revy, future voices) gets its own persona profile with a curated set of responses organized by behavioral situation. When Whim needs to respond to a trigger &mdash; wake word, command acknowledgment, error, idle chatter &mdash; it pulls from that persona's playlist instead of generating a generic response.
   </p>
+
+  <div class="screenshot-container">
+    <img src="manual_assets/PERSONA.png" alt="Persona Desktop Tab">
+  </div>
 
   <h3>Three-Column Layout</h3>
   <ul>
@@ -1539,6 +1569,10 @@ sudo systemctl status whim-tunnel.service</div>
     The SmartThings tab provides a complete dashboard for Samsung SmartThings device management via the OpenClaw gateway.
   </p>
 
+  <div class="screenshot-container">
+    <img src="manual_assets/SmartThings.png" alt="SmartThings Desktop Tab">
+  </div>
+
   <div class="screenshot-row">
     <div class="screenshot-container">
       <img src="manual_assets/phone_smartthings_hub.jpg" alt="SmartThings Hub">
@@ -1568,6 +1602,10 @@ sudo systemctl status whim-tunnel.service</div>
   <p>
     The Archive tab is a full-featured document editor that saves files to <code>~/ARCHIVE</code>. All documents created in Whim are stored in this directory.
   </p>
+
+  <div class="screenshot-container">
+    <img src="manual_assets/ARCHIVE.png" alt="Archive Desktop Tab">
+  </div>
 
   <h3>Document Actions</h3>
   <ul>
@@ -1617,6 +1655,10 @@ Notes: User notes here
   <p>
     The SS (Screen Share) tab enables bidirectional visual communication between the desktop and mobile devices.
   </p>
+
+  <div class="screenshot-container">
+    <img src="manual_assets/LIVE.png" alt="Screen Share / Live Desktop Tab">
+  </div>
 
   <h3>Architecture</h3>
   <ul>
@@ -1753,6 +1795,10 @@ Notes: User notes here
   <p>
     The SETTINGS tab provides a three-column configuration panel for managing API keys, LLM models, and application preferences. All settings persist to <code>~/.openclaw/whim_settings.json</code>.
   </p>
+
+  <div class="screenshot-container">
+    <img src="manual_assets/SETTINGS.png" alt="Settings Desktop Tab">
+  </div>
 
   <h3>Column 1: API Keys &amp; Endpoints</h3>
   <table>
@@ -2198,6 +2244,10 @@ scripts/
     running on different machines (Linux + Windows). Seven sync approaches are available,
     managed through a unified engine.
   </p>
+
+  <div class="screenshot-container">
+    <img src="manual_assets/SYNC.png" alt="Multi-Terminal Sync Desktop Tab">
+  </div>
 
   <h3>Sync Approaches</h3>
   <table>
