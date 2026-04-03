@@ -529,7 +529,7 @@ table code {
   <p style="color: var(--fg-dim); font-size: 14px; margin-top: 8px;">
     The Unified Desktop &amp; Mobile Ecosystem for Voice, AI, Connectivity, and Automation
   </p>
-  <div class="version-badge">v0.3.0 &mdash; March 2026 &mdash; CARRARA Mint &mdash; Hybrid Connection</div>
+  <div class="version-badge">v0.3.3 &mdash; April 2026 &mdash; CARRARA Mint &mdash; Hybrid Connection</div>
 </header>
 
 <!-- ==================== TABLE OF CONTENTS ==================== -->
@@ -585,51 +585,51 @@ table code {
       <a href="#messaging">Signal &amp; Discord Integration</a>
     </div>
     <div class="toc-item">
-      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">13</span>
+      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">11</span>
       <a href="#smartthings">SmartThings IoT Control</a>
     </div>
     <div class="toc-item">
-      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">14</span>
-      <a href="#geof">GeoF &mdash; Geofence Tracker</a>
-    </div>
-    <div class="toc-item">
-      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">15</span>
+      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">12</span>
       <a href="#archive">Archive Tab Editor</a>
     </div>
     <div class="toc-item">
-      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">16</span>
+      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">13</span>
       <a href="#screenshare">Screen Share System</a>
     </div>
     <div class="toc-item">
-      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">17</span>
+      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">14</span>
       <a href="#adb">ADB Portal &amp; Emulator</a>
     </div>
     <div class="toc-item">
-      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">18</span>
+      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">15</span>
       <a href="#gateway">OpenClaw Gateway</a>
     </div>
     <div class="toc-item">
-      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">19</span>
+      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">16</span>
       <a href="#settingstab">Settings Tab</a>
     </div>
     <div class="toc-item">
-      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">20</span>
+      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">17</span>
       <a href="#audiocapture">Audio Capture Tool</a>
     </div>
     <div class="toc-item">
-      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">21</span>
+      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">18</span>
       <a href="#tech">Technical Stack &amp; Config</a>
     </div>
     <div class="toc-item">
-      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">22</span>
+      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">19</span>
       <a href="#desktop-env">Desktop Environment Customizations</a>
     </div>
     <div class="toc-item">
-      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">23</span>
+      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">20</span>
       <a href="#windows11">Windows 11 Support</a>
     </div>
     <div class="toc-item">
-      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">24</span>
+      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">20.5</span>
+      <a href="#ios">iOS Support (Tahoe)</a>
+    </div>
+    <div class="toc-item">
+      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">21</span>
       <a href="#sync">Multi-Terminal Sync</a>
     </div>
   </div>
@@ -647,7 +647,7 @@ table code {
   </p>
 
   <div class="screenshot-container">
-    <img src="manual_assets/Whimai.png" alt="Whim Desktop — Sessions Tab">
+    <img src="manual_assets/whim_sessions_tab.png" alt="Whim Desktop — Sessions Tab">
     <div class="screenshot-caption">Whim desktop application showing the Sessions tab with all 14 module tabs visible across the header.</div>
   </div>
 
@@ -659,7 +659,7 @@ table code {
     </div>
     <div class="feature-card">
       <div class="fc-title">Mobile Companion</div>
-      <div class="fc-desc">Whim.m v3.1 provides a five-tab mobile experience (REC, LIBRARY, CHAT, WAKE, DEVICES) with voice recording, AI chat, wake word commands, cross-device file sharing, and inter-device messaging &mdash; accessible over LAN or VPS reverse SSH tunnel.</div>
+      <div class="fc-desc">Whim.m v3.3 provides a five-tab mobile experience (REC, LIBRARY, CHAT, WAKE, DEVICES) with voice recording, AI chat, wake word commands, cross-device file sharing, and inter-device messaging &mdash; accessible over LAN or VPS reverse SSH tunnel. Runs on Samsung Galaxy S22, Galaxy S9, and Lenovo TB311FU tablet.</div>
     </div>
     <div class="feature-card">
       <div class="fc-title">Local-First AI</div>
@@ -745,13 +745,13 @@ table code {
         <td>SSH Tunnel (autossh)</td>
         <td>Reverse SSH via VPS</td>
         <td>8089</td>
-        <td>Primary: secure cross-network connectivity via VPS at YOUR_VPS_IP</td>
+        <td>Primary: secure cross-network connectivity via VPS at 104.207.140.242</td>
       </tr>
       <tr>
         <td>Tailscale (fallback)</td>
         <td>WireGuard mesh VPN</td>
         <td>8089</td>
-        <td>Fallback: direct connection via Tailscale IP YOUR_TAILSCALE_PC_IP, handles WiFi&harr;cellular handoffs</td>
+        <td>Fallback: direct connection via Tailscale IP 100.69.17.20, handles WiFi&harr;cellular handoffs</td>
       </tr>
       <tr>
         <td>Ollama</td>
@@ -824,47 +824,20 @@ table code {
       <tr><td><span class="badge badge-green">CHAT</span></td><td>chat</td><td>Direct command-line chat with the OpenClaw gateway. Send messages, abort tasks, view real-time WebSocket traffic.</td></tr>
       <tr><td><span class="badge badge-green">WHIM.AI</span></td><td>whimai</td><td>Full AI console with local Ollama LLM, presets, observability, context metering, tool trace, output templates, and capture tools.</td></tr>
       <tr><td><span class="badge badge-blue">SMARTTHINGS</span></td><td>smartthings</td><td>Samsung SmartThings device browser with scan, filter, favorites, device detail, and recently-controlled history.</td></tr>
-      <tr><td><span class="badge badge-blue">SESSIONS</span></td><td>sessions</td><td>Active OpenClaw session manager with auto-refresh, presets, crash recovery, and Notion integration.</td></tr>
-      <tr><td><span class="badge badge-blue">PRESENCE</span></td><td>presence</td><td>Real-time presence tracking of connected clients, heartbeat pings, and online status dashboard.</td></tr>
+
       <tr><td><span class="badge badge-orange">AVR LAB</span></td><td>xtts</td><td>XTTS v2 voice synthesis lab with speaker references, spectrogram visualization, and Table Reads output.</td></tr>
       <tr><td><span class="badge badge-orange">VOICE ENGINE</span></td><td>voice_engine</td><td>Wake word tuning: live spectrogram (Whim-Scope), gain/HPF/AGC/parametric EQ, sensitivity, VAD, spectral subtraction, confidence ghost bar, intelligibility band.</td></tr>
       <tr><td><span class="badge badge-orange">PERSONA</span></td><td>persona</td><td>Voice personality manager: coined response playlists per voice clone, confidence-gated, context-aware, XTTS pre-render pipeline, behavioral categories.</td></tr>
-      <tr><td><span class="badge badge-orange">SIGNAL</span></td><td>signal</td><td>Signal messenger integration for sending/receiving messages, managing contacts, and viewing conversation history.</td></tr>
+
       <tr><td><span class="badge badge-orange">TRV CIPHER</span></td><td>hearmeout</td><td>Audio transcription workstation with spectrogram, playback transport, Whisper transcription, ODT export, and scrub tools.</td></tr>
-      <tr><td><span class="badge badge-green">GEOF</span></td><td>geof</td><td>Geofence tracker with canvas map, collar status table, LoRa bridge integration, 20-minute heartbeat monitor, and fence pin management for livestock tracking.</td></tr>
       <tr><td><span class="badge badge-yellow">ARCHIVE</span></td><td>archive</td><td>Rich text editor with formatting toolbar, font selection, alignment, bullet lists, find/replace, word count, and file browser.</td></tr>
-      <tr><td><span class="badge badge-yellow">DISCORD</span></td><td>discord</td><td>Discord bot management with desktop launch/stop, OpenClaw bot config, action toggles, and channel management.</td></tr>
-      <tr><td><span class="badge badge-red">RYVENCORE</span></td><td>ryvencore</td><td>Visual node-based programming environment (RyvenCore integration).</td></tr>
-      <tr><td><span class="badge badge-red">RYVEN EDITOR</span></td><td>ryven_editor</td><td>Advanced Ryven flow editor for building visual automation pipelines.</td></tr>
+
       <tr><td><span class="badge badge-blue">SS</span></td><td>ss</td><td>Screen share server with QR code, phone camera feed, desktop preview, FPS/quality settings, and MJPEG streaming.</td></tr>
-      <tr><td><span class="badge badge-yellow">EVENTS/DEBUG</span></td><td>events</td><td>Structured event log with module/level/session/request filtering, regex search, saved queries, and JSON/text export.</td></tr>
+
       <tr><td><span class="badge badge-yellow">SETTINGS</span></td><td>settings</td><td>API keys &amp; endpoints (Ollama, OpenAI, SmartThings, Notion), model management (pull/delete from Ollama), app preferences, theme, paths.</td></tr>
     </tbody>
   </table>
 </section>
-
-
-  <h3>Desktop Tab Screenshots</h3>
-  <div class="screenshot-row">
-    <div class="screenshot-container">
-      <img src="manual_assets/Chat.png" alt="Chat Desktop Tab">
-      <div class="screenshot-caption">Chat Tab</div>
-    </div>
-    <div class="screenshot-container">
-      <img src="manual_assets/LIBRARY.png" alt="Library Desktop Tab">
-      <div class="screenshot-caption">Library Tab</div>
-    </div>
-  </div>
-  <div class="screenshot-row">
-    <div class="screenshot-container">
-      <img src="manual_assets/AVRLAB.png" alt="AVR Lab Desktop Tab">
-      <div class="screenshot-caption">AVR Lab Tab</div>
-    </div>
-    <div class="screenshot-container">
-      <img src="manual_assets/TRVCIPHER.png" alt="TRV Cipher Desktop Tab">
-      <div class="screenshot-caption">TRV Cipher Tab</div>
-    </div>
-  </div>
 
 <!-- ==================== 04 WHIM.AI ==================== -->
 <section class="section" id="whimai">
@@ -875,7 +848,7 @@ table code {
   </div>
 
   <div class="screenshot-container">
-    <img src="manual_assets/Whimai.png" alt="Whim.AI Desktop Tab">
+    <img src="manual_assets/whimai_console.png" alt="Whim.AI Console">
     <div class="screenshot-caption">The Whim.AI console showing the AI chat panel, presets, observability metrics, and tool command reference.</div>
   </div>
 
@@ -964,127 +937,73 @@ table code {
   </div>
 
   <p>
-    Whim.m v3.2 is a full-featured mobile companion app served as a native APK or Progressive Web App (PWA) from either the desktop Whim app or a standalone Python server. It provides voice recording, AI chat (via Ollama proxy), wake word voice commands, a cross-device file library, and inter-device messaging &mdash; all organized into five dedicated bottom navigation tabs: <strong>REC</strong>, <strong>LIBRARY</strong>, <strong>CHAT</strong>, <strong>WAKE</strong>, and <strong>DEVICES</strong>. The app uses a hybrid connection strategy: VPS tunnel by default with Tailscale as an opt-in fallback, switchable from a dropdown in the mobile UI or from the desktop Control Panel.
+    Whim.m v3.3 is a full-featured mobile companion app served as a native APK or Progressive Web App (PWA) from either the desktop Whim app or a standalone Python server. It provides voice recording, AI chat (via Ollama proxy), wake word voice commands, a cross-device file library, and inter-device messaging &mdash; all organized into five dedicated bottom navigation tabs: <strong>REC</strong>, <strong>LIBRARY</strong>, <strong>CHAT</strong>, <strong>WAKE</strong>, and <strong>DEVICES</strong>. A persistent "Listening for Hey Whim" banner runs across the top of every tab, giving always-on wake word access regardless of which tab is active. The app uses a hybrid connection strategy: VPS tunnel by default with Tailscale as an opt-in fallback, switchable from a dropdown in the mobile UI or from the desktop Control Panel.
   </p>
 
-  <h3>v3.2 &mdash; Four-Tab Navigation</h3>
+  <h3>v3.3 &mdash; Five-Tab Navigation</h3>
 
+  <h3>Lenovo Tablet (TB311FU)</h3>
   <div class="phone-screenshot-row">
     <div class="screenshot-container">
-      <img src="manual_assets/phone_rec_tab.jpg" alt="Whim.m REC Tab">
-      <div class="screenshot-caption">REC tab &mdash; Whim.m v3.2 with record button, EXPORT TO WHIM, file list with play buttons, and status bar showing server/nic/ollama indicators</div>
+      <img src="manual_assets/tablet_rec_tab.png" alt="Whim.m REC Tab — Lenovo Tablet">
+      <div class="screenshot-caption">REC tab (Lenovo Tablet) &mdash; Whim.m v3.3 with record button, EXPORT TO WHIM, SENT TO WHIM file list, "Listening for Hey Whim" banner, and five-tab bottom navigation (REC, LIBRARY, CHAT, WAKE)</div>
     </div>
     <div class="screenshot-container">
-      <img src="manual_assets/phone_library_tab.jpg" alt="Whim.m Library Tab">
-      <div class="screenshot-caption">LIBRARY tab &mdash; Shared files across devices with "Pick from Gallery / Screenshots" and "Upload any file to library"</div>
+      <img src="manual_assets/tablet_library_tab.png" alt="Whim.m LIBRARY Tab — Lenovo Tablet">
+      <div class="screenshot-caption">LIBRARY tab (Lenovo Tablet) &mdash; Shared files across devices with "Pick from Gallery / Screenshots" and "Upload any file to library", persistent wake word banner</div>
     </div>
     <div class="screenshot-container">
-      <img src="manual_assets/phone_chat_tab.jpg" alt="Whim.m Chat Tab">
-      <div class="screenshot-caption">CHAT tab &mdash; Device Chat for talking between your devices with message input and attachment button</div>
+      <img src="manual_assets/tablet_chat_tab.png" alt="Whim.m CHAT Tab — Lenovo Tablet">
+      <div class="screenshot-caption">CHAT tab (Lenovo Tablet) &mdash; Device Chat for inter-device messaging with "Message all devices..." input, attachment button, and Send</div>
     </div>
   </div>
 
   <div class="phone-screenshot-row">
     <div class="screenshot-container">
-      <img src="manual_assets/phone_wake_tab.jpg" alt="Whim.m Wake Tab">
-      <div class="screenshot-caption">WAKE tab &mdash; Wake Word "Hey Whim" listening mode with microphone, voice chat using MillyAl voice, and text input</div>
+      <img src="manual_assets/tablet_wake_tab.png" alt="Whim.m WAKE Tab — Lenovo Tablet">
+      <div class="screenshot-caption">WAKE tab (Lenovo Tablet) &mdash; Wake Word "Hey Whim" with live waveform visualization, voice profile indicator, VOICE CHAT input, and microphone listening state</div>
     </div>
     <div class="screenshot-container">
-      <img src="manual_assets/phone_whimai_chat_v3.jpg" alt="Whim.ai Chat Screen">
-      <div class="screenshot-caption">Whim.ai standalone chat screen powered by Llama + OpenClaw with "Welcome. Ask me anything." prompt</div>
+      <img src="manual_assets/tablet_whimai_welcome.png" alt="Whim.ai Welcome — Lenovo Tablet">
+      <div class="screenshot-caption">Whim.ai welcome screen (Lenovo Tablet) &mdash; "Welcome. Ask me anything." with Send button, powered by Llama + OpenClaw</div>
     </div>
     <div class="screenshot-container">
-      <img src="manual_assets/phone_rec_tab_files.jpg" alt="Whim.m REC Tab File List">
-      <div class="screenshot-caption">REC tab showing the SENT TO WHIM file list with recordings (RevyMillyA.mp3, MillyAl.mp3, .webm recordings) and status bar indicators</div>
+      <img src="manual_assets/tablet_whimai_chat.png" alt="Whim.ai Chat — Lenovo Tablet">
+      <div class="screenshot-caption">Whim.ai chat (Lenovo Tablet) &mdash; AI conversation interface with keyboard open, "Ask anything..." prompt, and on-screen keyboard</div>
     </div>
   </div>
 
-  <h3>Wake Word Voice Commands</h3>
-
+  <h3>Samsung Galaxy S22</h3>
   <div class="phone-screenshot-row">
     <div class="screenshot-container">
-      <img src="manual_assets/phone_wake_open_maps.jpg" alt="Wake Word — Open Organic Maps">
-      <div class="screenshot-caption">Voice command: "Hey whim open organic maps application" &mdash; responds with whim-cmd {"action":"open_maps","params":{}} and generates voice reply via MillyAl</div>
+      <img src="manual_assets/phone_whim_m_connecting.jpg" alt="Whim.m Connecting — S22">
+      <div class="screenshot-caption">Whim.m splash screen (S22) &mdash; "Connecting to Whim..." with animated logo and Tailscale endpoint</div>
     </div>
     <div class="screenshot-container">
-      <img src="manual_assets/phone_wake_open_app.jpg" alt="Wake Word — Open App on Device">
-      <div class="screenshot-caption">Voice command: "Hey whim open organic maps application on this device" &mdash; responds with whim-cmd {"action":"open_app","params":...} for direct on-device launch</div>
+      <img src="manual_assets/phone_rec_tab_v3.jpg" alt="Whim.m REC Tab — S22">
+      <div class="screenshot-caption">REC tab (S22) &mdash; Voice recorder with timer, EXPORT TO WHIM, file list with playback buttons, and status bar indicators</div>
     </div>
     <div class="screenshot-container">
-      <img src="manual_assets/phone_wake_youtube_music.jpg" alt="Wake Word — Open YouTube Music">
-      <div class="screenshot-caption">Voice command: "Hey whim open youtube music on this device" &mdash; responds with whim-cmd {"action":"play_music","params":{"query":""}} to launch YouTube Music</div>
-    </div>
-  </div>
-
-  <h3>Known Issue &mdash; geo: URL Scheme</h3>
-  <div class="screenshot-row">
-    <div class="screenshot-container">
-      <img src="manual_assets/phone_maps_url_error.jpg" alt="geo: URL Scheme Error">
-      <div class="screenshot-caption">The geo:0,0?q= URL scheme triggers a "Webpage not available" error (net::ERR_UNKNOWN_URL_SCHEME) in the WebView. Use the "on this device" phrasing to launch apps directly via intent instead.</div>
-    </div>
-  </div>
-
-  <h3>Previous Versions</h3>
-
-  <div class="phone-screenshot-row">
-    <div class="screenshot-container">
-      <img src="manual_assets/whim_m_loading.jpg" alt="Whim.m Loading">
-      <div class="screenshot-caption">Whim.m loading on Samsung phone</div>
-    </div>
-    <div class="screenshot-container">
-      <img src="manual_assets/whim_m_failedload.jpg" alt="Whim.m Connection State">
-      <div class="screenshot-caption">Whim.m showing connection status indicators</div>
-    </div>
-    <div class="screenshot-container">
-      <img src="manual_assets/whim_app_icon.png" alt="Whim Application Icon">
-      <div class="screenshot-caption">Whim application icon</div>
+      <img src="manual_assets/phone_whimai_welcome_v3.jpg" alt="Whim.ai Welcome — S22">
+      <div class="screenshot-caption">Whim.ai welcome screen (S22) &mdash; "Welcome. Ask me anything." with Screen Share and location FABs</div>
     </div>
   </div>
 
   <div class="phone-screenshot-row">
     <div class="screenshot-container">
-      <img src="manual_assets/phone_whim_apk_connecting.jpg" alt="Whim APK Connecting">
-      <div class="screenshot-caption">Whim.m APK splash screen connecting to the desktop via VPS tunnel (YOUR_VPS_IP:8089)</div>
+      <img src="manual_assets/phone_whimai_chat_v3.jpg" alt="Whim.ai Chat — S22">
+      <div class="screenshot-caption">Whim.ai live chat (S22) &mdash; AI conversation with desktop app query, crab avatar, and detailed response</div>
     </div>
     <div class="screenshot-container">
-      <img src="manual_assets/phone_whim_m_recorder.jpg" alt="Whim.m">
-      <div class="screenshot-caption">Whim.m in action with 00:23 timer, "EXPORT TO WHIM" button, and list of sent recordings</div>
-    </div>
-    <div class="screenshot-container">
-      <img src="manual_assets/phone_whimai_welcome.jpg" alt="Whim.ai Welcome">
-      <div class="screenshot-caption">Whim.ai mobile chat overlay showing the welcome screen with Screen Share and location FABs</div>
-    </div>
-  </div>
-
-  <div class="phone-screenshot-row">
-    <div class="screenshot-container">
-      <img src="manual_assets/phone_whimai_chat.jpg" alt="Whim.ai Chat Conversation">
-      <div class="screenshot-caption">Whim.ai on phone showing a live AI conversation powered by Llama + OpenClaw with the crab avatar</div>
-    </div>
-    <div class="screenshot-container">
-      <img src="manual_assets/phone_chrome_whim1.jpg" alt="Whim in Chrome">
-      <div class="screenshot-caption">Whim.m accessed via Chrome browser on Samsung phone</div>
-    </div>
-    <div class="screenshot-container">
-      <img src="manual_assets/phone_chrome_whim2.jpg" alt="Whim in Chrome 2">
-      <div class="screenshot-caption">Whim.m PWA interface loaded through Chrome on phone</div>
-    </div>
-  </div>
-
-  <div class="phone-screenshot-row">
-    <div class="screenshot-container">
-      <img src="manual_assets/phone_whim_m_recorder.jpg" alt="Whim.m">
-      <div class="screenshot-caption">Whim.m with waveform, timer, export, and file list with playback</div>
-    </div>
-    <div class="screenshot-container">
-      <img src="manual_assets/phone_ss_desktop.jpg" alt="Screen Share — Phone Camera to Desktop">
-      <div class="screenshot-caption">Whim SS (Screen Share) showing phone camera feed to the desktop via MJPEG stream</div>
+      <img src="manual_assets/phone_tailscale_devices_v3.jpg" alt="Tailscale Devices — S22">
+      <div class="screenshot-caption">Tailscale mesh network &mdash; showing michaels-s22 and carraramint devices connected under the Whim Tailscale network</div>
     </div>
   </div>
 
   <h3>Features</h3>
   <ul>
-    <li><strong>Four-Tab Navigation</strong> &mdash; Bottom navigation bar with REC, LIBRARY, CHAT, and WAKE tabs for organized access to all features</li>
+    <li><strong>Five-Tab Navigation</strong> &mdash; Bottom navigation bar with REC, LIBRARY, CHAT, WAKE, and DEVICES tabs for organized access to all features</li>
+    <li><strong>Persistent Wake Word Banner</strong> &mdash; "Listening for Hey Whim" banner visible across all tabs, providing always-on voice activation without switching to the WAKE tab</li>
     <li><strong>Voice Recorder (REC)</strong> &mdash; Tap-to-record with real-time timer display, WebM/Opus encoding, and per-file playback buttons</li>
     <li><strong>Export to Whim</strong> &mdash; One-tap upload of recordings to the desktop ~/Journal directory with progress bar</li>
     <li><strong>File Picker</strong> &mdash; Choose existing audio files (.m4a, .aac, .ogg, .opus, .flac, .wav, .mp3, .3gp, .amr) for upload</li>
@@ -1124,8 +1043,8 @@ whim-cmd {"action":"open_maps","params":{}}</div>
   <table>
     <thead><tr><th>File</th><th>Size</th><th>Description</th></tr></thead>
     <tbody>
-      <tr><td>whim_m_v3.1_phone.apk</td><td>~61 KB</td><td>WebView wrapper for phones (connects via VPS tunnel)</td></tr>
-      <tr><td>whim_m_v3.1_tablet.apk</td><td>~61 KB</td><td>WebView wrapper for tablet (connects via VPS tunnel)</td></tr>
+      <tr><td>whim_m_v3.3_phone.apk</td><td>~61 KB</td><td>WebView wrapper for phones (Samsung Galaxy S22, Galaxy S9)</td></tr>
+      <tr><td>whim_m_v3.3_tablet.apk</td><td>~61 KB</td><td>WebView wrapper for tablet (Lenovo TB311FU)</td></tr>
     </tbody>
   </table>
 </section>
@@ -1194,7 +1113,7 @@ whim-cmd {"action":"open_maps","params":{}}</div>
     <thead><tr><th>Mode</th><th>Default</th><th>How It Works</th></tr></thead>
     <tbody>
       <tr><td><strong>VPS Tunnel</strong></td><td><span class="badge badge-green">YES</span></td><td>Phone &rarr; VPS:8089 &rarr; SSH tunnel &rarr; PC:8089. Works everywhere, no VPN client needed on phone.</td></tr>
-      <tr><td><strong>Tailscale</strong></td><td><span class="badge badge-yellow">OPT-IN</span></td><td>Phone &rarr; YOUR_TAILSCALE_PC_IP:8089 direct via WireGuard mesh. Handles network transitions natively. Requires Tailscale on phone.</td></tr>
+      <tr><td><strong>Tailscale</strong></td><td><span class="badge badge-yellow">OPT-IN</span></td><td>Phone &rarr; 100.69.17.20:8089 direct via WireGuard mesh. Handles network transitions natively. Requires Tailscale on phone.</td></tr>
       <tr><td><strong>Auto-detect</strong></td><td><span class="badge badge-yellow">OPT-IN</span></td><td>On connection, checks if Tailscale IP is reachable; uses it if available, otherwise falls back to VPS tunnel.</td></tr>
     </tbody>
   </table>
@@ -1220,29 +1139,29 @@ whim-cmd {"action":"open_maps","params":{}}</div>
   <table>
     <thead><tr><th>Device</th><th>Tailscale IP</th><th>LAN IP</th></tr></thead>
     <tbody>
-      <tr><td>PC (carraramint)</td><td>YOUR_TAILSCALE_PC_IP</td><td>YOUR_LAN_PC_IP</td></tr>
-      <tr><td>Samsung Galaxy S9</td><td>YOUR_TAILSCALE_PHONE1_IP</td><td>YOUR_LAN_PHONE1_IP</td></tr>
-      <tr><td>Samsung Galaxy S22</td><td>YOUR_TAILSCALE_PHONE2_IP</td><td>&mdash;</td></tr>
-      <tr><td>Lenovo TB311FU (Tablet)</td><td>YOUR_TAILSCALE_TABLET_IP</td><td>YOUR_LAN_TABLET_IP</td></tr>
+      <tr><td>PC (carraramint)</td><td>100.69.17.20</td><td>192.168.1.231</td></tr>
+      <tr><td>Samsung Galaxy S9</td><td>100.97.96.1</td><td>192.168.1.198</td></tr>
+      <tr><td>Samsung Galaxy S22</td><td>100.77.59.2</td><td>&mdash;</td></tr>
+      <tr><td>Lenovo TB311FU (Tablet)</td><td>100.64.255.124</td><td>192.168.1.112</td></tr>
     </tbody>
   </table>
 
   <h3>How It Works</h3>
-  <div class="code-block">VPS MODE:       [Phone] &rarr; [VPS: YOUR_VPS_IP:8089] &larr; SSH tunnel &larr; [PC:8089]
-TAILSCALE MODE: [Phone] &rarr; [YOUR_TAILSCALE_PC_IP:8089] &rarr; [PC:8089] (direct WireGuard)
+  <div class="code-block">VPS MODE:       [Phone] &rarr; [VPS: 104.207.140.242:8089] &larr; SSH tunnel &larr; [PC:8089]
+TAILSCALE MODE: [Phone] &rarr; [100.69.17.20:8089] &rarr; [PC:8089] (direct WireGuard)
 AUTO MODE:      Tries Tailscale first, falls back to VPS if unreachable</div>
   <p>
     <strong>VPS Tunnel (default):</strong> The CARRARA desktop opens an outbound SSH connection to a public VPS. The VPS accepts inbound connections from mobile devices and forwards them through the tunnel back to the desktop. No ports need to be opened on the home router.
   </p>
   <p>
-    <strong>Tailscale (fallback):</strong> When enabled, phones connect directly to the PC's Tailscale IP (YOUR_TAILSCALE_PC_IP) via WireGuard mesh. This is more stable during WiFi&harr;cellular transitions because Tailscale handles NAT traversal and connection migration natively.
+    <strong>Tailscale (fallback):</strong> When enabled, phones connect directly to the PC's Tailscale IP (100.69.17.20) via WireGuard mesh. This is more stable during WiFi&harr;cellular transitions because Tailscale handles NAT traversal and connection migration natively.
   </p>
 
   <h3>Infrastructure</h3>
   <table>
     <thead><tr><th>Item</th><th>Value</th></tr></thead>
     <tbody>
-      <tr><td>VPS</td><td>YOUR_VPS_IP (Vultr)</td></tr>
+      <tr><td>VPS</td><td>104.207.140.242 (Vultr)</td></tr>
       <tr><td>Tunnel port</td><td>8089</td></tr>
       <tr><td>Service</td><td><code>whim-tunnel.service</code> (systemd, starts on boot)</td></tr>
       <tr><td>Tool</td><td>autossh (auto-reconnects on failure)</td></tr>
@@ -1257,7 +1176,7 @@ AUTO MODE:      Tries Tailscale first, falls back to VPS if unreachable</div>
     The tunnel runs as a persistent systemd service on CARRARA:
   </p>
   <div class="code-block"># Service file: /etc/systemd/system/whim-tunnel.service
-ExecStart=/usr/bin/autossh -M 0 -N -R 8089:localhost:8089 root@YOUR_VPS_IP \
+ExecStart=/usr/bin/autossh -M 0 -N -R 8089:localhost:8089 root@104.207.140.242 \
   -o "ServerAliveInterval 30" -o "ServerAliveCountMax 3"
 
 # Check status:
@@ -1302,15 +1221,15 @@ sudo systemctl status whim-tunnel.service</div>
   <p>
     When the tunnel is active, the Whim.m standalone server prints the VPS URL alongside the LAN IP:
   </p>
-  <div class="code-block">  VPS Tunnel   : http://YOUR_VPS_IP:8089
-  LAN IP       : YOUR_LAN_PC_IP
+  <div class="code-block">  VPS Tunnel   : http://104.207.140.242:8089
+  LAN IP       : 192.168.1.231
   Listening on  : 0.0.0.0:8089
-  Open on phone : http://YOUR_LAN_PC_IP:8089
-  Via VPS tunnel: http://YOUR_VPS_IP:8089</div>
+  Open on phone : http://192.168.1.231:8089
+  Via VPS tunnel: http://104.207.140.242:8089</div>
 
   <h3>Troubleshooting</h3>
   <ul>
-    <li><strong>Tunnel not connecting:</strong> <code>ssh -v -R 8089:localhost:8089 root@YOUR_VPS_IP -N</code></li>
+    <li><strong>Tunnel not connecting:</strong> <code>ssh -v -R 8089:localhost:8089 root@104.207.140.242 -N</code></li>
     <li><strong>Port in use on VPS:</strong> <code>sudo lsof -i :8089</code></li>
     <li><strong>Service status:</strong> <code>sudo systemctl status whim-tunnel.service</code></li>
     <li><strong>Restart tunnel:</strong> <code>sudo systemctl restart whim-tunnel.service</code></li>
@@ -1439,11 +1358,6 @@ sudo systemctl status whim-tunnel.service</div>
     The VOICE ENGINE tab is a dedicated audio diagnostics and wake word calibration environment built for use in noisy environments such as vehicles, outdoor settings, or anywhere ambient noise interferes with "Hey Whim" detection. It provides a real-time spectrogram, signal processing controls, and wake word sensitivity tuning &mdash; all in a three-column layout.
   </p>
 
-  <div class="screenshot-container">
-    <img src="manual_assets/VOICEENGINE.png" alt="Voice Engine Desktop Tab">
-  </div>
-
-
   <h3>Whim-Scope (Live Spectrogram)</h3>
   <p>
     The top half of the tab displays a real-time frequency heatmap covering the <strong>300 Hz &ndash; 8 kHz</strong> range, driven by a 512-point Hanning FFT at 16 kHz mono. Key visual features:
@@ -1530,11 +1444,6 @@ sudo systemctl status whim-tunnel.service</div>
     The PERSONA tab is a voice personality manager that treats coined responses like playlists. Each voice clone (MillyAI, Revy, future voices) gets its own persona profile with a curated set of responses organized by behavioral situation. When Whim needs to respond to a trigger &mdash; wake word, command acknowledgment, error, idle chatter &mdash; it pulls from that persona's playlist instead of generating a generic response.
   </p>
 
-  <div class="screenshot-container">
-    <img src="manual_assets/PERSONA.png" alt="Persona Desktop Tab">
-  </div>
-
-
   <h3>Three-Column Layout</h3>
   <ul>
     <li><strong>Column 1: VOICES</strong> &mdash; Persona selector linked to voice clones from <code>~/voices/</code>. Create, duplicate, delete personas. The active persona (starred) is what Whim uses for all responses.</li>
@@ -1588,7 +1497,7 @@ sudo systemctl status whim-tunnel.service</div>
 <section class="section" id="messaging">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">12</span>
+    <span class="sec-num">10</span>
     <h2>Signal &amp; Discord Integration</h2>
   </div>
 
@@ -1623,17 +1532,12 @@ sudo systemctl status whim-tunnel.service</div>
 <section class="section" id="smartthings">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">13</span>
+    <span class="sec-num">11</span>
     <h2>SmartThings IoT Control</h2>
   </div>
   <p>
     The SmartThings tab provides a complete dashboard for Samsung SmartThings device management via the OpenClaw gateway.
   </p>
-
-  <div class="screenshot-container">
-    <img src="manual_assets/SmartThings.png" alt="SmartThings Desktop Tab">
-  </div>
-
 
   <div class="screenshot-row">
     <div class="screenshot-container">
@@ -1654,152 +1558,16 @@ sudo systemctl status whim-tunnel.service</div>
   </ul>
 </section>
 
-<!-- ==================== 12 GEOF ==================== -->
-<section class="section" id="geof">
-  <div class="section-header">
-    <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">14</span>
-    <h2>GeoF &mdash; Geofence Tracker</h2>
-  </div>
-  <p>
-    The GEOF tab is a geofencing and livestock tracking system designed for hilly terrain (Ozarks). It combines a canvas-based map with real-time collar monitoring via LoRa radio, GPS point-in-polygon fence checking, and ESP32-S3 collar firmware with deep sleep power management.
-  </p>
-
-  <div class="screenshot-container">
-    <img src="manual_assets/GeoF.png" alt="GeoF Desktop Tab">
-  </div>
-
-
-  <div class="card" style="margin: 20px 0;">
-    <div class="card-title">Not Just for Livestock</div>
-    <p style="font-size: 14px; color: var(--fg);">
-      GeoF works just as well for the four-legged family members who think the backyard fence is more of a suggestion than a rule. If your dog has mastered the art of the great escape &mdash; or simply can't resist chasing squirrels into the neighbor's yard &mdash; a lightweight GPS collar with GeoF gives you peace of mind without the drama. You'll get a gentle heads-up the moment your adventurous pup wanders past the boundary, so you can call them back before they make it three blocks down the street. Same LoRa collar, same map, same alerts &mdash; just swap "Cow-1" for "Biscuit" and you're set.
-    </p>
-  </div>
-
-  <h3>Architecture</h3>
-  <div class="conn-diagram">
-    <span class="node">Phone (GPS Pins)</span>
-    <span class="arrow">&rarr; JSON sync &rarr;</span>
-    <span class="node">Whim GeoF Tab</span>
-    <span class="arrow">&larr; LoRa Bridge &larr;</span>
-    <span class="node">LoRa Gateway</span>
-    <span class="arrow">&larr; SF12 radio &larr;</span>
-    <span class="node">ESP32-S3 Collars</span>
-  </div>
-
-  <h3>Layout</h3>
-  <table>
-    <thead><tr><th>Panel</th><th>Content</th></tr></thead>
-    <tbody>
-      <tr><td>Toolbar</td><td>Sync Pins, Load/Save/Clear Fence, Start/Stop Bridge, Start/Stop Heartbeat</td></tr>
-      <tr><td>Left (60%)</td><td>Canvas map with pan, zoom, grid lines, fence polygon, pin markers, and collar positions (color-coded by status)</td></tr>
-      <tr><td>Right (40%)</td><td>Collar status treeview, detail panel, and LoRa log</td></tr>
-    </tbody>
-  </table>
-
-  <h3>Collar Status Indicators</h3>
-  <table>
-    <thead><tr><th>Status</th><th>Color</th><th>Condition</th></tr></thead>
-    <tbody>
-      <tr><td><strong>OK</strong></td><td style="color:#2fa572">Green</td><td>Heartbeat received within 20 minutes and inside fence</td></tr>
-      <tr><td><strong>STALE</strong></td><td style="color:#e0a030">Yellow</td><td>No heartbeat for 20&ndash;40 minutes</td></tr>
-      <tr><td><strong>OFFLINE</strong></td><td style="color:#d94040">Red</td><td>No heartbeat for &gt;40 minutes</td></tr>
-      <tr><td><strong>ALERT</strong></td><td style="color:#ff3333">Bright Red</td><td>Collar reported position outside the geofence boundary</td></tr>
-    </tbody>
-  </table>
-
-  <h3>Pin Sync &amp; Fence Management</h3>
-  <ul>
-    <li><strong>Sync Pins</strong> &mdash; Import GPS coordinates from a mobile JSON file (supports <code>[{lat, lon}]</code> or <code>{pins: [...]}</code> format). Auto-builds fence polygon from 3+ pins.</li>
-    <li><strong>Load / Save Fence</strong> &mdash; Persists fence vertices and collar registry to <code>~/.openclaw/fence_config.json</code></li>
-    <li><strong>Clear Pins</strong> &mdash; Resets all pins and fence boundary</li>
-    <li><strong>Canvas Interaction</strong> &mdash; Click-drag to pan, scroll wheel to zoom (levels 1&ndash;20), coordinate display in status bar</li>
-  </ul>
-
-  <h3>LoRa Bridge Service</h3>
-  <p>
-    The LoRa bridge (<code>services/lora_bridge.py</code>) runs as a subprocess managed from the GeoF tab. It supports three modes:
-  </p>
-  <table>
-    <thead><tr><th>Mode</th><th>Flag</th><th>Description</th></tr></thead>
-    <tbody>
-      <tr><td>Serial</td><td><code>--port /dev/ttyUSB0</code></td><td>Reads from a hardware LoRa gateway via serial (default 115200 baud)</td></tr>
-      <tr><td>TCP</td><td><code>--tcp 0.0.0.0:9600</code></td><td>Accepts collar packets over TCP sockets</td></tr>
-      <tr><td>Simulated</td><td><code>--simulate</code></td><td>Generates synthetic collar data for testing without hardware</td></tr>
-    </tbody>
-  </table>
-  <p>
-    The bridge performs <strong>ray-casting point-in-polygon</strong> geofence checks on every packet. If a collar reports a position outside the fence boundary, the packet is tagged with <code>OUTSIDE_FENCE</code> alert.
-  </p>
-
-  <h3>LoRa Configuration</h3>
-  <table>
-    <thead><tr><th>Parameter</th><th>Default</th><th>Note</th></tr></thead>
-    <tbody>
-      <tr><td>Frequency</td><td>915 MHz</td><td>US ISM band</td></tr>
-      <tr><td>Spreading Factor</td><td><strong>SF12</strong></td><td>Maximum range for hilly Ozarks terrain. Slower data rate but signals &ldquo;bend&rdquo; over ridges.</td></tr>
-      <tr><td>TX Power</td><td>20 dBm</td><td>Maximum allowed for LoRa in US</td></tr>
-      <tr><td>CRC</td><td>Enabled</td><td>Error detection on all packets</td></tr>
-    </tbody>
-  </table>
-
-  <h3>ESP32-S3 Collar Firmware</h3>
-  <p>
-    Each livestock collar runs on an ESP32-S3 with GPS, LoRa radio (SX1276), and IMU accelerometer. The firmware (<code>Collar/firmware/main.cpp</code>) uses a deep sleep cycle:
-  </p>
-  <ul>
-    <li><strong>20-minute heartbeat</strong> &mdash; Wake from deep sleep, acquire GPS fix, check fence boundary, send LoRa status packet (collar ID, lat/lon, battery %), return to sleep</li>
-    <li><strong>5-minute motion interval</strong> &mdash; When the IMU detects movement, sleep interval decreases to 5 minutes for higher-resolution tracking</li>
-    <li><strong>Emergency broadcast</strong> &mdash; If GPS position is outside the fence polygon, immediately transmit 3 rapid emergency packets before sleeping</li>
-    <li><strong>Battery monitoring</strong> &mdash; ADC reads voltage divider on LiPo cell (4.2V=100%, 3.0V=0%)</li>
-  </ul>
-
-  <h3>Packet Format</h3>
-  <p>Collars transmit CSV over LoRa: <code>COLLAR_ID,LAT,LON,BATTERY,NAME[,OUTSIDE_FENCE]</code></p>
-  <div class="code-block">C001,36.350123,-93.200456,87,Cow-1
-C002,36.341000,-93.195000,62,Cow-2,OUTSIDE_FENCE</div>
-
-  <h3>File Structure</h3>
-  <table>
-    <thead><tr><th>Path</th><th>Purpose</th></tr></thead>
-    <tbody>
-      <tr><td><code>services/lora_bridge.py</code></td><td>LoRa bridge service (serial/TCP/simulated)</td></tr>
-      <tr><td><code>Collar/firmware/main.cpp</code></td><td>ESP32-S3 Arduino firmware</td></tr>
-      <tr><td><code>Collar/config/fence.json</code></td><td>Default fence config (flash to ESP32 SPIFFS)</td></tr>
-      <tr><td><code>~/.openclaw/fence_config.json</code></td><td>Active fence config (desktop)</td></tr>
-      <tr><td><code>~/.openclaw/geof_pins.json</code></td><td>Cached pin data from mobile sync</td></tr>
-    </tbody>
-  </table>
-
-  <h3>Heartbeat Monitor</h3>
-  <p>
-    The heartbeat monitor runs as a background timer in the Whim Terminal. Every 20 minutes it scans all registered collars and flags any that have gone silent as STALE or OFFLINE. Alerts appear in the LoRa Log panel and collar table rows change color accordingly.
-  </p>
-
-  <div class="card">
-    <div class="card-title">Ozarks Terrain Tip</div>
-    <p style="font-size: 14px; color: var(--yellow);">
-      SF12 (Spreading Factor 12) is critical for hilly terrain. It trades data rate for range, significantly increasing the chance of a signal clearing ridgelines between the collar and your antenna mast. Expect 2&ndash;5 km line-of-sight range, or 500m&ndash;1.5 km over hills with SF12 + 20 dBm.
-    </p>
-  </div>
-</section>
-
-<!-- ==================== 13 ARCHIVE ==================== -->
+<!-- ==================== 12 ARCHIVE ==================== -->
 <section class="section" id="archive">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">15</span>
+    <span class="sec-num">12</span>
     <h2>Archive Tab Editor</h2>
   </div>
   <p>
     The Archive tab is a full-featured document editor that saves files to <code>~/ARCHIVE</code>. All documents created in Whim are stored in this directory.
   </p>
-
-  <div class="screenshot-container">
-    <img src="manual_assets/ARCHIVE.png" alt="Archive Desktop Tab">
-  </div>
-
 
   <h3>Document Actions</h3>
   <ul>
@@ -1843,17 +1611,12 @@ Notes: User notes here
 <section class="section" id="screenshare">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">16</span>
+    <span class="sec-num">13</span>
     <h2>Screen Share System</h2>
   </div>
   <p>
     The SS (Screen Share) tab enables bidirectional visual communication between the desktop and mobile devices.
   </p>
-
-  <div class="screenshot-container">
-    <img src="manual_assets/LIVE.png" alt="Screen Share / Live Desktop Tab">
-  </div>
-
 
   <h3>Architecture</h3>
   <ul>
@@ -1896,7 +1659,7 @@ Notes: User notes here
 <section class="section" id="adb">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">17</span>
+    <span class="sec-num">14</span>
     <h2>ADB Portal &amp; Emulator</h2>
   </div>
   <p>
@@ -1933,7 +1696,7 @@ Notes: User notes here
 <section class="section" id="gateway">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">18</span>
+    <span class="sec-num">15</span>
     <h2>OpenClaw Gateway</h2>
   </div>
   <p>
@@ -1984,17 +1747,12 @@ Notes: User notes here
 <section class="section" id="settingstab">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">19</span>
+    <span class="sec-num">16</span>
     <h2>Settings Tab</h2>
   </div>
   <p>
     The SETTINGS tab provides a three-column configuration panel for managing API keys, LLM models, and application preferences. All settings persist to <code>~/.openclaw/whim_settings.json</code>.
   </p>
-
-  <div class="screenshot-container">
-    <img src="manual_assets/SETTINGS.png" alt="Settings Desktop Tab">
-  </div>
-
 
   <h3>Column 1: API Keys &amp; Endpoints</h3>
   <table>
@@ -2043,7 +1801,7 @@ Notes: User notes here
 <section class="section" id="audiocapture">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">20</span>
+    <span class="sec-num">17</span>
     <h2>Audio Capture Tool</h2>
   </div>
   <p>
@@ -2096,7 +1854,7 @@ Notes: User notes here
 <section class="section" id="tech">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">21</span>
+    <span class="sec-num">18</span>
     <h2>Technical Stack &amp; Configuration</h2>
   </div>
 
@@ -2165,7 +1923,7 @@ Notes: User notes here
 <section class="section" id="desktop-env">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">22</span>
+    <span class="sec-num">19</span>
     <h2>Desktop Environment Customizations</h2>
   </div>
   <p>
@@ -2254,7 +2012,7 @@ Notes: User notes here
 <section class="section" id="windows11">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">23</span>
+    <span class="sec-num">20</span>
     <h2>Windows 11 Support</h2>
   </div>
   <p>
@@ -2368,11 +2126,71 @@ scripts/
   </ul>
 </section>
 
+<!-- ==================== 20.5 iOS TAHOE ==================== -->
+<section class="section" id="ios">
+  <div class="section-header">
+    <img class="flame-sm" src="manual_assets/fire.png" alt="">
+    <span class="sec-num">20.5</span>
+    <h2>iOS Support (Tahoe)</h2>
+  </div>
+  <p>
+    Whim.m is accessible on iOS devices via Safari or Chrome as a Progressive Web App (PWA). The iOS variant, codenamed <strong>Tahoe</strong>, connects to the same Whim server backend and provides the same five-tab experience (REC, LIBRARY, CHAT, WAKE, DEVICES) with platform-specific adaptations for Apple hardware.
+  </p>
+
+  <h3>Prerequisites</h3>
+  <table>
+    <thead><tr><th>Software</th><th>Required</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>iOS 16+</td><td><span class="badge badge-green">Required</span></td><td>PWA support requires iOS 16 or later</td></tr>
+      <tr><td>Safari / Chrome</td><td><span class="badge badge-green">Required</span></td><td>Safari recommended for best PWA integration (Add to Home Screen)</td></tr>
+      <tr><td>Tailscale for iOS</td><td><span class="badge badge-yellow">Optional</span></td><td>Required for direct Tailscale mesh connection mode</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Configuration</h3>
+  <table>
+    <thead><tr><th>Setting</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td>Connection</td><td>VPS Tunnel (default) or Tailscale (requires Tailscale iOS app)</td></tr>
+      <tr><td>URL</td><td><code>http://104.207.140.242:8089</code> (VPS) or <code>http://100.69.17.20:8089</code> (Tailscale)</td></tr>
+      <tr><td>PWA Install</td><td>Safari &rarr; Share &rarr; Add to Home Screen</td></tr>
+      <tr><td>Audio Recording</td><td>WebRTC MediaRecorder API (Safari 14.5+)</td></tr>
+      <tr><td>Wake Word</td><td>Requires microphone permission grant; iOS may suspend background audio</td></tr>
+      <tr><td>Notifications</td><td>Web Push supported on iOS 16.4+ (requires PWA mode)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Platform Differences &mdash; iOS vs Android</h3>
+  <table>
+    <thead><tr><th>Feature</th><th>Android (APK)</th><th>iOS (PWA / Tahoe)</th></tr></thead>
+    <tbody>
+      <tr><td>App Delivery</td><td>Native APK via ADB sideload</td><td>PWA via Safari "Add to Home Screen"</td></tr>
+      <tr><td>WebView Engine</td><td>Chromium (Android WebView)</td><td>WebKit (Safari)</td></tr>
+      <tr><td>Audio Format</td><td>WebM/Opus (native)</td><td>MP4/AAC (Safari MediaRecorder default)</td></tr>
+      <tr><td>Background Audio</td><td>Supported (WebView keeps running)</td><td>Limited &mdash; iOS may suspend after ~30s in background</td></tr>
+      <tr><td>Wake Word</td><td>Always-on via WebView</td><td>Active only while app is in foreground</td></tr>
+      <tr><td>File Upload</td><td>Full filesystem access via intent</td><td>Photo Library + Files app picker</td></tr>
+      <tr><td>Camera Access</td><td>Direct WebRTC + Screen Share</td><td>WebRTC supported; no Screen Share capture</td></tr>
+      <tr><td>Notification</td><td>Firebase / local</td><td>Web Push (iOS 16.4+ in PWA mode only)</td></tr>
+      <tr><td>Install Size</td><td>~61 KB APK</td><td>~0 KB (bookmark/PWA shell)</td></tr>
+      <tr><td>Tailscale</td><td>Tailscale Android app</td><td>Tailscale iOS app (App Store)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Known Limitations on iOS</h3>
+  <ul>
+    <li><strong>Background Wake Word</strong> &mdash; iOS aggressively suspends background WebKit processes. The "Listening for Hey Whim" feature only works while the app is in the foreground.</li>
+    <li><strong>Audio Codec</strong> &mdash; Safari's MediaRecorder outputs MP4/AAC instead of WebM/Opus. The server handles both formats transparently.</li>
+    <li><strong>Screen Share</strong> &mdash; iOS does not support <code>getDisplayMedia()</code> in PWAs, so the desktop-to-phone Screen Share viewer works but phone-to-desktop camera capture may be limited.</li>
+    <li><strong>File Picker</strong> &mdash; iOS restricts filesystem access to the Photo Library and Files app; no direct path selection.</li>
+  </ul>
+</section>
+
 <!-- ==================== 21 MULTI-TERMINAL SYNC ==================== -->
 <section class="section" id="sync">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">24</span>
+    <span class="sec-num">21</span>
     <h2>Multi-Terminal Sync</h2>
   </div>
   <p>
@@ -2380,11 +2198,6 @@ scripts/
     running on different machines (Linux + Windows). Seven sync approaches are available,
     managed through a unified engine.
   </p>
-
-  <div class="screenshot-container">
-    <img src="manual_assets/SYNC.png" alt="Multi-Terminal Sync Desktop Tab">
-  </div>
-
 
   <h3>Sync Approaches</h3>
   <table>
@@ -2499,9 +2312,9 @@ scripts/
 <!-- ==================== FOOTER ==================== -->
 <footer class="manual-footer">
   <img src="manual_assets/fire.png" style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px; opacity: 0.6;">
-  <strong>Whim</strong> &mdash; Complete Manual v1.4 &mdash; April 2026<br>
+  <strong>Whim</strong> &mdash; Complete Manual v1.5 &mdash; April 2026<br>
   <span style="color: var(--fg-muted); font-size: 11px;">
-    Built on CARRARA &bull; Python &bull; Tkinter &bull; Ollama &bull; SSH Tunnel + Tailscale Hybrid &bull; OpenClaw &bull; Windows 11 + Linux &bull; Multi-Terminal Sync &bull; GeoF + LoRa + ESP32
+    Built on CARRARA &bull; Python &bull; Tkinter &bull; Ollama &bull; SSH Tunnel + Tailscale Hybrid &bull; OpenClaw &bull; Windows 11 + Linux + iOS (Tahoe) &bull; Multi-Terminal Sync
   </span>
 </footer>
 
