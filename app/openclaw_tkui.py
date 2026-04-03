@@ -10,7 +10,6 @@ import tkinter.font as tkFont
 from tkinter import ttk, filedialog, colorchooser, messagebox
 from datetime import datetime
 from http.server import HTTPServer, BaseHTTPRequestHandler
-import cgi
 import io
 import socket
 import qrcode
@@ -28,7 +27,6 @@ except ImportError:
     pystay = None
 from PIL import Image, ImageOps, ImageDraw, ImageTk
 import numpy as np
-import webbrowser
 try:
     import sounddevice as sd
 except ImportError:
@@ -49,8 +47,15 @@ LOGO_PATH = os.path.expanduser("~/Incoming/fire.png")
 SETTINGS_ICON_PATH = os.path.expanduser("~/settings.png")
 JOURNAL_DIR = os.path.expanduser("~/Journal")
 TRANSCRIPT_DIR = os.path.expanduser("~/TRANSCRIPT")
-TRANSCRIBE_SCRIPT = os.path.expanduser("~/.openclaw/sandboxes/agent-main-XXXXXXXX/skills/openai-whisper-api/scripts/transcribe.sh")
-
+TRANSCRIBE_SCRIPT = os.path.expanduser("~/.openclaw/sandboxes/agent-main-f331f052/skills/openai-whisper-api/scripts/transcribe.sh")
+SIGNAL_DESKTOP_BIN = "/opt/Signal/signal-desktop"
+SIGNAL_CLI_CLIENT = "/tmp/signal-cli-client"
+SIGNAL_CLI_TARBALL = os.path.expanduser("~/Incoming/signal-cli-0.14.0-Linux-client.tar.gz")
+SIGNAL_CONFIG_DIR = os.path.expanduser("~/.config/Signal")
+SIGNAL_LOG_FILE = os.path.expanduser("~/.config/Signal/logs/main.log")
+DISCORD_DESKTOP_BIN = "/usr/share/discord/Discord"
+DISCORD_CONFIG_DIR = os.path.expanduser("~/.config/discord")
+OPENCLAW_CONFIG = os.path.expanduser("~/.openclaw/openclaw.json")
 OPENCLAW_CONFIG = os.path.expanduser("~/.openclaw/openclaw.json")
 ARCHIVE_DIR = os.path.expanduser("~/ARCHIVE")
 WHIM_FONTS_DIR = os.path.expanduser("~/.openclaw/WhimUI/fonts")
@@ -66,17 +71,6 @@ DEFAULT_MODELS = [
 AUDIO_CAPTURE_DIR = os.path.expanduser("~/Journal/audio_captures")
 PERSONA_DIR = os.path.expanduser("~/voices/personas")
 PERSONA_CONFIG = os.path.expanduser("~/voices/personas/personas.json")
-
-WHIM_TERMINAL_VERSION = "3.3.0"
-WHIM_M_VERSION = "3.3.0"
-WHIM_APK_DIR = os.path.expanduser("~/vaults/WHIM/mobile/whim_m")
-
-WHIM_VERSION_HISTORY = [
-    ("3.3.0", "2026-03-18", "Tailscale OTA updates via Library. GitHub Manual moved to Library tab. Native overlay removed."),
-    ("3.2.0", "2026-03-18", "Version display on Terminal and mobile. Update Devices button. Updates tab."),
-    ("3.1.0", "2026-03-18", "Keyboard-aware input rows — text box and send button stay visible when soft keyboard opens on all devices."),
-    ("3.0.0", "2026-03-17", "Full tunnel migration. VPS reverse SSH tunnel replaces Tailscale for mobile connectivity. Health bar and connection toggle."),
-]
 
 _WHIM_ICON_B64 = ""
 _whim_icon_path = os.path.expanduser("~/.openclaw/Whim.png")
@@ -94,7 +88,7 @@ def _make_whim_tray_icon():
     draw.text((22, 18), "W", fill=(255, 255, 255, 255))
     return img
 
-VPS_HOST = "YOUR_VPS_IP"
+VPS_HOST = "104.207.140.242"
 VPS_TUNNEL_PORT = 8089
 
 def _make_tunnel_icon(tunnel_up=False, whim_up=False):
@@ -897,21 +891,47 @@ class AudioUploadHandler(BaseHTTPRequestHandler):
                 "CONTENT_TYPE": content_type,
                 "CONTENT_LENGTH": self.headers.get("Content-Length", "0"),
             }
-            form = cgi.FieldStorage(
-                fp=self.rfile, headers=self.headers, environ=environ,
-                keep_blank_values=True
-            )
-            file_item = form["audio"]
-            if not file_item.filename:
+            # Parse multipart boundary manually (cgi module removed in Python 3.13)
+            boundary = None
+            for part in content_type.split(";"):
+                part = part.strip()
+                if part.startswith("boundary="):
+                    boundary = part.split("=", 1)[1].strip().strip('"')
+            if not boundary:
+                self.send_error(400, "No multipart boundary found")
+                return
+            content_length = int(self.headers.get("Content-Length", "0"))
+            body = self.rfile.read(content_length)
+            boundary_bytes = boundary.encode("utf-8")
+            parts = body.split(b"--" + boundary_bytes)
+            file_data = None
+            filename = None
+            for part in parts:
+                if b"Content-Disposition:" not in part:
+                    continue
+                header_end = part.find(b"\r\n\r\n")
+                if header_end == -1:
+                    continue
+                headers_section = part[:header_end].decode("utf-8", errors="replace")
+                payload = part[header_end + 4:]
+                if payload.endswith(b"\r\n"):
+                    payload = payload[:-2]
+                if 'name="audio"' in headers_section:
+                    import re as _re
+                    fn_match = _re.search(r'filename="([^"]*)"', headers_section)
+                    if fn_match:
+                        filename = fn_match.group(1)
+                    file_data = payload
+            if not filename or file_data is None:
                 self.send_error(400, "No file uploaded")
                 return
-            safe_name = os.path.basename(file_item.filename)
+            safe_name = os.path.basename(filename)
             ts = datetime.now().strftime("%Y%m%d_%H%M%S")
             dest_name = f"{ts}_{safe_name}"
             dest_path = os.path.join(self.server.upload_dir, dest_name)
             os.makedirs(self.server.upload_dir, exist_ok=True)
             with open(dest_path, "wb") as out:
-                shutil.copyfileobj(file_item.file, out)
+                out.write(file_data)
             resp = json.dumps({"status": "ok", "file": dest_name}).encode("utf-8")
             self.send_response(200)
             self._cors_headers()
@@ -935,6 +955,7 @@ class AudioUploadHandler(BaseHTTPRequestHandler):
         "CHAT OPS: send (chat message), abort (current task), retry, history, clear, export.\n"
         "VOICE & MEDIA: record (voice capture), transcribe (Whisper), tts (XTTS text-to-speech), "
         "playback, scrub (clean audio).\n"
+        "SIGNAL / DISCORD: sig.send, sig.recv, sig.contacts, disc.send, disc.react, disc.search.\n"
         "ARCHIVE & FILES: archive.new, archive.save, archive.open, journal, ingest.\n"
         "SYSTEM: You can read/write files, run shell commands, manage SmartThings devices, "
         "control SSH tunnel networking, manage sessions, and access all Whim subsystems.\n"
@@ -1389,40 +1410,32 @@ class ModernApp(tk.Tk):
             self._whimai_ollama_url = cfg["ollama_url"]
         if cfg.get("openai_key") and hasattr(self, "_settings_openai_key_var"):
             self._settings_openai_key_var.set(cfg["openai_key"])
+        tc = cfg.get("theme_colors", {})
+        if tc:
+            key_map = {
+                "background": "bg", "card": "card", "input": "input",
+                "border": "border", "button": "btn", "button_hover": "btn_hover",
+                "foreground": "fg", "accent": "green", "red": "red", "yellow": "yellow",
+            }
+            for cfg_key, th_key in key_map.items():
+                if cfg_key in tc:
+                    TH[th_key] = tc[cfg_key]
 
     def build_ui(self):
         header = tk.Frame(self, bg=TH["card"])
         header.pack(fill="x", padx=0, pady=(0, 2))
         if self._logo_img:
             tk.Label(header, image=self._logo_img, bg=TH["card"]).pack(side="left", padx=(12, 4), pady=8)
-        whim_title_frame = tk.Frame(header, bg=TH["card"])
-        whim_title_frame.pack(side="left", padx=4, pady=8)
-        tk.Label(whim_title_frame, text="Whim", bg=TH["card"], fg="#00ff00",
-                 font=("28 Days Later", 24, "bold")).pack(anchor="w")
-        tk.Label(whim_title_frame, text=f"Terminal v{WHIM_TERMINAL_VERSION}", bg=TH["card"],
-                 fg=TH["fg_dim"], font=("Consolas", 8)).pack(anchor="w")
+        tk.Label(header, text="Whim", bg=TH["card"], fg="#00ff00",
+                 font=("28 Days Later", 24, "bold")).pack(side="left", padx=4, pady=8)
+        tk.Label(header, text="v3.3.0", bg=TH["card"], fg="#e08030",
+                 font=("JetBrains Mono", 10)).pack(side="left", padx=(0, 8), pady=8)
 
         if self._settings_img:
             settings_btn = tk.Label(header, image=self._settings_img, bg=TH["card"],
                                     cursor="hand2")
             settings_btn.pack(side="right", padx=(0, 12), pady=8)
             settings_btn.bind("<Button-1>", lambda e: self._open_settings())
-
-        update_btn = tk.Label(header, text="\u21bb Update Devices", bg=TH["btn"],
-                              fg=TH["fg"], font=("Segoe UI", 9, "bold"), padx=10, pady=4,
-                              cursor="hand2", relief="flat")
-        update_btn.pack(side="right", padx=(0, 8), pady=8)
-        update_btn.bind("<Button-1>", lambda e: self._update_all_devices())
-        update_btn.bind("<Enter>", lambda e: update_btn.config(bg=TH["btn_hover"]))
-        update_btn.bind("<Leave>", lambda e: update_btn.config(bg=TH["btn"]))
-
-        github_btn = tk.Label(header, text="GITHUB MANUAL", bg="#F5A623",
-                              fg="#000000", font=("Segoe UI", 9, "bold"), padx=10, pady=4,
-                              cursor="hand2", relief="flat")
-        github_btn.pack(side="right", padx=(0, 8), pady=8)
-        github_btn.bind("<Button-1>", lambda e: webbrowser.open("https://scarter84.github.io/0411/"))
-        github_btn.bind("<Enter>", lambda e: github_btn.config(bg="#E0951E"))
-        github_btn.bind("<Leave>", lambda e: github_btn.config(bg="#F5A623"))
 
         header_rows = tk.Frame(header, bg=TH["card"])
         header_rows.pack(side="right", padx=12, pady=4)
@@ -1531,17 +1544,25 @@ class ModernApp(tk.Tk):
         self._device_poll_running = True
         threading.Thread(target=self._poll_device_status, daemon=True).start()
 
-        tab_data = [
-            ("chat", "CHAT"), ("whimai", "WHIM.AI"), ("smartthings", "SMARTTHINGS"), ("presence", "SYS STATUS"),
-            ("xtts", "AVR LAB"), ("voice_engine", "VOICE ENGINE"), ("ss", "LIVE"), ("hearmeout", "TRV CIPHER"),
-            ("cursor", "CURSOR"), ("library", "LIBRARY"), ("archive", "ARCHIVE"),
-            ("sessions", "SESSIONS"), ("events", "EVENTS/DEBUG"), ("persona", "PERSONA"), ("updates", "UPDATES"), ("settings", "SETTINGS"),
-        ]
-
         tab_bar_outer = tk.Frame(self, bg=TH["bg"])
         tab_bar_outer.pack(fill="x", padx=8, pady=(2, 0))
 
+        tab_data = [
+            ("chat", "CHAT"),
+            ("whimai", "WHIM.AI"),
+            ("smartthings", "SMARTTHINGS"),
+            ("xtts", "AVR LAB"),
+            ("voice_engine", "VOICE ENGINE"),
+            ("ss", "LIVE"),
+            ("hearmeout", "TRV CIPHER"),
+            ("library", "LIBRARY"),
+            ("archive", "ARCHIVE"),
+            ("persona", "PERSONA"),
+            ("settings", "SETTINGS"),
+        ]
+
         mid = (len(tab_data) + 1) // 2
+
         row1_data = tab_data[:mid]
         row2_data = tab_data[mid:]
 
@@ -1557,7 +1578,7 @@ class ModernApp(tk.Tk):
             for ci, (key, label) in enumerate(row_data):
                 row_frame.columnconfigure(ci, weight=1)
                 btn = tk.Label(row_frame, text=label, bg=TH["card"], fg=TH["fg2"],
-                               font=("Segoe UI", 9), padx=8, pady=5, cursor="hand2",
+                               font=("Segoe UI", 9, "bold"), padx=8, pady=5, cursor="hand2",
                                anchor="center", relief="flat",
                                highlightthickness=1, highlightbackground=TH["border"])
                 btn.grid(row=0, column=ci, sticky="ew", padx=1)
@@ -1568,6 +1589,7 @@ class ModernApp(tk.Tk):
                     fg=TH["green"] if k == self._active_tab_key else TH["fg2"]))
                 self._tab_buttons[key] = btn
 
+        # ==================== TAB CONTAINER & TAB CREATION ====================
         self._tab_container = tk.Frame(self, bg=TH["bg"])
         self._tab_container.pack(fill="both", expand=True, padx=8, pady=(2, 8))
 
@@ -1584,26 +1606,22 @@ class ModernApp(tk.Tk):
 
         self._switch_tab("chat")
 
+        # Build only the tabs that exist in tab_data
         self.build_chat()
         self.build_whimai()
         self.build_smartthings()
-        self.build_sessions()
-        self.after(500, self._sess_check_crash_recovery)
-        self.build_presence()
         self.build_xtts()
         self.build_voice_engine()
-        self.build_cursor()
         self.build_library()
         self.build_hearmeout()
         self.build_archive()
         self.build_ss()
-        self.build_events()
         self.build_persona()
-        self.build_updates()
         self.build_settings()
+
         self._apply_saved_settings()
         self._refresh_models()
-
+       
     def _init_tab_drag(self):
         pass
 
@@ -1612,7 +1630,9 @@ class ModernApp(tk.Tk):
         self._chat_device_name = "Whim PC"
         self._chat_last_id = 0
         self._chat_poll_url = "http://127.0.0.1:8089/device/chat"
+        self._chat_presence_url = "http://127.0.0.1:8089/device/presence"
         self._chat_poll_active = False
+        self._chat_presence_widgets = {}
 
         header = tk.Frame(f, bg=TH["bg"])
         header.pack(fill="x", padx=12, pady=(10, 0))
@@ -1622,8 +1642,20 @@ class ModernApp(tk.Tk):
                                          fg=TH["fg_dim"], bg=TH["bg"])
         self._chat_status_lbl.pack(side="right")
 
-        wrap = tk.Frame(f, bg=TH["bg"])
-        wrap.pack(fill="both", expand=True, padx=12, pady=8)
+        body = tk.Frame(f, bg=TH["bg"])
+        body.pack(fill="both", expand=True, padx=12, pady=8)
+
+        presence_frame = tk.Frame(body, bg=TH["card"], bd=0, highlightthickness=1,
+                                  highlightbackground=TH["border"], width=180)
+        presence_frame.pack(side="left", fill="y", padx=(0, 8))
+        presence_frame.pack_propagate(False)
+        tk.Label(presence_frame, text="DEVICES", bg=TH["card"], fg=TH["fg_dim"],
+                 font=("Consolas", 9, "bold")).pack(anchor="w", padx=10, pady=(10, 6))
+        self._chat_presence_list = tk.Frame(presence_frame, bg=TH["card"])
+        self._chat_presence_list.pack(fill="both", expand=True, padx=6)
+
+        wrap = tk.Frame(body, bg=TH["bg"])
+        wrap.pack(side="left", fill="both", expand=True)
         self.chat_log = self._text_widget(wrap, wrap="word", font=("Segoe UI", 10), state="disabled")
         chat_scroll = self._scrollbar(wrap, command=self.chat_log.yview)
         self.chat_log.configure(yscrollcommand=chat_scroll.set)
@@ -1642,11 +1674,57 @@ class ModernApp(tk.Tk):
         self.chat_entry = self._entry(bottom, self.chat_entry_var, font=("Segoe UI", 11))
         self.chat_entry.pack(side="left", fill="x", expand=True, padx=(0, 8), ipady=4)
         self.chat_entry.bind("<Return>", lambda e: self.chat_send())
+        self._btn(bottom, "😀", self._chat_toggle_emoji).pack(side="left", padx=(0, 4))
         self._btn(bottom, "Send", self.chat_send).pack(side="left", padx=(0, 4))
         self._btn(bottom, "AI Chat", self._chat_send_to_ai).pack(side="left", padx=(0, 4))
         self._btn(bottom, "Abort", self.chat_abort).pack(side="left")
 
+        self._chat_emoji_visible = False
+        self._chat_emoji_frame = tk.Frame(f, bg=TH["card"], bd=0, highlightthickness=1,
+                                          highlightbackground=TH["border"])
+        _emoji_categories = {
+            "Smileys": "😀😃😄😁😆😅🤣😂🙂😊😇🥰😍🤩😘😗😚😋😛😜🤪😝🤑🤗🤭🤫🤔🫡"
+                       "🤐🤨😐😑😶🫥😏😒🙄😬🤥🫠😌😔😪🤤😴😷🤒🤕🤢🤮🥴😵🤯🥳🥸😎"
+                       "🤓🧐😕🫤😟🙁😮😯😲😳🥺🥹😦😧😨😰😥😢😭😱😖😣😞😓😩😫🥱😤😡😠🤬",
+            "Gestures": "👋🤚🖐✋🖖🫱🫲🫳🫴👌🤌🤏✌🤞🫰🤟🤘🤙👈👉👆🖕👇☝🫵👍👎✊👊🤛🤜"
+                        "👏🫶🙌👐🤲🤝🙏💪🦾🖖👀👁👄💋🫦🦷👅👂🦻👃🫁🧠🦴👤👥",
+            "Hearts":  "❤️🧡💛💚💙💜🖤🤍🤎💔❤️‍🔥❤️‍🩹💕💞💓💗💖💘💝💟♥️",
+            "Animals": "🐶🐱🐭🐹🐰🦊🐻🐼🐨🐯🦁🐮🐷🐸🐵🐔🐧🐦🦆🦅🦉🦇🐺🐗🐴🦄🐝🪱🐛🦋"
+                       "🐌🐞🐜🪰🦟🦗🕷🦂🐢🐍🦎🦖🦕🐙🦑🦐🦞🦀🐡🐠🐟🐬🐳🐋🦈🦭🐊🐅🐆",
+            "Food":    "🍏🍎🍐🍊🍋🍌🍉🍇🍓🫐🍈🍒🍑🥭🍍🥥🥝🍅🍆🥑🥦🥬🥒🌶🫑🌽🥕🫒🧄🧅"
+                       "🥔🍠🫘🥐🥖🫓🥨🧀🥚🍳🧈🥞🧇🥓🥩🍗🍖🦴🌭🍔🍟🍕🫔🌮🌯🫙☕🍵🍺🍻",
+            "Objects": "⌚📱💻⌨🖥🖨🖱💡🔦🕯🪔📷📹🎥📽🎞📞☎📟📠📺📻🎙🎚🎛🧭⏱⏲⏰🔔🔑🗝"
+                       "🔒🔓🔏📦🧰🔧🔨🪛🔩⚙🧲💣🔫🪃🏹🛡🪚🔪🗡⚔🧪🧫🧬🔬🔭📡💉🩸💊🩹",
+            "Symbols": "✅❌❓❗💯🔥⭐💫✨🎵🎶💤💢💥💦💨🕳🎉🎊💡🔔🔕📢📣💬💭🗯♠♥♦♣🃏🀄🎴"
+                       "🔴🟠🟡🟢🔵🟣🟤⚫⚪🟥🟧🟨🟩🟦🟪🟫⬛⬜▪▫◾◽🔶🔷🔸🔹🔺🔻💠🔘",
+        }
+        for cat_name, emojis in _emoji_categories.items():
+            row_frame = tk.Frame(self._chat_emoji_frame, bg=TH["card"])
+            row_frame.pack(fill="x", padx=6, pady=(4, 0))
+            tk.Label(row_frame, text=cat_name, bg=TH["card"], fg=TH["fg_dim"],
+                     font=("Consolas", 8)).pack(side="left", padx=(4, 8))
+            emoji_row = tk.Frame(row_frame, bg=TH["card"])
+            emoji_row.pack(side="left", fill="x")
+            for ch in emojis:
+                btn = tk.Label(emoji_row, text=ch, bg=TH["card"], fg=TH["fg"],
+                               font=("Noto Color Emoji", 14), cursor="hand2")
+                btn.pack(side="left", padx=1, pady=1)
+                btn.bind("<Button-1>", lambda e, c=ch: self._chat_insert_emoji(c))
+
         self._chat_start_poll()
+
+    def _chat_toggle_emoji(self):
+        if self._chat_emoji_visible:
+            self._chat_emoji_frame.pack_forget()
+            self._chat_emoji_visible = False
+        else:
+            self._chat_emoji_frame.pack(fill="x", padx=12, pady=(0, 4))
+            self._chat_emoji_visible = True
+
+    def _chat_insert_emoji(self, emoji):
+        pos = self.chat_entry.index("insert")
+        self.chat_entry.insert(pos, emoji)
+        self.chat_entry.focus_set()
 
     def _chat_start_poll(self):
         if self._chat_poll_active:
@@ -1662,9 +1740,10 @@ class ModernApp(tk.Tk):
         self.after(2000, self._chat_poll_tick)
 
     def _chat_poll_fetch(self):
-        import urllib.request
+        import urllib.request, urllib.parse
         try:
-            url = f"{self._chat_poll_url}?since={self._chat_last_id}"
+            dev_enc = urllib.parse.quote(self._chat_device_name)
+            url = f"{self._chat_poll_url}?since={self._chat_last_id}&device={dev_enc}"
             req = urllib.request.Request(url, method="GET")
             with urllib.request.urlopen(req, timeout=5) as resp:
                 msgs = json.loads(resp.read().decode())
@@ -1674,8 +1753,32 @@ class ModernApp(tk.Tk):
                     self._chat_last_id = mid
                 self.after(0, self._chat_display_msg, m)
             self.after(0, lambda: self._chat_status_lbl.config(text="connected", fg=TH["green"]))
+            try:
+                req2 = urllib.request.Request(self._chat_presence_url, method="GET")
+                with urllib.request.urlopen(req2, timeout=3) as resp2:
+                    devices = json.loads(resp2.read().decode())
+                self.after(0, self._chat_update_presence, devices)
+            except Exception:
+                pass
         except Exception:
             self.after(0, lambda: self._chat_status_lbl.config(text="offline", fg=TH["red"]))
+
+    def _chat_update_presence(self, devices):
+        for w in self._chat_presence_list.winfo_children():
+            w.destroy()
+        self._chat_presence_widgets.clear()
+        for dev in devices:
+            name = dev.get("name", "?")
+            active = dev.get("active", False)
+            row = tk.Frame(self._chat_presence_list, bg=TH["card"])
+            row.pack(fill="x", pady=2)
+            dot_canvas = tk.Canvas(row, width=10, height=10, bg=TH["card"], highlightthickness=0)
+            dot_canvas.pack(side="left", padx=(4, 6), pady=2)
+            color = TH["green"] if active else "#555555"
+            dot_canvas.create_oval(1, 1, 9, 9, fill=color, outline="")
+            tk.Label(row, text=name, bg=TH["card"], fg=TH["fg"] if active else TH["fg_dim"],
+                     font=("Consolas", 9)).pack(side="left")
+            self._chat_presence_widgets[name] = {"canvas": dot_canvas, "row": row}
 
     def _chat_display_msg(self, m):
         sender = m.get("sender", "?")
@@ -2157,6 +2260,14 @@ class ModernApp(tk.Tk):
             ("tts", "Text-to-speech (XTTS)"),
             ("playback", "Play last audio"),
             ("scrub", "Scrub & clean audio"),
+            ("", None),
+            ("SIGNAL / DISCORD", None),
+            ("sig.send", "Send Signal message"),
+            ("sig.recv", "Receive Signal msgs"),
+            ("sig.contacts", "List Signal contacts"),
+            ("disc.send", "Send Discord message"),
+            ("disc.react", "Add reaction"),
+            ("disc.search", "Search Discord"),
             ("", None),
             ("ARCHIVE & FILES", None),
             ("archive.new", "New document"),
@@ -3329,8 +3440,12 @@ class ModernApp(tk.Tk):
             "note": "TRV cipher decryption review session"},
         "AVR Table Read Batch": {"type": "avr", "tags": ["table-read", "batch"],
             "note": "Batch voice generation for table reads"},
+        "Discord Gateway Ops": {"type": "discord", "tags": ["gateway", "ops"],
+            "note": "Discord bot gateway operations & moderation"},
         "Whim.ai Chat": {"type": "whimai", "tags": ["chat", "ai"],
             "note": "General Whim.ai assistant session"},
+        "Signal Relay": {"type": "signal", "tags": ["relay", "messaging"],
+            "note": "Signal message relay & monitoring"},
         "Ingest Pipeline": {"type": "avr", "tags": ["ingest", "transcribe"],
             "note": "Audio ingest and transcription pipeline"},
     }
@@ -3362,7 +3477,7 @@ class ModernApp(tk.Tk):
         self._sess_store_save(store)
 
     def build_sessions(self):
-        f = self.tabs["sessions"]
+        #f = self.tabs["sessions"]
         self._sessions_data = []
         self._sessions_telemetry = {}
         self._sessions_polling = False
@@ -3943,7 +4058,7 @@ class ModernApp(tk.Tk):
             self.sessions_tree.delete(item)
 
         type_map = {"whim.ai": "Whim.ai", "whimai": "Whim.ai", "avr": "AVR",
-                    "trv": "TRV"}
+                    "trv": "TRV", "signal": "Signal", "discord": "Discord"}
 
         pinned_ids = []
         unpinned_ids = []
@@ -4286,6 +4401,7 @@ class ModernApp(tk.Tk):
                 log_lines.append(notes[:500])
             log_sources = [
                 os.path.expanduser("~/.openclaw/gateway.log"),
+                os.path.expanduser("~/.config/Signal/logs/main.log"),
             ]
             for lp in log_sources:
                 if os.path.isfile(lp):
@@ -4321,6 +4437,8 @@ class ModernApp(tk.Tk):
         {"id": "whim-ui",       "name": "WHIM UI",          "kind": "client"},
         {"id": "whim-ai",       "name": "Whim.ai",          "kind": "agent"},
         {"id": "gateway",       "name": "Gateway",          "kind": "gateway"},
+        {"id": "discord-gw",    "name": "Discord Gateway",  "kind": "gateway"},
+        {"id": "signal-daemon", "name": "Signal Daemon",    "kind": "agent"},
         {"id": "ingest",        "name": "Ingest Service",   "kind": "agent"},
     ]
 
@@ -4706,6 +4824,10 @@ class ModernApp(tk.Tk):
             "whim-ui": ["whim-ui", "whim_ui", "whimui", "ui"],
             "whim-ai": ["whim-ai", "whim_ai", "whimai", "whim.ai", "ai"],
             "gateway": ["gateway", "gw", "openclaw-gateway"],
+            "discord-gw": ["discord-gw", "discord_gw", "discord-gateway",
+                           "discord", "discordgw"],
+            "signal-daemon": ["signal-daemon", "signal_daemon", "signal",
+                              "signal-cli", "signald"],
             "ingest": ["ingest", "ingest-service", "ingest_service",
                        "journal-ingest", "transcribe"],
         }
@@ -4846,6 +4968,8 @@ class ModernApp(tk.Tk):
     _PRES_MAP_TOPOLOGY = [
         ("whim-ui",       "gateway"),
         ("whim-ai",       "gateway"),
+        ("gateway",       "discord-gw"),
+        ("gateway",       "signal-daemon"),
         ("gateway",       "ingest"),
     ]
 
@@ -4853,7 +4977,9 @@ class ModernApp(tk.Tk):
         "whim-ui":       (0.15, 0.25),
         "whim-ai":       (0.15, 0.75),
         "gateway":       (0.50, 0.50),
-        "ingest":        (0.85, 0.50),
+        "discord-gw":    (0.85, 0.20),
+        "signal-daemon": (0.85, 0.50),
+        "ingest":        (0.85, 0.80),
     }
 
     def _pres_draw_map(self):
@@ -5092,131 +5218,6 @@ class ModernApp(tk.Tk):
         self._btn(btn_row, "Play Output", self._xtts_play).pack(side="left", padx=(0, 4))
         self._btn(btn_row, "Save to TableReads", self._xtts_save_tableread).pack(side="left")
 
-        # --- Voice Shaping ---
-        shape_card = self._card(center, "VOICE SHAPING", fg="#888888")
-        shape_card.pack(fill="x", pady=(0, 6))
-
-        self._xtts_shape_vars = {}
-        shape_defs = [
-            ("temperature",       "Temperature",       0.1, 1.5, 0.65, 0.05,
-             "Creativity / emotion. Higher = more expressive, lower = more stable"),
-            ("speed",             "Speed",             0.5, 2.0, 1.0,  0.05,
-             "Playback rate. <1 slower, >1 faster (artifacts beyond 0.7-1.3)"),
-            ("repetition_penalty","Rep. Penalty",      1.0, 5.0, 2.0,  0.1,
-             "Prevents loops & repeated syllables. Higher = stricter"),
-            ("length_penalty",    "Length Penalty",     0.5, 2.0, 1.0,  0.1,
-             "Controls output length. >1 longer phrases, <1 shorter"),
-            ("top_p",             "Top-P",             0.1, 1.0, 0.8,  0.05,
-             "Nucleus sampling. Lower = safer / flatter delivery"),
-            ("top_k",             "Top-K",             1,   100, 50,   1,
-             "Token diversity. Lower = more predictable"),
-        ]
-
-        for key, label, lo, hi, default, res, tip in shape_defs:
-            row = tk.Frame(shape_card, bg=TH["card"])
-            row.pack(fill="x", padx=10, pady=1)
-            lbl = tk.Label(row, text=label, bg=TH["card"], fg=TH["fg2"],
-                           font=TH["font_xs"], width=12, anchor="w")
-            lbl.pack(side="left")
-            var = tk.DoubleVar(value=default)
-            self._xtts_shape_vars[key] = (var, default)
-            val_lbl = tk.Label(row, text=f"{default:.2f}" if isinstance(default, float) else str(int(default)),
-                               bg=TH["card"], fg=TH["green"], font=TH["font_xs"], width=5)
-            val_lbl.pack(side="right")
-            scale = tk.Scale(row, variable=var, from_=lo, to=hi, resolution=res,
-                             orient="horizontal", bg=TH["card"], fg=TH["fg"],
-                             troughcolor=TH["input"], highlightthickness=0,
-                             sliderrelief="flat", bd=0, showvalue=False,
-                             activebackground=TH["btn_hover"],
-                             command=lambda v, vl=val_lbl, k=key: vl.config(
-                                 text=f"{float(v):.2f}" if k != "top_k" else str(int(float(v)))))
-            scale.pack(side="left", fill="x", expand=True, padx=4)
-            lbl.bind("<Enter>", lambda e, t=tip, w=lbl: self._xtts_show_tip(w, t))
-            lbl.bind("<Leave>", lambda e: self._xtts_hide_tip())
-
-        tk.Frame(shape_card, bg=TH["border_hi"], height=1).pack(fill="x", padx=10, pady=(4, 2))
-
-        post_label = tk.Label(shape_card, text="POST-PROCESSING (ffmpeg)", bg=TH["card"],
-                              fg=TH["fg2"], font=TH["font_xs"], anchor="w")
-        post_label.pack(fill="x", padx=10)
-
-        self._xtts_post_vars = {}
-        post_defs = [
-            ("warmth",     "Warmth",       0, 100, 0, 1,
-             "Low-frequency boost for a warmer, fuller sound"),
-            ("brightness", "Brightness",   0, 100, 0, 1,
-             "High-frequency lift for clarity and air"),
-            ("reverb",     "Reverb",       0, 100, 0, 1,
-             "Room ambience (dry=0, cathedral=100)"),
-            ("compression","Compression",  0, 100, 0, 1,
-             "Dynamic range compression for a more even, broadcast feel"),
-            ("pause_pre",  "Pause Before", 0, 3000, 0, 50,
-             "Silence in ms inserted before speech"),
-            ("pause_post", "Pause After",  0, 3000, 0, 50,
-             "Silence in ms appended after speech"),
-        ]
-
-        for key, label, lo, hi, default, res, tip in post_defs:
-            row = tk.Frame(shape_card, bg=TH["card"])
-            row.pack(fill="x", padx=10, pady=1)
-            lbl = tk.Label(row, text=label, bg=TH["card"], fg=TH["fg2"],
-                           font=TH["font_xs"], width=12, anchor="w")
-            lbl.pack(side="left")
-            var = tk.IntVar(value=default)
-            self._xtts_post_vars[key] = (var, default)
-            unit = "ms" if "pause" in key else "%"
-            val_lbl = tk.Label(row, text=f"{default}{unit}",
-                               bg=TH["card"], fg=TH["green"], font=TH["font_xs"], width=6)
-            val_lbl.pack(side="right")
-            scale = tk.Scale(row, variable=var, from_=lo, to=hi, resolution=res,
-                             orient="horizontal", bg=TH["card"], fg=TH["fg"],
-                             troughcolor=TH["input"], highlightthickness=0,
-                             sliderrelief="flat", bd=0, showvalue=False,
-                             activebackground=TH["btn_hover"],
-                             command=lambda v, vl=val_lbl, u=unit: vl.config(
-                                 text=f"{int(float(v))}{u}"))
-            scale.pack(side="left", fill="x", expand=True, padx=4)
-            lbl.bind("<Enter>", lambda e, t=tip, w=lbl: self._xtts_show_tip(w, t))
-            lbl.bind("<Leave>", lambda e: self._xtts_hide_tip())
-
-        tk.Frame(shape_card, bg=TH["border_hi"], height=1).pack(fill="x", padx=10, pady=(4, 2))
-
-        preset_row = tk.Frame(shape_card, bg=TH["card"])
-        preset_row.pack(fill="x", padx=10, pady=(2, 6))
-        presets = [
-            ("Neutral",  dict(temperature=0.65, speed=1.0, repetition_penalty=2.0,
-                              length_penalty=1.0, top_p=0.8, top_k=50,
-                              warmth=0, brightness=0, reverb=0, compression=0,
-                              pause_pre=0, pause_post=0)),
-            ("Warm",     dict(temperature=0.75, speed=0.92, repetition_penalty=2.0,
-                              length_penalty=1.1, top_p=0.85, top_k=60,
-                              warmth=55, brightness=10, reverb=15, compression=20,
-                              pause_pre=0, pause_post=0)),
-            ("Lively",   dict(temperature=0.90, speed=1.08, repetition_penalty=1.8,
-                              length_penalty=1.0, top_p=0.90, top_k=70,
-                              warmth=15, brightness=45, reverb=5, compression=30,
-                              pause_pre=0, pause_post=0)),
-            ("Dry",      dict(temperature=0.50, speed=1.0, repetition_penalty=2.5,
-                              length_penalty=1.0, top_p=0.70, top_k=40,
-                              warmth=0, brightness=0, reverb=0, compression=40,
-                              pause_pre=0, pause_post=0)),
-            ("Gentle",   dict(temperature=0.60, speed=0.88, repetition_penalty=2.2,
-                              length_penalty=1.2, top_p=0.80, top_k=50,
-                              warmth=40, brightness=5, reverb=25, compression=15,
-                              pause_pre=200, pause_post=300)),
-            ("Dramatic",  dict(temperature=1.00, speed=0.85, repetition_penalty=1.5,
-                               length_penalty=1.3, top_p=0.92, top_k=80,
-                               warmth=35, brightness=30, reverb=40, compression=10,
-                               pause_pre=400, pause_post=500)),
-        ]
-        self._xtts_presets = presets
-        for name, vals in presets:
-            self._btn(preset_row, name, lambda v=vals: self._xtts_apply_preset(v)).pack(
-                side="left", padx=(0, 3))
-        self._btn(preset_row, "Reset", self._xtts_reset_shaping).pack(side="right")
-
-        self._xtts_tip_win = None
-
         # Spectrogram
         spec_card = self._card(center, "SPECTROGRAM", fg="#888888")
         spec_card.pack(fill="both", expand=True, pady=(0, 6))
@@ -5415,44 +5416,25 @@ class ModernApp(tk.Tk):
             self._xtts_log_msg(f"❌ Conda xtts python not found: {XTTS_CONDA_PYTHON}")
             return
 
-        shape = self._xtts_get_shape_params()
         self.xtts_generating = True
         self.xtts_gen_btn.config(state="disabled")
-        shape_info = (f"temp={shape['temperature']:.2f} spd={shape['speed']:.2f} "
-                      f"rep={shape['repetition_penalty']:.1f} len={shape['length_penalty']:.1f} "
-                      f"p={shape['top_p']:.2f} k={int(shape['top_k'])}")
-        self._xtts_log_msg(f"⏳ Generating ({len(text)} chars, voice={os.path.basename(ref_wav)}, "
-                           f"lang={lang})\n   {shape_info}")
+        self._xtts_log_msg(f"⏳ Generating ({len(text)} chars, voice={os.path.basename(ref_wav)}, lang={lang})…")
 
         script = (
-            "import sys, time, torch, torchaudio\n"
+            "import sys, time, torch, wave\n"
             "from TTS.tts.configs.xtts_config import XttsConfig\n"
-            "from TTS.tts.models.xtts import Xtts, XttsAudioConfig, XttsArgs\n"
+            "from TTS.tts.models.xtts import XttsAudioConfig, XttsArgs\n"
             "from TTS.config.shared_configs import BaseDatasetConfig\n"
             "torch.serialization.add_safe_globals([XttsConfig, XttsAudioConfig, XttsArgs, BaseDatasetConfig])\n"
-            "config = XttsConfig()\n"
-            "from TTS.api import TTS as _TTS\n"
-            f"_t = _TTS({XTTS_MODEL!r}, gpu={gpu})\n"
-            "model = _t.synthesizer.tts_model\n"
-            f"gpt_cond_latent, speaker_embedding = model.get_conditioning_latents(audio_path=[{ref_wav!r}])\n"
+            "from TTS.api import TTS\n"
+            f"tts = TTS({XTTS_MODEL!r}, gpu={gpu})\n"
             "t0 = time.time()\n"
-            "out = model.inference(\n"
-            f"    {text!r},\n"
-            f"    {lang!r},\n"
-            "    gpt_cond_latent,\n"
-            "    speaker_embedding,\n"
-            f"    temperature={shape['temperature']},\n"
-            f"    speed={shape['speed']},\n"
-            f"    length_penalty={shape['length_penalty']},\n"
-            f"    repetition_penalty={shape['repetition_penalty']},\n"
-            f"    top_p={shape['top_p']},\n"
-            f"    top_k={int(shape['top_k'])},\n"
-            "    enable_text_splitting=True,\n"
-            ")\n"
-            "wav = torch.tensor(out['wav']).unsqueeze(0)\n"
-            f"torchaudio.save({out_wav!r}, wav, 24000)\n"
+            f"tts.tts_to_file(text={text!r}, file_path={out_wav!r}, "
+            f"speaker_wav={ref_wav!r}, language={lang!r})\n"
             "elapsed = time.time() - t0\n"
-            "audio_dur = wav.shape[-1] / 24000\n"
+            f"wf = wave.open({out_wav!r}, 'rb')\n"
+            "audio_dur = wf.getnframes() / wf.getframerate()\n"
+            "wf.close()\n"
             "rtf = elapsed / audio_dur if audio_dur > 0 else 0\n"
             f"print('Wrote ' + {out_wav!r})\n"
             "print(f'processing time: {elapsed:.2f}sec')\n"
@@ -5465,14 +5447,9 @@ class ModernApp(tk.Tk):
                     [XTTS_CONDA_PYTHON, "-c", script],
                     capture_output=True, text=True, timeout=300)
                 if proc.returncode == 0:
-                    self.after(0, lambda: self._xtts_log_msg(f"✅ Generated: {out_wav}"))
+                    self.after(0, lambda: self._xtts_log_msg(f"✅ Done: {out_wav}"))
                     if proc.stdout.strip():
                         self.after(0, lambda: self._xtts_log_msg(proc.stdout.strip()))
-                    pp_ok = self._xtts_postprocess(out_wav)
-                    if pp_ok:
-                        pp = self._xtts_get_post_params()
-                        if any(pp[k] for k in pp):
-                            self.after(0, lambda: self._xtts_log_msg("✅ Post-processing applied"))
                 else:
                     err = proc.stderr.strip()
                     self.after(0, lambda: self._xtts_log_msg(f"❌ Error (exit {proc.returncode}):\n{err}"))
@@ -5489,104 +5466,6 @@ class ModernApp(tk.Tk):
         self.xtts_generating = False
         self.xtts_gen_btn.config(state="normal")
         self._xtts_draw_spectrogram()
-
-    def _xtts_apply_preset(self, vals):
-        for key, (var, _default) in self._xtts_shape_vars.items():
-            if key in vals:
-                var.set(vals[key])
-        for key, (var, _default) in self._xtts_post_vars.items():
-            if key in vals:
-                var.set(vals[key])
-        self._xtts_log_msg("Preset applied")
-
-    def _xtts_reset_shaping(self):
-        for key, (var, default) in self._xtts_shape_vars.items():
-            var.set(default)
-        for key, (var, default) in self._xtts_post_vars.items():
-            var.set(default)
-        self._xtts_log_msg("Voice shaping reset to defaults")
-
-    def _xtts_show_tip(self, widget, text):
-        self._xtts_hide_tip()
-        x = widget.winfo_rootx() + widget.winfo_width()
-        y = widget.winfo_rooty()
-        self._xtts_tip_win = tw = tk.Toplevel(self)
-        tw.wm_overrideredirect(True)
-        tw.wm_geometry(f"+{x+4}+{y}")
-        lbl = tk.Label(tw, text=text, bg="#1a1a2e", fg="#e0e0e0",
-                       font=("Segoe UI", 8), padx=6, pady=3, relief="solid", bd=1)
-        lbl.pack()
-
-    def _xtts_hide_tip(self):
-        if self._xtts_tip_win:
-            self._xtts_tip_win.destroy()
-            self._xtts_tip_win = None
-
-    def _xtts_get_shape_params(self):
-        return {k: var.get() for k, (var, _) in self._xtts_shape_vars.items()}
-
-    def _xtts_get_post_params(self):
-        return {k: var.get() for k, (var, _) in self._xtts_post_vars.items()}
-
-    def _xtts_postprocess(self, wav_path):
-        pp = self._xtts_get_post_params()
-        warmth = pp["warmth"]
-        brightness = pp["brightness"]
-        reverb = pp["reverb"]
-        compression = pp["compression"]
-        pause_pre = pp["pause_pre"]
-        pause_post = pp["pause_post"]
-
-        if not any([warmth, brightness, reverb, compression, pause_pre, pause_post]):
-            return True
-
-        tmp_path = wav_path + ".tmp.wav"
-        filters = []
-
-        if warmth > 0:
-            gain = warmth * 0.08
-            filters.append(f"lowshelf=g={gain:.1f}:f=300:t=s")
-        if brightness > 0:
-            gain = brightness * 0.06
-            filters.append(f"highshelf=g={gain:.1f}:f=4000:t=s")
-        if compression > 0:
-            threshold = max(-40, -40 + (100 - compression) * 0.35)
-            ratio = 2 + compression * 0.06
-            filters.append(f"acompressor=threshold={threshold:.0f}dB:ratio={ratio:.1f}:attack=5:release=50")
-        if reverb > 0:
-            wet = reverb / 100.0
-            delays = int(20 + reverb * 0.6)
-            decays = min(0.7, reverb * 0.007)
-            filters.append(f"aecho=0.8:{wet:.2f}:{delays}:{decays:.2f}")
-
-        pad_parts = []
-        if pause_pre > 0:
-            pad_parts.append(f"adelay={pause_pre}|{pause_pre}")
-        if pause_post > 0:
-            pad_parts.append(f"apad=pad_dur={pause_post / 1000.0:.3f}")
-        filters.extend(pad_parts)
-
-        if not filters:
-            return True
-
-        af = ",".join(filters)
-        cmd = ["ffmpeg", "-y", "-i", wav_path, "-af", af, tmp_path]
-        try:
-            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
-            if proc.returncode == 0:
-                shutil.move(tmp_path, wav_path)
-                return True
-            else:
-                self.after(0, lambda: self._xtts_log_msg(
-                    f"Post-processing error: {proc.stderr.strip()[-200:]}"))
-                if os.path.isfile(tmp_path):
-                    os.remove(tmp_path)
-                return False
-        except Exception as e:
-            self.after(0, lambda: self._xtts_log_msg(f"Post-processing failed: {e}"))
-            if os.path.isfile(tmp_path):
-                os.remove(tmp_path)
-            return False
 
     def _xtts_draw_spectrogram(self, wav_path=None):
         if wav_path is None:
@@ -5744,6 +5623,426 @@ class ModernApp(tk.Tk):
         self._xtts_playing_proc = subprocess.Popen(
             ["ffplay", "-autoexit", "-nodisp", filepath],
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    # ==================== SIGNAL TAB ====================
+
+    def build_signal(self):
+        f = self.tabs["signal"]
+        self._signal_poll_id = None
+
+        root_frame = tk.Frame(f, bg=TH["bg"])
+        root_frame.pack(fill="both", expand=True, padx=8, pady=8)
+
+        # Top status bar
+        status_bar = tk.Frame(root_frame, bg=TH["card"], height=36)
+        status_bar.pack(fill="x", pady=(0, 8))
+        self.signal_status_var = tk.StringVar(value="Checking...")
+        tk.Label(status_bar, textvariable=self.signal_status_var, bg=TH["card"],
+                 fg=TH["green"], font=("Consolas", 9)).pack(side="left", padx=10, pady=6)
+        self._signal_watch_status = tk.StringVar(value="")
+        tk.Label(status_bar, textvariable=self._signal_watch_status, bg=TH["card"],
+                 fg=TH["fg2"], font=("Consolas", 9)).pack(side="left", padx=8)
+        self._btn(status_bar, "Daemon Status", self._signal_daemon_status).pack(
+            side="right", padx=(4, 10), pady=4)
+        self._btn(status_bar, "Refresh", self._signal_check_status).pack(
+            side="right", padx=4, pady=4)
+        self.signal_cli_status_var = tk.StringVar(value="")
+        tk.Label(status_bar, textvariable=self.signal_cli_status_var, bg=TH["card"],
+                 fg=TH["fg2"], font=("Consolas", 8)).pack(side="right", padx=8)
+
+        # --- Three-column layout ---
+        columns = tk.Frame(root_frame, bg=TH["bg"])
+        columns.pack(fill="both", expand=True)
+        columns.columnconfigure(0, weight=2)  # Contacts & Groups: 2/3
+        columns.columnconfigure(1, weight=1)  # Send Message: center
+        columns.columnconfigure(2, weight=2)  # Live Feed: 2/3
+        columns.rowconfigure(0, weight=1)
+
+        # ========== LEFT COLUMN: Contacts & Groups ==========
+        left_col = tk.Frame(columns, bg=TH["bg"])
+        left_col.grid(row=0, column=0, sticky="nsew", padx=(0, 4))
+        left_col.rowconfigure(1, weight=1)
+
+        # Daemon connection card
+        conn_card = self._card(left_col, "SIGNAL-CLI DAEMON", fg="#888888")
+        conn_card.pack(fill="x", pady=(0, 6))
+
+        conn_row = tk.Frame(conn_card, bg=TH["card"])
+        conn_row.pack(fill="x", padx=10, pady=4)
+        tk.Label(conn_row, text="Endpoint:", bg=TH["card"], fg=TH["fg2"],
+                 font=("Segoe UI", 9)).pack(side="left")
+        self.signal_endpoint_var = tk.StringVar(value="127.0.0.1:8080")
+        self._entry(conn_row, self.signal_endpoint_var, width=18).pack(
+            side="left", padx=6, fill="x", expand=True)
+
+        mode_row = tk.Frame(conn_card, bg=TH["card"])
+        mode_row.pack(fill="x", padx=10, pady=(0, 4))
+        tk.Label(mode_row, text="Mode:", bg=TH["card"], fg=TH["fg2"],
+                 font=("Segoe UI", 9)).pack(side="left")
+        self.signal_conn_mode = tk.StringVar(value="http")
+        for val, lbl in [("tcp", "TCP"), ("socket", "Socket"), ("http", "HTTP")]:
+            tk.Radiobutton(mode_row, text=lbl, variable=self.signal_conn_mode,
+                           value=val, bg=TH["card"], fg=TH["fg"],
+                           selectcolor=TH["input"], activebackground=TH["card"],
+                           activeforeground=TH["fg"], font=("Segoe UI", 9),
+                           highlightthickness=0).pack(side="left", padx=4)
+
+        desktop_row = tk.Frame(conn_card, bg=TH["card"])
+        desktop_row.pack(fill="x", padx=10, pady=(0, 8))
+        self._btn(desktop_row, "Launch Signal", self._signal_launch_desktop).pack(
+            side="left", padx=(0, 4))
+        self._btn(desktop_row, "Stop Signal", self._signal_stop_desktop).pack(
+            side="left")
+
+        # Contacts & Groups card
+        lists_card = self._card(left_col, "CONTACTS & GROUPS", fg="#888888")
+        lists_card.pack(fill="both", expand=True)
+
+        list_btns = tk.Frame(lists_card, bg=TH["card"])
+        list_btns.pack(fill="x", padx=10, pady=4)
+        self._btn(list_btns, "Contacts", self._signal_list_contacts).pack(
+            side="left", padx=(0, 4))
+        self._btn(list_btns, "Groups", self._signal_list_groups).pack(
+            side="left", padx=(0, 4))
+        self._btn(list_btns, "Accounts", self._signal_list_accounts).pack(
+            side="left")
+
+        cg_text_frame = tk.Frame(lists_card, bg=TH["card"])
+        cg_text_frame.pack(fill="both", expand=True, padx=10, pady=(0, 10))
+        self.signal_contacts_box = self._text_widget(cg_text_frame, height=10)
+        cg_scroll = tk.Scrollbar(cg_text_frame, bg=TH["card"], troughcolor=TH["bg"],
+                                  command=self.signal_contacts_box.yview)
+        self.signal_contacts_box.configure(yscrollcommand=cg_scroll.set)
+        self.signal_contacts_box.pack(side="left", fill="both", expand=True)
+        cg_scroll.pack(side="right", fill="y")
+
+        # ========== CENTER COLUMN: Send & Operations ==========
+        center_col = tk.Frame(columns, bg=TH["bg"])
+        center_col.grid(row=0, column=1, sticky="nsew", padx=4)
+
+        # Send message card
+        send_card = self._card(center_col, "SEND MESSAGE", fg="#888888")
+        send_card.pack(fill="x", pady=(0, 6))
+
+        to_row = tk.Frame(send_card, bg=TH["card"])
+        to_row.pack(fill="x", padx=10, pady=4)
+        tk.Label(to_row, text="To:", bg=TH["card"], fg=TH["fg2"],
+                 font=("Segoe UI", 9)).pack(side="left")
+        self.signal_to_var = tk.StringVar(value="")
+        self._entry(to_row, self.signal_to_var).pack(
+            side="left", fill="x", expand=True, padx=6)
+
+        grp_row = tk.Frame(send_card, bg=TH["card"])
+        grp_row.pack(fill="x", padx=10, pady=(0, 4))
+        tk.Label(grp_row, text="Group:", bg=TH["card"], fg=TH["fg2"],
+                 font=("Segoe UI", 9)).pack(side="left")
+        self.signal_group_var = tk.StringVar(value="")
+        self._entry(grp_row, self.signal_group_var).pack(
+            side="left", fill="x", expand=True, padx=6)
+
+        tk.Label(send_card, text="Message:", bg=TH["card"], fg=TH["fg2"],
+                 font=("Segoe UI", 9), anchor="w").pack(fill="x", padx=10)
+        self.signal_msg_text = self._text_widget(send_card, height=4, wrap="word",
+                                               font=("Segoe UI", 10))
+        self.signal_msg_text.pack(fill="x", padx=10, pady=4)
+
+        send_btns = tk.Frame(send_card, bg=TH["card"])
+        send_btns.pack(fill="x", padx=10, pady=(0, 8))
+        self._btn(send_btns, "Send", self._signal_send).pack(side="left", padx=(0, 4))
+        self._btn(send_btns, "Attach...", self._signal_attach).pack(side="left", padx=(0, 4))
+        self.signal_attachment_var = tk.StringVar(value="")
+        tk.Label(send_btns, textvariable=self.signal_attachment_var, bg=TH["card"],
+                 fg=TH["fg2"], font=("Consolas", 8)).pack(side="left", padx=4)
+
+        # Operations card
+        ops_card = self._card(center_col, "OPERATIONS", fg="#888888")
+        ops_card.pack(fill="x", pady=(0, 6))
+
+        ops_row1 = tk.Frame(ops_card, bg=TH["card"])
+        ops_row1.pack(fill="x", padx=10, pady=4)
+        self._btn(ops_row1, "Receive", self._signal_receive).pack(side="left", padx=(0, 4))
+        self._btn(ops_row1, "Auto-Receive", self._signal_toggle_poll).pack(side="left", padx=(0, 4))
+        self.signal_poll_label = tk.StringVar(value="Off")
+        tk.Label(ops_row1, textvariable=self.signal_poll_label, bg=TH["card"],
+                 fg=TH["fg2"], font=("Segoe UI", 9)).pack(side="left", padx=4)
+
+        ops_row2 = tk.Frame(ops_card, bg=TH["card"])
+        ops_row2.pack(fill="x", padx=10, pady=(0, 4))
+        self._btn(ops_row2, "Identities", self._signal_list_identities).pack(side="left", padx=(0, 4))
+        self._btn(ops_row2, "Devices", self._signal_list_devices).pack(side="left", padx=(0, 4))
+        self._btn(ops_row2, "Link Device", self._signal_link_device).pack(side="left")
+
+        ops_row3 = tk.Frame(ops_card, bg=TH["card"])
+        ops_row3.pack(fill="x", padx=10, pady=(0, 8))
+        self._btn(ops_row3, "Stickers", self._signal_list_stickers).pack(side="left", padx=(0, 4))
+        self._btn(ops_row3, "Update Profile", self._signal_update_profile).pack(side="left", padx=(0, 4))
+        self._btn(ops_row3, "Sync Contacts", self._signal_send_contacts_sync).pack(side="left")
+
+        ops_row4 = tk.Frame(ops_card, bg=TH["card"])
+        ops_row4.pack(fill="x", padx=10, pady=(0, 8))
+        self._btn(ops_row4, "Sync Request", self._signal_sync_request).pack(side="left")
+
+        # Output log card
+        log_card = self._card(center_col, "OUTPUT", fg="#888888")
+        log_card.pack(fill="both", expand=True)
+        log_inner = tk.Frame(log_card, bg=TH["card"])
+        log_inner.pack(fill="both", expand=True, padx=10, pady=(0, 10))
+        self.signal_log = self._text_widget(log_inner, font=("Consolas", 9),
+                                          fg=TH["fg2"], state="disabled")
+        log_scroll = tk.Scrollbar(log_inner, bg=TH["card"], troughcolor=TH["bg"],
+                                   command=self.signal_log.yview)
+        self.signal_log.configure(yscrollcommand=log_scroll.set)
+        self.signal_log.pack(side="left", fill="both", expand=True)
+        log_scroll.pack(side="right", fill="y")
+
+        # ========== RIGHT COLUMN: Messages Live Feed ==========
+        right_col = tk.Frame(columns, bg=TH["bg"])
+        right_col.grid(row=0, column=2, sticky="nsew", padx=(4, 0))
+        right_col.rowconfigure(0, weight=1)
+
+        feed_card = self._card(right_col, "MESSAGES (LIVE FEED)", fg="#888888")
+        feed_card.pack(fill="both", expand=True)
+
+        feed_toolbar = tk.Frame(feed_card, bg=TH["card"])
+        feed_toolbar.pack(fill="x", padx=10, pady=4)
+        self._btn(feed_toolbar, "Fetch via Gateway", self._signal_gw_receive).pack(
+            side="right")
+
+        feed_inner = tk.Frame(feed_card, bg=TH["card"])
+        feed_inner.pack(fill="both", expand=True, padx=10, pady=(0, 10))
+        self.signal_feed = tk.Text(feed_inner, bg=TH["input"], fg=TH["fg"],
+                                    font=("Segoe UI", 10), wrap="word",
+                                    state="disabled", bd=0, highlightthickness=1,
+                                    highlightbackground=TH["border_hi"])
+        feed_scroll = tk.Scrollbar(feed_inner, bg=TH["card"], troughcolor=TH["bg"],
+                                    command=self.signal_feed.yview)
+        self.signal_feed.configure(yscrollcommand=feed_scroll.set)
+        self.signal_feed.pack(side="left", fill="both", expand=True)
+        feed_scroll.pack(side="right", fill="y")
+
+        self.signal_feed.tag_config("incoming", foreground=TH["green"])
+        self.signal_feed.tag_config("outgoing", foreground=TH["blue_text"])
+        self.signal_feed.tag_config("meta", foreground=TH["fg2"])
+        self.signal_feed.tag_config("timestamp", foreground=TH["fg_dim"])
+
+        self._signal_log_watcher_active = False
+
+        self._signal_check_status()
+        self._signal_check_cli()
+
+    def _signal_log_msg(self, msg):
+        self.signal_log.config(state="normal")
+        self.signal_log.insert("end", msg + "\n")
+        self.signal_log.see("end")
+        self.signal_log.config(state="disabled")
+
+    def _signal_check_status(self):
+        try:
+            result = subprocess.run(["pgrep", "-f", "signal-cli-daemon"], capture_output=True, text=True, timeout=5)
+            if result.returncode == 0:
+                pids = result.stdout.strip().split("\n")
+                self.signal_status_var.set(f"Daemon running (PID {pids[0]})")
+            else:
+                self.signal_status_var.set("Daemon not running")
+        except Exception as e:
+            self.signal_status_var.set(f"Error: {e}")
+
+    def _signal_daemon_status(self):
+        import urllib.request
+        try:
+            req = urllib.request.Request("http://127.0.0.1:8080/v1/about", method="GET")
+            with urllib.request.urlopen(req, timeout=3) as resp:
+                data = resp.read().decode()
+                self._signal_log_msg(f"✅ signal-cli daemon: {data}")
+                self._signal_watch_status.set("Daemon reachable")
+        except Exception as e:
+            self._signal_log_msg(f"❌ Daemon unreachable: {e}")
+            self._signal_watch_status.set("Daemon offline")
+
+    def _signal_gw_receive(self):
+        import urllib.request
+        try:
+            req = urllib.request.Request("http://127.0.0.1:8080/v1/receive", method="GET")
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                data = json.loads(resp.read().decode())
+                if not data:
+                    self._signal_log_msg("(no new messages)")
+                    return
+                self.signal_feed.config(state="normal")
+                for msg in data:
+                    envelope = msg.get("envelope", {})
+                    source = envelope.get("sourceName") or envelope.get("sourceNumber", "?")
+                    dm = envelope.get("dataMessage", {})
+                    body = dm.get("message", "")
+                    ts = envelope.get("timestamp", "")
+                    if body:
+                        self.signal_feed.insert("end", f"[{ts}] ", "timestamp")
+                        self.signal_feed.insert("end", f"{source}: ", "incoming")
+                        self.signal_feed.insert("end", f"{body}\n")
+                self.signal_feed.see("end")
+                self.signal_feed.config(state="disabled")
+        except Exception as e:
+            self._signal_log_msg(f"❌ Gateway receive failed: {e}")
+
+    def _signal_check_cli(self):
+        if os.path.isfile(SIGNAL_CLI_CLIENT) and os.access(SIGNAL_CLI_CLIENT, os.X_OK):
+            self.signal_cli_status_var.set(f"signal-cli-client: {SIGNAL_CLI_CLIENT}")
+        else:
+            self.signal_cli_status_var.set("signal-cli-client not found, extracting…")
+            self._signal_install_cli()
+
+    def _signal_install_cli(self):
+        if not os.path.isfile(SIGNAL_CLI_TARBALL):
+            self.signal_cli_status_var.set(f"Tarball not found: {SIGNAL_CLI_TARBALL}")
+            return
+        def do_extract():
+            try:
+                import tarfile
+                with tarfile.open(SIGNAL_CLI_TARBALL, "r:gz") as tar:
+                    tar.extractall(path="/tmp", filter="data")
+                if os.path.isfile(SIGNAL_CLI_CLIENT):
+                    os.chmod(SIGNAL_CLI_CLIENT, 0o755)
+                    self.after(0, lambda: self.signal_cli_status_var.set(f"signal-cli-client: {SIGNAL_CLI_CLIENT}"))
+                    self.after(0, lambda: self._signal_log_msg("✅ signal-cli-client extracted successfully"))
+                else:
+                    self.after(0, lambda: self.signal_cli_status_var.set("Extraction failed: binary not found"))
+            except Exception as e:
+                self.after(0, lambda: self.signal_cli_status_var.set(f"Extract error: {e}"))
+        threading.Thread(target=do_extract, daemon=True).start()
+
+    def _signal_launch_desktop(self):
+        if not os.path.isfile(SIGNAL_DESKTOP_BIN):
+            self._signal_log_msg(f"❌ Signal Desktop not found: {SIGNAL_DESKTOP_BIN}")
+            return
+        self._signal_log_msg("▶ Launching Signal Desktop…")
+        subprocess.Popen([SIGNAL_DESKTOP_BIN], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        self.after(2000, self._signal_check_status)
+
+    def _signal_stop_desktop(self):
+        try:
+            subprocess.run(["pkill", "-x", "signal-desktop"], capture_output=True, timeout=5)
+            self._signal_log_msg("⏹ Signal Desktop stopped")
+            self.after(1000, self._signal_check_status)
+        except Exception as e:
+            self._signal_log_msg(f"❌ {e}")
+
+    def _signal_cli_cmd(self, args, callback=None):
+        if not os.path.isfile(SIGNAL_CLI_CLIENT):
+            self._signal_log_msg("❌ signal-cli-client not found. Attempting extraction…")
+            self._signal_install_cli()
+            return
+        mode = self.signal_conn_mode.get()
+        endpoint = self.signal_endpoint_var.get().strip()
+        cmd = [SIGNAL_CLI_CLIENT]
+        if mode == "tcp":
+            cmd += ["--json-rpc-tcp", endpoint]
+        elif mode == "socket":
+            cmd += ["--json-rpc-socket", endpoint]
+        elif mode == "http":
+            cmd += ["--json-rpc-http", endpoint]
+        cmd += args
+        self._signal_log_msg(f"$ {' '.join(cmd)}")
+        def run():
+            try:
+                proc = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+                output = proc.stdout.strip()
+                err = proc.stderr.strip()
+                if output:
+                    self.after(0, lambda: self._signal_log_msg(output))
+                if err:
+                    self.after(0, lambda: self._signal_log_msg(f"stderr: {err}"))
+                if proc.returncode != 0 and not output and not err:
+                    self.after(0, lambda: self._signal_log_msg(f"❌ Exit code {proc.returncode}"))
+                if callback:
+                    self.after(0, lambda: callback(output, err, proc.returncode))
+            except subprocess.TimeoutExpired:
+                self.after(0, lambda: self._signal_log_msg("❌ Command timed out"))
+            except Exception as e:
+                self.after(0, lambda: self._signal_log_msg(f"❌ {e}"))
+        threading.Thread(target=run, daemon=True).start()
+
+    def _signal_list_contacts(self):
+        def on_result(out, err, rc):
+            self.signal_contacts_box.config(state="normal")
+            self.signal_contacts_box.delete("1.0", "end")
+            self.signal_contacts_box.insert("end", out if out else "(no contacts returned)")
+            self.signal_contacts_box.config(state="disabled")
+        self._signal_cli_cmd(["listContacts", "--all-recipients", "--detailed"], callback=on_result)
+
+    def _signal_list_groups(self):
+        def on_result(out, err, rc):
+            self.signal_contacts_box.config(state="normal")
+            self.signal_contacts_box.delete("1.0", "end")
+            self.signal_contacts_box.insert("end", out if out else "(no groups returned)")
+            self.signal_contacts_box.config(state="disabled")
+        self._signal_cli_cmd(["listGroups", "--detailed"], callback=on_result)
+
+    def _signal_list_accounts(self):
+        self._signal_cli_cmd(["listAccounts"])
+
+    def _signal_send(self):
+        msg = self.signal_msg_text.get("1.0", "end").strip()
+        if not msg:
+            self._signal_log_msg("❌ No message text")
+            return
+        group_id = self.signal_group_var.get().strip()
+        recipient = self.signal_to_var.get().strip()
+        args = ["send", "-m", msg]
+        if group_id:
+            args += ["-g", group_id]
+        elif recipient:
+            args.append(recipient)
+        else:
+            self._signal_log_msg("❌ No recipient or group ID specified")
+            return
+        attach = self.signal_attachment_var.get().strip()
+        if attach and os.path.isfile(attach):
+            args += ["-a", attach]
+        self._signal_cli_cmd(args)
+
+    def _signal_attach(self):
+        path = filedialog.askopenfilename(title="Select attachment")
+        if path:
+            self.signal_attachment_var.set(path)
+
+    def _signal_receive(self):
+        self._signal_cli_cmd(["receive", "-t", "5"])
+
+    def _signal_toggle_poll(self):
+        if self._signal_poll_id:
+            self.after_cancel(self._signal_poll_id)
+            self._signal_poll_id = None
+            self.signal_poll_label.set("Off")
+            self._signal_log_msg("🔁 Auto-receive stopped")
+        else:
+            self.signal_poll_label.set("On (10s)")
+            self._signal_log_msg("🔁 Auto-receive started (every 10s)")
+            self._signal_poll_tick()
+
+    def _signal_poll_tick(self):
+        self._signal_receive()
+        self._signal_poll_id = self.after(10000, self._signal_poll_tick)
+
+    def _signal_list_identities(self):
+        self._signal_cli_cmd(["listIdentities"])
+
+    def _signal_list_devices(self):
+        self._signal_cli_cmd(["listDevices"])
+
+    def _signal_link_device(self):
+        self._signal_cli_cmd(["link"])
+
+    def _signal_list_stickers(self):
+        self._signal_cli_cmd(["listStickerPacks"])
+
+    def _signal_update_profile(self):
+        self._signal_cli_cmd(["updateProfile"])
+
+    def _signal_send_contacts_sync(self):
+        self._signal_cli_cmd(["sendContacts"])
+
+    def _signal_sync_request(self):
+        self._signal_cli_cmd(["sendSyncRequest"])
 
     # ==================== HEAR ME OUT TAB ====================
     AUDIO_JR_DIR = os.path.expanduser("~/audioJR")
@@ -7047,498 +7346,11 @@ class ModernApp(tk.Tk):
         except Exception:
             pass
 
-    # ------------------------------------------------------------------ CURSOR
-    _CURSOR_DEFAULT_DIR = os.path.expanduser("~/vaults/WHIM")
-
-    def build_cursor(self):
-        f = self.tabs["cursor"]
-        self._cursor_file_path = None
-        self._cursor_dirty = False
-        self._cursor_chat_history = []
-
-        root = tk.Frame(f, bg=TH["bg"])
-        root.pack(fill="both", expand=True, padx=8, pady=8)
-
-        # ── Top bar: model selector + file actions ──
-        top = tk.Frame(root, bg=TH["card"], height=42)
-        top.pack(fill="x", pady=(0, 4))
-
-        tk.Label(top, text="CURSOR", bg=TH["card"], fg=TH["green"],
-                 font=("JetBrains Mono", 12, "bold")).pack(side="left", padx=10, pady=6)
-
-        tk.Frame(top, width=1, bg=TH["border"], height=24).pack(side="left", fill="y", padx=6, pady=6)
-
-        tk.Label(top, text="Model:", bg=TH["card"], fg=TH["fg2"],
-                 font=TH["font_sm"]).pack(side="left", padx=(4, 4))
-        self._cursor_model_var = tk.StringVar(value=DEFAULT_MODELS[0])
-        self._cursor_model_combo = ttk.Combobox(top, textvariable=self._cursor_model_var,
-                                                  values=DEFAULT_MODELS, width=24, state="readonly")
-        self._cursor_model_combo.pack(side="left", padx=(0, 4))
-        self._cursor_ram_lbl = tk.Label(top, text="", bg=TH["card"], fg=TH["fg2"],
-                                         font=("Consolas", 8))
-        self._cursor_ram_lbl.pack(side="left", padx=(0, 8))
-        self._cursor_model_combo.bind("<<ComboboxSelected>>", lambda e: self._cursor_update_ram_label())
-
-        tk.Frame(top, width=1, bg=TH["border"], height=24).pack(side="left", fill="y", padx=4, pady=6)
-
-        self._btn(top, "Open", self._cursor_open_file).pack(side="left", padx=2, pady=4)
-        self._btn(top, "Save", self._cursor_save_file).pack(side="left", padx=2, pady=4)
-        self._btn(top, "Save As", self._cursor_save_as).pack(side="left", padx=2, pady=4)
-        self._btn(top, "New", self._cursor_new_file).pack(side="left", padx=2, pady=4)
-
-        self._cursor_status = tk.StringVar(value="No file open")
-        tk.Label(top, textvariable=self._cursor_status, bg=TH["card"], fg=TH["green"],
-                 font=("Consolas", 9)).pack(side="right", padx=10, pady=6)
-
-        # ── Three columns: file tree | editor | AI assist ──
-        paned = tk.PanedWindow(root, orient="horizontal", bg=TH["bg"],
-                                sashwidth=4, sashrelief="flat")
-        paned.pack(fill="both", expand=True)
-
-        # ── Left: file browser ──
-        left = tk.Frame(paned, bg=TH["card"], width=200)
-        paned.add(left, minsize=140, width=200)
-
-        fb_top = tk.Frame(left, bg=TH["card"])
-        fb_top.pack(fill="x")
-        tk.Label(fb_top, text="FILES", bg=TH["card"], fg=TH["fg_dim"],
-                 font=("Consolas", 9)).pack(side="left", padx=8, pady=4)
-        self._btn(fb_top, "\u21bb", self._cursor_refresh_tree).pack(side="right", padx=4, pady=2)
-
-        self._cursor_dir_var = tk.StringVar(value=self._CURSOR_DEFAULT_DIR)
-        dir_entry = self._entry(left, self._cursor_dir_var, font=("Consolas", 8))
-        dir_entry.pack(fill="x", padx=4, pady=2)
-        dir_entry.bind("<Return>", lambda e: self._cursor_refresh_tree())
-
-        tree_frame = tk.Frame(left, bg=TH["bg"])
-        tree_frame.pack(fill="both", expand=True, padx=2, pady=2)
-        self._cursor_tree = ttk.Treeview(tree_frame, show="tree", selectmode="browse")
-        vsb = ttk.Scrollbar(tree_frame, orient="vertical", command=self._cursor_tree.yview)
-        self._cursor_tree.configure(yscrollcommand=vsb.set)
-        self._cursor_tree.pack(side="left", fill="both", expand=True)
-        vsb.pack(side="right", fill="y")
-        self._cursor_tree.bind("<<TreeviewOpen>>", self._cursor_tree_expand)
-        self._cursor_tree.bind("<Double-1>", self._cursor_tree_open)
-
-        # ── Center: code editor with line gutter ──
-        center = tk.Frame(paned, bg=TH["bg"])
-        paned.add(center, minsize=300)
-
-        self._cursor_file_lbl = tk.Label(center, text="untitled", bg=TH["bg"], fg=TH["fg_dim"],
-                                          font=("Consolas", 9), anchor="w")
-        self._cursor_file_lbl.pack(fill="x", padx=4, pady=(2, 0))
-
-        editor_frame = tk.Frame(center, bg=TH["bg"])
-        editor_frame.pack(fill="both", expand=True)
-
-        self._cursor_gutter = tk.Text(editor_frame, width=5, bg="#111111", fg="#555555",
-                                       font=("JetBrains Mono", 11), bd=0,
-                                       highlightthickness=0, padx=4, state="disabled",
-                                       takefocus=0)
-        self._cursor_gutter.pack(side="left", fill="y")
-
-        self._cursor_editor = tk.Text(editor_frame, bg="#0e0e0e", fg=TH["fg"],
-                                       font=("JetBrains Mono", 11), bd=0,
-                                       insertbackground=TH["green"], highlightthickness=0,
-                                       wrap="none", undo=True, maxundo=-1,
-                                       tabs=("4c",))
-        self._cursor_editor.pack(side="left", fill="both", expand=True)
-
-        e_vsb = ttk.Scrollbar(editor_frame, orient="vertical", command=self._cursor_editor.yview)
-        self._cursor_editor.configure(yscrollcommand=e_vsb.set)
-        e_vsb.pack(side="right", fill="y")
-
-        e_hsb = ttk.Scrollbar(center, orient="horizontal", command=self._cursor_editor.xview)
-        self._cursor_editor.configure(xscrollcommand=e_hsb.set)
-        e_hsb.pack(fill="x")
-
-        self._cursor_editor.bind("<KeyRelease>", lambda e: self._cursor_update_gutter())
-        self._cursor_editor.bind("<<Modified>>", self._cursor_on_modified)
-
-        # syntax tag colours
-        self._cursor_editor.tag_configure("keyword", foreground="#c678dd")
-        self._cursor_editor.tag_configure("builtin", foreground="#56b6c2")
-        self._cursor_editor.tag_configure("string", foreground="#98c379")
-        self._cursor_editor.tag_configure("comment", foreground="#5c6370", font=("JetBrains Mono", 11, "italic"))
-        self._cursor_editor.tag_configure("decorator", foreground="#e5c07b")
-        self._cursor_editor.tag_configure("number", foreground="#d19a66")
-        self._cursor_editor.tag_configure("self_kw", foreground="#e06c75")
-
-        # ── Right: AI assist ──
-        right = tk.Frame(paned, bg=TH["card"], width=320)
-        paned.add(right, minsize=200, width=320)
-
-        tk.Label(right, text="AI ASSIST", bg=TH["card"], fg=TH["fg_dim"],
-                 font=("Consolas", 9)).pack(anchor="w", padx=8, pady=(6, 2))
-
-        assist_btns = tk.Frame(right, bg=TH["card"])
-        assist_btns.pack(fill="x", padx=4, pady=2)
-        self._btn(assist_btns, "Explain", lambda: self._cursor_ai_action("explain")).pack(side="left", padx=2, pady=2)
-        self._btn(assist_btns, "Fix Bugs", lambda: self._cursor_ai_action("fix")).pack(side="left", padx=2, pady=2)
-        self._btn(assist_btns, "Refactor", lambda: self._cursor_ai_action("refactor")).pack(side="left", padx=2, pady=2)
-        self._btn(assist_btns, "Docstring", lambda: self._cursor_ai_action("docstring")).pack(side="left", padx=2, pady=2)
-
-        assist_btns2 = tk.Frame(right, bg=TH["card"])
-        assist_btns2.pack(fill="x", padx=4, pady=(0, 2))
-        self._btn(assist_btns2, "Complete", lambda: self._cursor_ai_action("complete")).pack(side="left", padx=2, pady=2)
-        self._btn(assist_btns2, "Tests", lambda: self._cursor_ai_action("tests")).pack(side="left", padx=2, pady=2)
-        self._btn(assist_btns2, "Apply Diff", self._cursor_apply_diff).pack(side="left", padx=2, pady=2)
-        self._btn(assist_btns2, "Clear", self._cursor_clear_chat).pack(side="left", padx=2, pady=2)
-
-        self._cursor_chat_log = tk.Text(right, bg="#111111", fg=TH["fg"],
-                                         font=("JetBrains Mono", 10), bd=0,
-                                         highlightthickness=0, wrap="word",
-                                         state="disabled")
-        self._cursor_chat_log.pack(fill="both", expand=True, padx=4, pady=2)
-        self._cursor_chat_log.tag_configure("user", foreground=TH["green"])
-        self._cursor_chat_log.tag_configure("ai", foreground="#dce4ee")
-        self._cursor_chat_log.tag_configure("system", foreground="#888888", font=("JetBrains Mono", 9, "italic"))
-
-        input_frame = tk.Frame(right, bg=TH["card"])
-        input_frame.pack(fill="x", padx=4, pady=(2, 6))
-        self._cursor_input_var = tk.StringVar()
-        inp = self._entry(input_frame, self._cursor_input_var, font=("JetBrains Mono", 10))
-        inp.pack(side="left", fill="x", expand=True, padx=(0, 4))
-        inp.bind("<Return>", lambda e: self._cursor_send_chat())
-        self._btn(input_frame, "Send", self._cursor_send_chat).pack(side="right", padx=2, pady=2)
-
-        self._cursor_refresh_tree()
-        self._cursor_refresh_models()
-        self._cursor_update_ram_label()
-
-    def _cursor_refresh_models(self):
-        def _fetch():
-            import urllib.request as _ur
-            try:
-                with _ur.urlopen(_ur.Request(
-                    f"{getattr(self, '_whimai_ollama_url', 'http://localhost:11434')}/api/tags"),
-                    timeout=5) as resp:
-                    data = json.loads(resp.read().decode())
-                models = data.get("models", [])
-                names = [m["name"] for m in models]
-                self._cursor_model_info = {m["name"]: m for m in models}
-                if names:
-                    self.after(0, lambda: self._cursor_model_combo.config(values=names))
-                    self.after(0, self._cursor_update_ram_label)
-            except Exception:
-                pass
-        self._cursor_model_info = {}
-        threading.Thread(target=_fetch, daemon=True).start()
-
-    def _cursor_update_ram_label(self):
-        name = self._cursor_model_var.get()
-        info = getattr(self, "_cursor_model_info", {}).get(name, {})
-        size_gb = info.get("size", 0) / 1e9
-        params = info.get("details", {}).get("parameter_size", "")
-        quant = info.get("details", {}).get("quantization_level", "")
-        parts = []
-        if size_gb > 0:
-            parts.append(f"{size_gb:.1f}GB")
-        if params:
-            parts.append(params)
-        if quant:
-            parts.append(quant)
-        try:
-            import psutil
-            ram = psutil.virtual_memory()
-            parts.append(f"RAM:{ram.available / 1e9:.0f}GB free")
-        except ImportError:
-            pass
-        self._cursor_ram_lbl.config(text="  ".join(parts) if parts else "")
-
-    # ── File browser ──
-    def _cursor_refresh_tree(self):
-        self._cursor_tree.delete(*self._cursor_tree.get_children())
-        root_dir = self._cursor_dir_var.get().strip()
-        if not os.path.isdir(root_dir):
-            return
-        self._cursor_populate_node("", root_dir)
-
-    def _cursor_populate_node(self, parent, path):
-        skip = {".venv", "__pycache__", "node_modules", ".git", "obj", "gen"}
-        try:
-            entries = sorted(os.listdir(path))
-        except PermissionError:
-            return
-        dirs = [e for e in entries if os.path.isdir(os.path.join(path, e)) and e not in skip]
-        files = [e for e in entries if os.path.isfile(os.path.join(path, e))]
-        for d in dirs:
-            full = os.path.join(path, d)
-            node = self._cursor_tree.insert(parent, "end", text=f"\U0001f4c1 {d}",
-                                             values=(full,), open=False)
-            self._cursor_tree.insert(node, "end", text="...")  # placeholder
-        for fn in files:
-            ext = os.path.splitext(fn)[1].lower()
-            if ext in (".py", ".js", ".json", ".html", ".css", ".sh", ".md",
-                       ".txt", ".yaml", ".yml", ".toml", ".xml", ".java", ".go",
-                       ".cfg", ".conf", ".csv", ".sql"):
-                full = os.path.join(path, fn)
-                self._cursor_tree.insert(parent, "end", text=f"  {fn}", values=(full,))
-
-    def _cursor_tree_expand(self, event):
-        node = self._cursor_tree.focus()
-        children = self._cursor_tree.get_children(node)
-        if len(children) == 1 and self._cursor_tree.item(children[0], "text") == "...":
-            self._cursor_tree.delete(children[0])
-            vals = self._cursor_tree.item(node, "values")
-            if vals:
-                self._cursor_populate_node(node, vals[0])
-
-    def _cursor_tree_open(self, event):
-        node = self._cursor_tree.focus()
-        vals = self._cursor_tree.item(node, "values")
-        if vals and os.path.isfile(vals[0]):
-            self._cursor_load_file(vals[0])
-
-    def _cursor_load_file(self, path):
-        try:
-            with open(path, "r", errors="replace") as fh:
-                content = fh.read()
-        except Exception as e:
-            self._cursor_status.set(f"Error: {e}")
-            return
-        self._cursor_file_path = path
-        self._cursor_editor.delete("1.0", "end")
-        self._cursor_editor.insert("1.0", content)
-        self._cursor_editor.edit_reset()
-        self._cursor_editor.edit_modified(False)
-        self._cursor_dirty = False
-        fname = os.path.basename(path)
-        self._cursor_file_lbl.config(text=path)
-        self._cursor_status.set(fname)
-        self._cursor_update_gutter()
-        self._cursor_highlight_syntax()
-
-    def _cursor_open_file(self):
-        path = filedialog.askopenfilename(
-            title="Open file",
-            initialdir=self._cursor_dir_var.get(),
-            filetypes=[("Python", "*.py"), ("All text", "*.*")])
-        if path:
-            self._cursor_load_file(path)
-
-    def _cursor_save_file(self):
-        if not self._cursor_file_path:
-            self._cursor_save_as()
-            return
-        try:
-            content = self._cursor_editor.get("1.0", "end-1c")
-            with open(self._cursor_file_path, "w") as fh:
-                fh.write(content)
-            self._cursor_dirty = False
-            self._cursor_editor.edit_modified(False)
-            self._cursor_status.set(f"Saved {os.path.basename(self._cursor_file_path)}")
-        except Exception as e:
-            self._cursor_status.set(f"Error: {e}")
-
-    def _cursor_save_as(self):
-        path = filedialog.asksaveasfilename(
-            title="Save as",
-            initialdir=self._cursor_dir_var.get(),
-            defaultextension=".py",
-            filetypes=[("Python", "*.py"), ("All", "*.*")])
-        if path:
-            self._cursor_file_path = path
-            self._cursor_file_lbl.config(text=path)
-            self._cursor_save_file()
-
-    def _cursor_new_file(self):
-        self._cursor_file_path = None
-        self._cursor_editor.delete("1.0", "end")
-        self._cursor_editor.edit_reset()
-        self._cursor_editor.edit_modified(False)
-        self._cursor_dirty = False
-        self._cursor_file_lbl.config(text="untitled")
-        self._cursor_status.set("New file")
-        self._cursor_update_gutter()
-
-    def _cursor_on_modified(self, event=None):
-        if self._cursor_editor.edit_modified():
-            self._cursor_dirty = True
-            if self._cursor_file_path:
-                name = os.path.basename(self._cursor_file_path)
-                self._cursor_status.set(f"{name} (modified)")
-            self._cursor_highlight_syntax()
-
-    def _cursor_update_gutter(self):
-        self._cursor_gutter.config(state="normal")
-        self._cursor_gutter.delete("1.0", "end")
-        line_count = int(self._cursor_editor.index("end-1c").split(".")[0])
-        nums = "\n".join(str(i) for i in range(1, line_count + 1))
-        self._cursor_gutter.insert("1.0", nums)
-        self._cursor_gutter.config(state="disabled")
-
-    _PY_KEYWORDS = {
-        "False", "None", "True", "and", "as", "assert", "async", "await",
-        "break", "class", "continue", "def", "del", "elif", "else", "except",
-        "finally", "for", "from", "global", "if", "import", "in", "is",
-        "lambda", "nonlocal", "not", "or", "pass", "raise", "return",
-        "try", "while", "with", "yield",
-    }
-    _PY_BUILTINS = {
-        "print", "len", "range", "int", "str", "float", "list", "dict",
-        "set", "tuple", "bool", "type", "isinstance", "hasattr", "getattr",
-        "setattr", "open", "super", "enumerate", "zip", "map", "filter",
-        "sorted", "reversed", "any", "all", "min", "max", "sum", "abs",
-        "input", "format", "repr", "id", "hex", "oct", "bin", "chr", "ord",
-        "staticmethod", "classmethod", "property", "Exception", "ValueError",
-        "TypeError", "KeyError", "IndexError", "AttributeError", "OSError",
-        "FileNotFoundError", "RuntimeError", "StopIteration", "NotImplementedError",
-    }
-
-    def _cursor_highlight_syntax(self):
-        import re as _re
-        editor = self._cursor_editor
-        for tag in ("keyword", "builtin", "string", "comment", "decorator", "number", "self_kw"):
-            editor.tag_remove(tag, "1.0", "end")
-        content = editor.get("1.0", "end")
-        patterns = [
-            ("comment", _re.compile(r'#[^\n]*')),
-            ("string", _re.compile(r'(?:"""[\s\S]*?"""|\'\'\'[\s\S]*?\'\'\'|"(?:[^"\\]|\\.)*"|\'(?:[^\'\\]|\\.)*\')')),
-            ("decorator", _re.compile(r'@\w+')),
-            ("number", _re.compile(r'\b\d+\.?\d*(?:e[+-]?\d+)?\b')),
-            ("self_kw", _re.compile(r'\bself\b')),
-            ("keyword", _re.compile(r'\b(?:' + "|".join(self._PY_KEYWORDS) + r')\b')),
-            ("builtin", _re.compile(r'\b(?:' + "|".join(self._PY_BUILTINS) + r')\b')),
-        ]
-        for tag_name, pat in patterns:
-            for m in pat.finditer(content):
-                start_idx = f"1.0+{m.start()}c"
-                end_idx = f"1.0+{m.end()}c"
-                editor.tag_add(tag_name, start_idx, end_idx)
-
-    # ── AI assist ──
-    _CURSOR_PROMPTS = {
-        "explain": "Explain the following code concisely. Focus on what it does and any notable patterns:\n\n```\n{code}\n```",
-        "fix": "Find and fix bugs in this code. Return the corrected code with brief comments on what was wrong:\n\n```\n{code}\n```",
-        "refactor": "Refactor this code to be cleaner and more maintainable. Preserve functionality:\n\n```\n{code}\n```",
-        "docstring": "Add docstrings/comments to this code. Return the full code with documentation added:\n\n```\n{code}\n```",
-        "complete": "Complete this code. Continue writing from where it ends. Return only the new code to append:\n\n```\n{code}\n```",
-        "tests": "Write unit tests for this code using pytest. Return only the test code:\n\n```\n{code}\n```",
-    }
-
-    def _cursor_get_context(self):
-        try:
-            sel = self._cursor_editor.get("sel.first", "sel.last")
-            if sel.strip():
-                return sel
-        except tk.TclError:
-            pass
-        return self._cursor_editor.get("1.0", "end-1c")
-
-    def _cursor_ai_action(self, action):
-        code = self._cursor_get_context()
-        if not code.strip():
-            self._cursor_chat_append("No code in editor.\n", "system")
-            return
-        prompt = self._CURSOR_PROMPTS.get(action, "{code}").format(code=code)
-        self._cursor_chat_append(f"[{action.upper()}] using {self._cursor_model_var.get()}\n", "system")
-        self._cursor_stream_ollama(prompt)
-
-    def _cursor_send_chat(self):
-        text = self._cursor_input_var.get().strip()
-        if not text:
-            return
-        self._cursor_input_var.set("")
-        code = self._cursor_get_context()
-        if code.strip():
-            full_prompt = f"{text}\n\nHere is the code I'm working with:\n```\n{code}\n```"
-        else:
-            full_prompt = text
-        self._cursor_chat_append(f"You: {text}\n", "user")
-        self._cursor_stream_ollama(full_prompt)
-
-    def _cursor_chat_append(self, text, tag="ai"):
-        self._cursor_chat_log.config(state="normal")
-        self._cursor_chat_log.insert("end", text, tag)
-        self._cursor_chat_log.see("end")
-        self._cursor_chat_log.config(state="disabled")
-
-    def _cursor_clear_chat(self):
-        self._cursor_chat_log.config(state="normal")
-        self._cursor_chat_log.delete("1.0", "end")
-        self._cursor_chat_log.config(state="disabled")
-        self._cursor_chat_history = []
-
-    def _cursor_stream_ollama(self, prompt):
-        model = self._cursor_model_var.get()
-        self._cursor_chat_history.append({"role": "user", "content": prompt})
-        sys_msg = (
-            "You are a concise code assistant embedded in the Whim IDE. "
-            "When returning code, use fenced code blocks. Be direct and brief."
-        )
-        messages = [{"role": "system", "content": sys_msg}] + list(self._cursor_chat_history)
-
-        def _stream():
-            import urllib.request as _ur
-            try:
-                payload = json.dumps({
-                    "model": model,
-                    "messages": messages,
-                    "stream": True,
-                    "options": {"temperature": 0.3, "num_ctx": 16384}
-                }).encode()
-                req = _ur.Request(
-                    f"{getattr(self, '_whimai_ollama_url', 'http://localhost:11434')}/api/chat",
-                    data=payload, method="POST",
-                    headers={"Content-Type": "application/json"})
-                full = []
-                with _ur.urlopen(req, timeout=180) as resp:
-                    buf = b""
-                    while True:
-                        chunk = resp.read(1)
-                        if not chunk:
-                            break
-                        buf += chunk
-                        if chunk == b"\n" and buf.strip():
-                            try:
-                                data = json.loads(buf.strip())
-                                token = data.get("message", {}).get("content", "")
-                                if token:
-                                    full.append(token)
-                                    self.after(0, lambda t=token: self._cursor_chat_append(t, "ai"))
-                                if data.get("done"):
-                                    break
-                            except (json.JSONDecodeError, ValueError):
-                                pass
-                            buf = b""
-                response_text = "".join(full)
-                self._cursor_chat_history.append({"role": "assistant", "content": response_text})
-                self.after(0, lambda: self._cursor_chat_append("\n\n", "ai"))
-                self.after(0, lambda: self._cursor_status.set("Ready"))
-            except Exception as e:
-                self.after(0, lambda: self._cursor_chat_append(f"\n[Error: {e}]\n", "system"))
-                self.after(0, lambda: self._cursor_status.set("Error"))
-
-        self._cursor_status.set(f"Streaming {model}...")
-        threading.Thread(target=_stream, daemon=True).start()
-
-    def _cursor_apply_diff(self):
-        chat_text = self._cursor_chat_log.get("1.0", "end")
-        import re as _re
-        blocks = _re.findall(r'```(?:python)?\n(.*?)```', chat_text, _re.DOTALL)
-        if not blocks:
-            self._cursor_chat_append("No code block found in AI response to apply.\n", "system")
-            return
-        code = blocks[-1].strip()
-        confirm = messagebox.askyesno("Apply Code",
-                                       f"Replace editor contents with AI-generated code?\n\n"
-                                       f"({len(code)} characters, {code.count(chr(10))+1} lines)")
-        if confirm:
-            self._cursor_editor.delete("1.0", "end")
-            self._cursor_editor.insert("1.0", code)
-            self._cursor_update_gutter()
-            self._cursor_highlight_syntax()
-            self._cursor_chat_append("Applied code to editor.\n", "system")
-
-    # ------------------------------------------------------------------ LIBRARY
     _LIB_DIR = os.path.expanduser("~/Shared")
 
     def build_library(self):
         f = self.tabs["library"]
         os.makedirs(self._LIB_DIR, exist_ok=True)
-
-        self._lib_view_mode = "list"
 
         root_frame = tk.Frame(f, bg=TH["bg"])
         root_frame.pack(fill="both", expand=True, padx=8, pady=8)
@@ -7557,29 +7369,12 @@ class ModernApp(tk.Tk):
         self._btn(action_bar, "Upload Files", self._lib_upload).pack(side="left", padx=4, pady=4)
         self._btn(action_bar, "Download Selected", self._lib_download).pack(side="left", padx=4, pady=4)
         self._btn(action_bar, "Preview", self._lib_preview).pack(side="left", padx=4, pady=4)
-        self._btn(action_bar, "Rename", self._lib_rename).pack(side="left", padx=4, pady=4)
         self._btn(action_bar, "Delete Selected", self._lib_delete).pack(side="left", padx=4, pady=4)
         self._btn(action_bar, "Refresh", self._lib_refresh).pack(side="left", padx=4, pady=4)
-
-        rhs = tk.Frame(action_bar, bg=TH["card"])
-        rhs.pack(side="right")
-        self._btn(rhs, "\u2630 List", lambda: self._lib_set_view("list")).pack(side="left", padx=2, pady=4)
-        self._btn(rhs, "\u25a6 Grid", lambda: self._lib_set_view("grid")).pack(side="left", padx=2, pady=4)
-        self._btn(rhs, "\u25eb Detail", lambda: self._lib_set_view("detail")).pack(side="left", padx=2, pady=4)
-        self._btn(rhs, "Open Folder", self._lib_open_folder).pack(side="left", padx=(8, 4), pady=4)
-
-        self._lib_content_frame = tk.Frame(root_frame, bg=TH["bg"])
-        self._lib_content_frame.pack(fill="both", expand=True)
-
-        self._lib_build_list_view()
-        self._lib_refresh()
-
-    def _lib_build_list_view(self):
-        for w in self._lib_content_frame.winfo_children():
-            w.destroy()
+        self._btn(action_bar, "Open Folder", self._lib_open_folder).pack(side="right", padx=4, pady=4)
 
         cols = ("name", "size", "type")
-        list_frame = tk.Frame(self._lib_content_frame, bg=TH["bg"])
+        list_frame = tk.Frame(root_frame, bg=TH["bg"])
         list_frame.pack(fill="both", expand=True)
 
         self._lib_tree = ttk.Treeview(list_frame, columns=cols, show="headings",
@@ -7598,111 +7393,7 @@ class ModernApp(tk.Tk):
 
         self._lib_tree.bind("<Double-1>", lambda e: self._lib_preview())
 
-    def _lib_build_grid_view(self):
-        for w in self._lib_content_frame.winfo_children():
-            w.destroy()
-
-        canvas = tk.Canvas(self._lib_content_frame, bg=TH["bg"], highlightthickness=0)
-        vsb = ttk.Scrollbar(self._lib_content_frame, orient="vertical", command=canvas.yview)
-        canvas.configure(yscrollcommand=vsb.set)
-        vsb.pack(side="right", fill="y")
-        canvas.pack(side="left", fill="both", expand=True)
-
-        grid_inner = tk.Frame(canvas, bg=TH["bg"])
-        canvas.create_window((0, 0), window=grid_inner, anchor="nw")
-        self._lib_grid_inner = grid_inner
-        self._lib_grid_canvas = canvas
-
-        def _on_frame_configure(e):
-            canvas.configure(scrollregion=canvas.bbox("all"))
-        grid_inner.bind("<Configure>", _on_frame_configure)
-
-        def _on_canvas_configure(e):
-            canvas.itemconfig(canvas.find_all()[0], width=e.width)
-        canvas.bind("<Configure>", _on_canvas_configure)
-
-        self._lib_tree = None
-
-    def _lib_build_detail_view(self):
-        for w in self._lib_content_frame.winfo_children():
-            w.destroy()
-
-        cols = ("name", "size", "type", "modified")
-        list_frame = tk.Frame(self._lib_content_frame, bg=TH["bg"])
-        list_frame.pack(fill="both", expand=True)
-
-        self._lib_tree = ttk.Treeview(list_frame, columns=cols, show="headings",
-                                       selectmode="extended")
-        self._lib_tree.heading("name", text="Name", anchor="w")
-        self._lib_tree.heading("size", text="Size", anchor="w")
-        self._lib_tree.heading("type", text="Type", anchor="w")
-        self._lib_tree.heading("modified", text="Modified", anchor="w")
-        self._lib_tree.column("name", width=350, minwidth=200)
-        self._lib_tree.column("size", width=80, minwidth=50)
-        self._lib_tree.column("type", width=80, minwidth=50)
-        self._lib_tree.column("modified", width=150, minwidth=100)
-
-        vsb = ttk.Scrollbar(list_frame, orient="vertical", command=self._lib_tree.yview)
-        self._lib_tree.configure(yscrollcommand=vsb.set)
-        self._lib_tree.pack(side="left", fill="both", expand=True)
-        vsb.pack(side="right", fill="y")
-
-        self._lib_tree.bind("<Double-1>", lambda e: self._lib_preview())
-
-    def _lib_set_view(self, mode):
-        self._lib_view_mode = mode
-        if mode == "list":
-            self._lib_build_list_view()
-        elif mode == "grid":
-            self._lib_build_grid_view()
-        elif mode == "detail":
-            self._lib_build_detail_view()
         self._lib_refresh()
-
-    def _lib_get_selected_names(self):
-        if self._lib_view_mode == "grid":
-            name = getattr(self, "_lib_grid_selected", None)
-            return [name] if name else []
-        if self._lib_tree is None:
-            return []
-        sel = self._lib_tree.selection()
-        return [self._lib_tree.item(i, "values")[0] for i in sel]
-
-    def _lib_rename(self):
-        names = self._lib_get_selected_names()
-        if not names:
-            self._lib_status_var.set("No file selected")
-            return
-        old_name = names[0]
-        old_path = os.path.join(self._LIB_DIR, old_name)
-        if not os.path.isfile(old_path):
-            self._lib_status_var.set("File not found")
-            return
-        from tkinter import simpledialog
-        new_name = simpledialog.askstring("Rename File", "New filename:",
-                                           initialvalue=old_name, parent=self)
-        if not new_name or new_name == old_name:
-            return
-        new_path = os.path.join(self._LIB_DIR, new_name)
-        if os.path.exists(new_path):
-            self._lib_status_var.set("A file with that name already exists")
-            return
-        try:
-            os.rename(old_path, new_path)
-            self._lib_status_var.set(f"Renamed to {new_name}")
-            self._lib_refresh()
-        except Exception as e:
-            self._lib_status_var.set(f"Error: {e}")
-
-    def _lib_preview_path(self, fpath, name):
-        ftype = self._lib_file_type(name)
-        if ftype == "Image":
-            self._lib_show_image(fpath, name)
-        else:
-            try:
-                subprocess.Popen(["xdg-open", fpath])
-            except Exception:
-                self._lib_status_var.set("Cannot open file")
 
     def _lib_human_size(self, nbytes):
         for unit in ("B", "KB", "MB", "GB"):
@@ -7724,70 +7415,17 @@ class ModernApp(tk.Tk):
         return types.get(ext, "File")
 
     def _lib_refresh(self):
+        self._lib_tree.delete(*self._lib_tree.get_children())
         if not os.path.isdir(self._LIB_DIR):
             return
-
-        entries = []
         for fn in sorted(os.listdir(self._LIB_DIR), reverse=True):
             fp = os.path.join(self._LIB_DIR, fn)
             if os.path.isfile(fp):
-                entries.append((fn, fp))
-
-        if self._lib_view_mode == "grid":
-            for w in self._lib_grid_inner.winfo_children():
-                w.destroy()
-            col = 0
-            row = 0
-            cols_per_row = 5
-            for fn, fp in entries:
-                sz = self._lib_human_size(os.path.getsize(fp))
-                ftype = self._lib_file_type(fn)
-                cell = tk.Frame(self._lib_grid_inner, bg=TH["card"], bd=1,
-                                relief="solid", highlightbackground=TH["border"],
-                                highlightthickness=1)
-                cell.grid(row=row, column=col, padx=4, pady=4, sticky="nsew")
-                self._lib_grid_inner.columnconfigure(col, weight=1)
-
-                icon_map = {"Image": "\U0001f5bc", "Video": "\U0001f3ac",
-                            "Audio": "\U0001f3b5", "PDF": "\U0001f4c4",
-                            "Text": "\U0001f4dd"}
-                icon = icon_map.get(ftype, "\U0001f4c1")
-                tk.Label(cell, text=icon, bg=TH["card"], fg=TH["fg"],
-                         font=("Segoe UI", 24)).pack(pady=(8, 2))
-                tk.Label(cell, text=fn, bg=TH["card"], fg=TH["fg"],
-                         font=("Segoe UI", 9), wraplength=120).pack(padx=4)
-                tk.Label(cell, text=sz, bg=TH["card"], fg=TH["fg2"],
-                         font=("Consolas", 8)).pack(pady=(0, 6))
-
-                def _sel(e, name=fn):
-                    self._lib_grid_selected = name
-                cell.bind("<Button-1>", _sel)
-                for child in cell.winfo_children():
-                    child.bind("<Button-1>", _sel)
-                cell.bind("<Double-1>", lambda e, path=fp: self._lib_preview_path(path, os.path.basename(path)))
-
-                col += 1
-                if col >= cols_per_row:
-                    col = 0
-                    row += 1
-            self._lib_grid_canvas.update_idletasks()
-            self._lib_grid_canvas.configure(scrollregion=self._lib_grid_canvas.bbox("all"))
-        elif self._lib_view_mode == "detail":
-            import time as _time
-            self._lib_tree.delete(*self._lib_tree.get_children())
-            for fn, fp in entries:
-                sz = self._lib_human_size(os.path.getsize(fp))
-                ftype = self._lib_file_type(fn)
-                mtime = _time.strftime("%Y-%m-%d %H:%M", _time.localtime(os.path.getmtime(fp)))
-                self._lib_tree.insert("", "end", values=(fn, sz, ftype, mtime))
-        else:
-            self._lib_tree.delete(*self._lib_tree.get_children())
-            for fn, fp in entries:
                 sz = self._lib_human_size(os.path.getsize(fp))
                 ftype = self._lib_file_type(fn)
                 self._lib_tree.insert("", "end", values=(fn, sz, ftype))
-
-        self._lib_status_var.set(f"{len(entries)} file(s)")
+        count = len(self._lib_tree.get_children())
+        self._lib_status_var.set(f"{count} file(s)")
 
     def _lib_upload(self):
         paths = filedialog.askopenfilenames(
@@ -7808,28 +7446,33 @@ class ModernApp(tk.Tk):
         self._lib_refresh()
 
     def _lib_download(self):
-        names = self._lib_get_selected_names()
-        if not names:
+        sel = self._lib_tree.selection()
+        if not sel:
             self._lib_status_var.set("No file selected")
             return
-        downloads_dir = os.path.expanduser("~/Downloads")
-        os.makedirs(downloads_dir, exist_ok=True)
+        dest_dir = filedialog.askdirectory(
+            title="Save files to...",
+            initialdir=os.path.expanduser("~/Downloads"))
+        if not dest_dir:
+            return
         saved = 0
-        for name in names:
+        for item in sel:
+            name = self._lib_tree.item(item, "values")[0]
             src = os.path.join(self._LIB_DIR, name)
             if os.path.isfile(src):
                 try:
-                    shutil.copy2(src, os.path.join(downloads_dir, name))
+                    shutil.copy2(src, os.path.join(dest_dir, name))
                     saved += 1
                 except Exception as e:
                     self._lib_status_var.set(f"Error: {e}")
-        self._lib_status_var.set(f"Downloaded {saved} file(s) to Downloads")
+        self._lib_status_var.set(f"Downloaded {saved} file(s) to {os.path.basename(dest_dir)}")
 
     def _lib_delete(self):
-        names = self._lib_get_selected_names()
-        if not names:
+        sel = self._lib_tree.selection()
+        if not sel:
             self._lib_status_var.set("No file selected")
             return
+        names = [self._lib_tree.item(i, "values")[0] for i in sel]
         confirm = messagebox.askyesno(
             "Delete Files",
             f"Delete {len(names)} file(s) from Library?\n\n" + "\n".join(names[:10]))
@@ -7853,13 +7496,31 @@ class ModernApp(tk.Tk):
             self._lib_status_var.set("Cannot open folder")
 
     def _lib_preview(self):
-        names = self._lib_get_selected_names()
-        if not names:
+        sel = self._lib_tree.selection()
+        if not sel:
             self._lib_status_var.set("No file selected")
             return
-        name = names[0]
+        name = self._lib_tree.item(sel[0], "values")[0]
         fpath = os.path.join(self._LIB_DIR, name)
-        self._lib_preview_path(fpath, name)
+        ftype = self._lib_file_type(name)
+
+        if ftype == "Image":
+            self._lib_show_image(fpath, name)
+        elif ftype in ("Video", "Audio", "PDF"):
+            try:
+                subprocess.Popen(["xdg-open", fpath])
+            except Exception:
+                self._lib_status_var.set("Cannot open file")
+        elif ftype == "Text":
+            try:
+                subprocess.Popen(["xdg-open", fpath])
+            except Exception:
+                self._lib_status_var.set("Cannot open file")
+        else:
+            try:
+                subprocess.Popen(["xdg-open", fpath])
+            except Exception:
+                self._lib_status_var.set("Cannot open file")
 
     def _lib_show_image(self, fpath, name):
         win = tk.Toplevel(self)
@@ -8029,6 +7690,8 @@ class ModernApp(tk.Tk):
         self.arc_color_combo.pack(side="left", padx=2, pady=4)
         self.arc_color_combo.bind("<<ComboboxSelected>>", lambda e: self._arc_apply_color())
         self._btn(fmt_bar, "Pick...", self._arc_pick_color).pack(
+            side="left", padx=2, pady=4)
+        self._btn(fmt_bar, "Hue", self._arc_open_hue_picker).pack(
             side="left", padx=2, pady=4)
 
         tk.Frame(fmt_bar, bg=TH["border_hi"], width=2).pack(
@@ -8398,6 +8061,108 @@ class ModernApp(tk.Tk):
             self.arc_color_var.set(result[1])
             self._arc_apply_color()
 
+    def _arc_open_hue_picker(self):
+        win = tk.Toplevel(self)
+        win.title("Hue Color Picker")
+        win.configure(bg=TH["bg"])
+        win.geometry("420x340")
+        win.resizable(False, False)
+        win.transient(self)
+        win.grab_set()
+
+        tk.Label(win, text="HUE COLOR PICKER", bg=TH["bg"], fg=TH["green"],
+                 font=("Segoe UI", 12, "bold")).pack(pady=(12, 8))
+
+        hue_canvas = tk.Canvas(win, width=360, height=30, bg=TH["bg"],
+                               highlightthickness=1, highlightbackground=TH["border"])
+        hue_canvas.pack(padx=30, pady=(0, 8))
+        hue_img = tk.PhotoImage(width=360, height=30)
+        for x in range(360):
+            h = x / 360.0
+            r, g, b = [int(c * 255) for c in self._hsv_to_rgb(h, 1.0, 1.0)]
+            col = f"#{r:02x}{g:02x}{b:02x}"
+            for y in range(30):
+                hue_img.put(col, (x, y))
+        hue_canvas._img = hue_img
+        hue_canvas.create_image(0, 0, anchor="nw", image=hue_img)
+
+        sat_bright_canvas = tk.Canvas(win, width=360, height=150, bg=TH["bg"],
+                                      highlightthickness=1, highlightbackground=TH["border"])
+        sat_bright_canvas.pack(padx=30, pady=(0, 8))
+
+        preview_frame = tk.Frame(win, bg=TH["bg"])
+        preview_frame.pack(fill="x", padx=30, pady=(0, 8))
+        tk.Label(preview_frame, text="Color:", bg=TH["bg"], fg=TH["fg2"],
+                 font=TH["font_sm"]).pack(side="left")
+        color_preview = tk.Label(preview_frame, text="     ", bg=self.arc_color_var.get(),
+                                 width=6, relief="solid", bd=1)
+        color_preview.pack(side="left", padx=8)
+        hex_var = tk.StringVar(value=self.arc_color_var.get())
+        hex_entry = self._entry(preview_frame, hex_var, width=10)
+        hex_entry.pack(side="left", padx=4)
+
+        state = {"hue": 0.0}
+
+        def _render_sat_bright(hue):
+            state["hue"] = hue
+            img = tk.PhotoImage(width=360, height=150)
+            for x in range(0, 360, 2):
+                s = x / 359.0
+                for y in range(0, 150, 2):
+                    v = 1.0 - y / 149.0
+                    r, g, b = [int(c * 255) for c in self._hsv_to_rgb(hue, s, v)]
+                    col = f"#{r:02x}{g:02x}{b:02x}"
+                    img.put(col, to=(x, y, x + 2, y + 2))
+            sat_bright_canvas._img = img
+            sat_bright_canvas.delete("all")
+            sat_bright_canvas.create_image(0, 0, anchor="nw", image=img)
+
+        def _on_hue_click(event):
+            hue = max(0, min(359, event.x)) / 360.0
+            _render_sat_bright(hue)
+
+        def _on_sb_click(event):
+            s = max(0, min(359, event.x)) / 359.0
+            v = 1.0 - max(0, min(149, event.y)) / 149.0
+            r, g, b = [int(c * 255) for c in self._hsv_to_rgb(state["hue"], s, v)]
+            col = f"#{r:02x}{g:02x}{b:02x}"
+            hex_var.set(col)
+            color_preview.config(bg=col)
+
+        hue_canvas.bind("<Button-1>", _on_hue_click)
+        hue_canvas.bind("<B1-Motion>", _on_hue_click)
+        sat_bright_canvas.bind("<Button-1>", _on_sb_click)
+        sat_bright_canvas.bind("<B1-Motion>", _on_sb_click)
+
+        def _apply():
+            self.arc_color_var.set(hex_var.get())
+            self._arc_apply_color()
+            win.destroy()
+
+        btn_row = tk.Frame(win, bg=TH["bg"])
+        btn_row.pack(pady=(0, 12))
+        self._btn(btn_row, "Apply", _apply).pack(side="left", padx=4)
+        self._btn(btn_row, "Cancel", win.destroy).pack(side="left", padx=4)
+
+        _render_sat_bright(0.0)
+
+    @staticmethod
+    def _hsv_to_rgb(h, s, v):
+        if s == 0.0:
+            return (v, v, v)
+        i = int(h * 6.0)
+        f = (h * 6.0) - i
+        p = v * (1.0 - s)
+        q = v * (1.0 - s * f)
+        t = v * (1.0 - s * (1.0 - f))
+        i %= 6
+        if i == 0: return (v, t, p)
+        if i == 1: return (q, v, p)
+        if i == 2: return (p, v, t)
+        if i == 3: return (p, q, v)
+        if i == 4: return (t, p, v)
+        return (v, p, q)
+
     def _arc_insert_bullet(self):
         choice = self.arc_bullet_var.get()
         prefix_map = {
@@ -8457,6 +8222,1330 @@ class ModernApp(tk.Tk):
         self.arc_changelog.insert("end", f"[{ts}] {msg}\n")
         self.arc_changelog.see("end")
         self.arc_changelog.config(state="disabled")
+
+    # ==================== DISCORD TAB ====================
+    def build_discord(self):
+        f = self.tabs["discord"]
+        self._discord_cfg = {}
+        self._discord_load_config()
+
+        pane = ttk.PanedWindow(f, orient="horizontal")
+        pane.pack(fill="both", expand=True, padx=12, pady=12)
+
+        # --- Left panel: status, config, channels ---
+        left = ttk.Frame(pane)
+        pane.add(left, weight=1)
+
+        # Desktop status
+        status_frame = ttk.LabelFrame(left, text="DISCORD DESKTOP", style="Grey.TLabelframe")
+        status_frame.pack(fill="x", pady=(0, 8))
+
+        st_row = ttk.Frame(status_frame)
+        st_row.pack(fill="x", padx=8, pady=4)
+        self.discord_status_var = tk.StringVar(value="Checking…")
+        ttk.Label(st_row, textvariable=self.discord_status_var, font=("Segoe UI", 10)).pack(side="left")
+        self._btn(st_row, "Refresh", self._discord_check_status).pack(side="right")
+
+        dt_btns = ttk.Frame(status_frame)
+        dt_btns.pack(fill="x", padx=8, pady=(0, 8))
+        self._btn(dt_btns, "Launch", self._discord_launch).pack(side="left", padx=(0, 4))
+        self._btn(dt_btns, "Stop", self._discord_stop).pack(side="left")
+
+        # Bot config
+        bot_frame = ttk.LabelFrame(left, text="OPENCLAW BOT CONFIG", style="Grey.TLabelframe")
+        bot_frame.pack(fill="x", pady=(0, 8))
+
+        cfg_info = ttk.Frame(bot_frame)
+        cfg_info.pack(fill="x", padx=8, pady=4)
+        self.discord_bot_status_var = tk.StringVar(value="")
+        ttk.Label(cfg_info, textvariable=self.discord_bot_status_var,
+                  font=("Consolas", 8), foreground=TH["fg2"], wraplength=280).pack(anchor="w")
+
+        # Toggles for actions
+        toggle_frame = ttk.LabelFrame(left, text="ACTIONS (OPENCLAW.JSON)", style="Grey.TLabelframe")
+        toggle_frame.pack(fill="x", pady=(0, 8))
+
+        self._discord_action_vars = {}
+        action_names = [
+            "reactions", "stickers", "emojiUploads", "stickerUploads",
+            "messages", "search", "channelInfo", "voiceStatus", "moderation", "presence"
+        ]
+        tog_inner = ttk.Frame(toggle_frame)
+        tog_inner.pack(fill="x", padx=8, pady=4)
+        for i, act in enumerate(action_names):
+            actions_cfg = self._discord_cfg.get("actions", {})
+            var = tk.BooleanVar(value=actions_cfg.get(act, False))
+            self._discord_action_vars[act] = var
+            r, c = divmod(i, 2)
+            ttk.Checkbutton(tog_inner, text=act, variable=var).grid(row=r, column=c, sticky="w", padx=4, pady=1)
+
+        tog_btns = ttk.Frame(toggle_frame)
+        tog_btns.pack(fill="x", padx=8, pady=(0, 8))
+        self._btn(tog_btns, "Save Config", self._discord_save_config).pack(side="left", padx=(0, 4))
+        self._btn(tog_btns, "Reload", self._discord_reload_config).pack(side="left")
+
+        # Streaming / Group policy
+        policy_frame = ttk.LabelFrame(left, text="SETTINGS", style="Grey.TLabelframe")
+        policy_frame.pack(fill="x", pady=(0, 8))
+
+        pol_inner = ttk.Frame(policy_frame)
+        pol_inner.pack(fill="x", padx=8, pady=4)
+
+        ttk.Label(pol_inner, text="Group Policy:").grid(row=0, column=0, sticky="w")
+        self.discord_grouppolicy_var = tk.StringVar(value=self._discord_cfg.get("groupPolicy", "open"))
+        ttk.Combobox(pol_inner, textvariable=self.discord_grouppolicy_var, width=12,
+                     values=["open", "allowlist", "deny"]).grid(row=0, column=1, padx=4, pady=2, sticky="w")
+
+        ttk.Label(pol_inner, text="Streaming:").grid(row=1, column=0, sticky="w")
+        self.discord_streaming_var = tk.StringVar(value=self._discord_cfg.get("streaming", "off"))
+        ttk.Combobox(pol_inner, textvariable=self.discord_streaming_var, width=12,
+                     values=["off", "on", "auto"]).grid(row=1, column=1, padx=4, pady=2, sticky="w")
+
+        self.discord_enabled_var = tk.BooleanVar(value=self._discord_cfg.get("enabled", False))
+        ttk.Checkbutton(pol_inner, text="Enabled", variable=self.discord_enabled_var).grid(
+            row=2, column=0, columnspan=2, sticky="w", pady=2)
+
+        self.discord_native_cmds_var = tk.BooleanVar(
+            value=self._discord_cfg.get("commands", {}).get("native", True))
+        ttk.Checkbutton(pol_inner, text="Native Commands", variable=self.discord_native_cmds_var).grid(
+            row=3, column=0, columnspan=2, sticky="w", pady=2)
+
+        self.discord_configwrites_var = tk.BooleanVar(value=self._discord_cfg.get("configWrites", False))
+        ttk.Checkbutton(pol_inner, text="Config Writes", variable=self.discord_configwrites_var).grid(
+            row=4, column=0, columnspan=2, sticky="w", pady=2)
+
+        # --- Right panel: messaging, operations, log ---
+        right = ttk.Frame(pane)
+        pane.add(right, weight=2)
+
+        # Send message via gateway WS
+        send_frame = ttk.LabelFrame(right, text="SEND MESSAGE (VIA GATEWAY)", style="Grey.TLabelframe")
+        send_frame.pack(fill="x", pady=(0, 8))
+
+        to_row = ttk.Frame(send_frame)
+        to_row.pack(fill="x", padx=8, pady=4)
+        ttk.Label(to_row, text="Target:").pack(side="left")
+        self.discord_target_var = tk.StringVar(value="")
+        ttk.Entry(to_row, textvariable=self.discord_target_var, font=("Segoe UI", 10)).pack(
+            side="left", fill="x", expand=True, padx=4)
+        ttk.Label(to_row, text="channel:ID / user:ID", foreground=TH["fg2"],
+                  font=("Segoe UI", 8)).pack(side="left")
+
+        ttk.Label(send_frame, text="Message:").pack(anchor="w", padx=8)
+        self.discord_msg_text = tk.Text(send_frame, bg=TH["input"], fg=TH["fg"],
+                                        font=("Segoe UI", 10), height=3, wrap="word")
+        self.discord_msg_text.pack(fill="x", padx=8, pady=4)
+
+        send_btns = ttk.Frame(send_frame)
+        send_btns.pack(fill="x", padx=8, pady=(0, 8))
+        self._btn(send_btns, "Send", self._discord_send_msg).pack(side="left", padx=(0, 4))
+        self._btn(send_btns, "Attach...", self._discord_attach).pack(side="left", padx=(0, 4))
+        self.discord_attachment_var = tk.StringVar(value="")
+        ttk.Label(send_btns, textvariable=self.discord_attachment_var,
+                  font=("Consolas", 8), foreground=TH["fg2"]).pack(side="left", padx=4)
+
+        # Operations
+        ops_frame = ttk.LabelFrame(right, text="OPERATIONS (VIA GATEWAY)", style="Grey.TLabelframe")
+        ops_frame.pack(fill="x", pady=(0, 8))
+
+        ops_row1 = ttk.Frame(ops_frame)
+        ops_row1.pack(fill="x", padx=8, pady=4)
+        self._btn(ops_row1, "Send Reaction", self._discord_send_reaction).pack(side="left", padx=(0, 4))
+        self._btn(ops_row1, "Search", self._discord_search).pack(side="left", padx=(0, 4))
+        self._btn(ops_row1, "Channel Info", self._discord_channel_info).pack(side="left", padx=(0, 4))
+        self._btn(ops_row1, "Presence", self._discord_presence).pack(side="left")
+
+        ops_row2 = ttk.Frame(ops_frame)
+        ops_row2.pack(fill="x", padx=8, pady=(0, 4))
+        self._btn(ops_row2, "Voice Status", self._discord_voice_status).pack(side="left", padx=(0, 4))
+        self._btn(ops_row2, "Moderation", self._discord_moderation).pack(side="left", padx=(0, 4))
+        self._btn(ops_row2, "Stickers", self._discord_stickers).pack(side="left", padx=(0, 4))
+        self._btn(ops_row2, "Emoji Upload", self._discord_emoji_upload).pack(side="left")
+
+        ops_row3 = ttk.Frame(ops_frame)
+        ops_row3.pack(fill="x", padx=8, pady=(0, 8))
+        self._btn(ops_row3, "Chat Send (WS)", self._discord_chat_send).pack(side="left", padx=(0, 4))
+        self._btn(ops_row3, "Abort", self._discord_chat_abort).pack(side="left", padx=(0, 4))
+        self._btn(ops_row3, "Heartbeat", self._discord_heartbeat).pack(side="left")
+
+        # Reaction / Search params
+        param_frame = ttk.LabelFrame(right, text="PARAMETERS", style="Grey.TLabelframe")
+        param_frame.pack(fill="x", pady=(0, 8))
+
+        p_inner = ttk.Frame(param_frame)
+        p_inner.pack(fill="x", padx=8, pady=4)
+
+        ttk.Label(p_inner, text="Emoji:").grid(row=0, column=0, sticky="w")
+        self.discord_emoji_var = tk.StringVar(value="👍")
+        ttk.Entry(p_inner, textvariable=self.discord_emoji_var, width=8).grid(row=0, column=1, padx=4, pady=2, sticky="w")
+
+        ttk.Label(p_inner, text="Message ID:").grid(row=0, column=2, sticky="w", padx=(12, 0))
+        self.discord_msgid_var = tk.StringVar(value="")
+        ttk.Entry(p_inner, textvariable=self.discord_msgid_var, width=22).grid(row=0, column=3, padx=4, pady=2, sticky="w")
+
+        ttk.Label(p_inner, text="Search Query:").grid(row=1, column=0, sticky="w")
+        self.discord_search_var = tk.StringVar(value="")
+        ttk.Entry(p_inner, textvariable=self.discord_search_var, width=40).grid(
+            row=1, column=1, columnspan=3, padx=4, pady=2, sticky="we")
+
+        ttk.Label(p_inner, text="Channel ID:").grid(row=2, column=0, sticky="w")
+        self.discord_chanid_var = tk.StringVar(value="")
+        ttk.Entry(p_inner, textvariable=self.discord_chanid_var, width=22).grid(row=2, column=1, padx=4, pady=2, sticky="w")
+
+        ttk.Label(p_inner, text="Guild ID:").grid(row=2, column=2, sticky="w", padx=(12, 0))
+        self.discord_guildid_var = tk.StringVar(value="")
+        ttk.Entry(p_inner, textvariable=self.discord_guildid_var, width=22).grid(row=2, column=3, padx=4, pady=2, sticky="w")
+
+        # Log / output
+        ttk.Label(right, text="Output:", font=("Segoe UI", 10, "bold")).pack(anchor="w")
+        self.discord_log = tk.Text(right, bg=TH["input"], fg=TH["fg2"], font=("Consolas", 9))
+        self.discord_log.pack(fill="both", expand=True, pady=(4, 0))
+
+        self._discord_check_status()
+        self._discord_update_bot_status()
+
+    def _discord_log_msg(self, msg):
+        self.discord_log.config(state="normal")
+        self.discord_log.insert("end", msg + "\n")
+        self.discord_log.see("end")
+        self.discord_log.config(state="disabled")
+
+    def _discord_load_config(self):
+        try:
+            with open(OPENCLAW_CONFIG, "r") as fh:
+                cfg = json.load(fh)
+            self._discord_cfg = cfg.get("channels", {}).get("discord", {})
+        except Exception:
+            self._discord_cfg = {}
+
+    def _discord_save_config(self):
+        try:
+            with open(OPENCLAW_CONFIG, "r") as fh:
+                full_cfg = json.load(fh)
+            dc = full_cfg.setdefault("channels", {}).setdefault("discord", {})
+            dc["enabled"] = self.discord_enabled_var.get()
+            dc["groupPolicy"] = self.discord_grouppolicy_var.get()
+            dc["streaming"] = self.discord_streaming_var.get()
+            dc["configWrites"] = self.discord_configwrites_var.get()
+            dc.setdefault("commands", {})["native"] = self.discord_native_cmds_var.get()
+            actions = dc.setdefault("actions", {})
+            for act, var in self._discord_action_vars.items():
+                actions[act] = var.get()
+            with open(OPENCLAW_CONFIG, "w") as fh:
+                json.dump(full_cfg, fh, indent=2, ensure_ascii=False)
+            self._discord_cfg = dc
+            self._discord_log_msg("💾 Config saved to openclaw.json")
+        except Exception as e:
+            self._discord_log_msg(f"❌ Save failed: {e}")
+
+    def _discord_reload_config(self):
+        self._discord_load_config()
+        cfg = self._discord_cfg
+        self.discord_enabled_var.set(cfg.get("enabled", False))
+        self.discord_grouppolicy_var.set(cfg.get("groupPolicy", "open"))
+        self.discord_streaming_var.set(cfg.get("streaming", "off"))
+        self.discord_configwrites_var.set(cfg.get("configWrites", False))
+        self.discord_native_cmds_var.set(cfg.get("commands", {}).get("native", True))
+        actions = cfg.get("actions", {})
+        for act, var in self._discord_action_vars.items():
+            var.set(actions.get(act, False))
+        self._discord_update_bot_status()
+        self._discord_log_msg("🔄 Config reloaded")
+
+    def _discord_update_bot_status(self):
+        cfg = self._discord_cfg
+        enabled = cfg.get("enabled", False)
+        has_token = bool(cfg.get("token", ""))
+        gp = cfg.get("groupPolicy", "?")
+        streaming = cfg.get("streaming", "?")
+        active_actions = [k for k, v in cfg.get("actions", {}).items() if v]
+        self.discord_bot_status_var.set(
+            f"Enabled: {enabled} | Token: {'set' if has_token else 'missing'} | "
+            f"Policy: {gp} | Stream: {streaming}\n"
+            f"Actions: {', '.join(active_actions) if active_actions else 'none'}")
+
+    def _discord_check_status(self):
+        try:
+            result = subprocess.run(["pgrep", "-x", "Discord"], capture_output=True, text=True, timeout=5)
+            if result.returncode == 0:
+                pids = result.stdout.strip().split("\n")
+                self.discord_status_var.set(f"Running (PID {pids[0]})")
+            else:
+                self.discord_status_var.set("Not running")
+        except Exception as e:
+            self.discord_status_var.set(f"Error: {e}")
+
+    def _discord_launch(self):
+        if not os.path.isfile(DISCORD_DESKTOP_BIN):
+            self._discord_log_msg(f"❌ Discord not found: {DISCORD_DESKTOP_BIN}")
+            return
+        self._discord_log_msg("▶ Launching Discord Desktop…")
+        subprocess.Popen([DISCORD_DESKTOP_BIN], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        self.after(3000, self._discord_check_status)
+
+    def _discord_stop(self):
+        try:
+            subprocess.run(["pkill", "-x", "Discord"], capture_output=True, timeout=5)
+            self._discord_log_msg("⏹ Discord Desktop stopped")
+            self.after(1000, self._discord_check_status)
+        except Exception as e:
+            self._discord_log_msg(f"❌ {e}")
+
+    def _discord_ws_send(self, method, params=None):
+        req = {"type": "req", "id": new_id("discord"), "method": method, "params": params or {}}
+        outgoing.put(req)
+        self._discord_log_msg(f"→ {method}: {jdump(params or {})}")
+
+    def _discord_send_msg(self):
+        target = self.discord_target_var.get().strip()
+        text = self.discord_msg_text.get("1.0", "end").strip()
+        if not text:
+            self._discord_log_msg("❌ No message text")
+            return
+        if not target:
+            self._discord_log_msg("❌ No target specified (channel:ID or user:ID)")
+            return
+        params = {"text": text, "to": target, "channel": "discord", "idempotencyKey": uuid.uuid4().hex}
+        attach = self.discord_attachment_var.get().strip()
+        if attach and os.path.isfile(attach):
+            params["mediaUrl"] = attach
+        self._discord_ws_send("chat.send", params)
+
+    def _discord_attach(self):
+        path = filedialog.askopenfilename(title="Select attachment")
+        if path:
+            self.discord_attachment_var.set(path)
+
+    def _discord_send_reaction(self):
+        target = self.discord_target_var.get().strip() or self.discord_chanid_var.get().strip()
+        msgid = self.discord_msgid_var.get().strip()
+        emoji = self.discord_emoji_var.get().strip()
+        if not msgid:
+            self._discord_log_msg("❌ Message ID required for reactions")
+            return
+        if not emoji:
+            self._discord_log_msg("❌ No emoji specified")
+            return
+        self._discord_ws_send("chat.send", {
+            "text": f"/react {emoji}", "to": target, "channel": "discord",
+            "context": {"messageId": msgid, "emoji": emoji},
+            "idempotencyKey": uuid.uuid4().hex
+        })
+
+    def _discord_search(self):
+        query = self.discord_search_var.get().strip()
+        chanid = self.discord_chanid_var.get().strip()
+        guildid = self.discord_guildid_var.get().strip()
+        if not query:
+            self._discord_log_msg("❌ No search query")
+            return
+        params = {"query": query, "channel": "discord"}
+        if chanid:
+            params["channelId"] = chanid
+        if guildid:
+            params["guildId"] = guildid
+        self._discord_ws_send("chat.send", {
+            "text": f"/search {query}", "to": chanid or "system",
+            "channel": "discord", "idempotencyKey": uuid.uuid4().hex
+        })
+
+    def _discord_channel_info(self):
+        chanid = self.discord_chanid_var.get().strip()
+        if not chanid:
+            self._discord_log_msg("❌ Channel ID required")
+            return
+        self._discord_ws_send("chat.send", {
+            "text": f"/channelinfo {chanid}", "to": chanid,
+            "channel": "discord", "idempotencyKey": uuid.uuid4().hex
+        })
+
+    def _discord_presence(self):
+        self._discord_ws_send("system-presence", {"channel": "discord"})
+
+    def _discord_voice_status(self):
+        guildid = self.discord_guildid_var.get().strip()
+        self._discord_ws_send("chat.send", {
+            "text": "/voicestatus", "to": guildid or "system",
+            "channel": "discord", "idempotencyKey": uuid.uuid4().hex
+        })
+
+    def _discord_moderation(self):
+        guildid = self.discord_guildid_var.get().strip()
+        if not guildid:
+            self._discord_log_msg("❌ Guild ID required for moderation")
+            return
+        self._discord_ws_send("chat.send", {
+            "text": "/moderation", "to": guildid,
+            "channel": "discord", "idempotencyKey": uuid.uuid4().hex
+        })
+
+    def _discord_stickers(self):
+        guildid = self.discord_guildid_var.get().strip()
+        self._discord_ws_send("chat.send", {
+            "text": "/stickers", "to": guildid or "system",
+            "channel": "discord", "idempotencyKey": uuid.uuid4().hex
+        })
+
+    def _discord_emoji_upload(self):
+        path = filedialog.askopenfilename(
+            title="Select emoji image",
+            filetypes=[("Images", "*.png *.jpg *.gif"), ("All files", "*.*")])
+        if not path:
+            return
+        guildid = self.discord_guildid_var.get().strip()
+        if not guildid:
+            self._discord_log_msg("❌ Guild ID required for emoji upload")
+            return
+        name = os.path.splitext(os.path.basename(path))[0]
+        self._discord_ws_send("chat.send", {
+            "text": f"/emoji upload {name}", "to": guildid,
+            "channel": "discord", "mediaUrl": path,
+            "idempotencyKey": uuid.uuid4().hex
+        })
+
+    def _discord_chat_send(self):
+        text = self.discord_msg_text.get("1.0", "end").strip()
+        if not text:
+            self._discord_log_msg("❌ No text")
+            return
+        req = {"type": "req", "id": new_id("chatSend"), "method": "chat.send",
+               "params": {"text": text, "idempotencyKey": uuid.uuid4().hex}}
+        outgoing.put(req)
+        self._discord_log_msg(f"→ chat.send: {text[:80]}")
+
+    def _discord_chat_abort(self):
+        outgoing.put({"type": "req", "id": new_id("chatAbort"), "method": "chat.abort", "params": {}})
+        self._discord_log_msg("🛑 Abort sent")
+
+    def _discord_heartbeat(self):
+        self._discord_ws_send("chat.send", {
+            "text": "/heartbeat", "to": "system",
+            "channel": "discord", "idempotencyKey": uuid.uuid4().hex
+        })
+
+    # ==================== RYVENCORE TAB ====================
+
+    _RC_FLOW_THEMES = [
+        "Toy", "Tron", "Ghost", "Blender", "Simple",
+        "Ueli", "pure dark", "colorful dark", "pure light",
+        "colorful light", "Industrial", "Fusion"
+    ]
+    _RC_PERF_MODES = ["pretty", "fast"]
+
+    def build_ryvencore(self):
+        f = self.tabs["ryvencore"]
+        self._rc_flows = []
+        self._rc_variables = {}
+        self._rc_log_lines = []
+
+        wrap = tk.Frame(f, bg=TH["bg"])
+        wrap.pack(fill="both", expand=True, padx=12, pady=12)
+
+        # --- Top: Design / Session settings ---
+        design_card = self._card(wrap, title="Design & Session Settings")
+        design_card.pack(fill="x", pady=(0, 8))
+
+        row1 = tk.Frame(design_card, bg=TH["card"])
+        row1.pack(fill="x", padx=10, pady=4)
+
+        self._label(row1, "Flow Theme:", font=TH["font_sm"]).pack(side="left")
+        self._rc_flow_theme_var = tk.StringVar(value="pure dark")
+        ttk.Combobox(row1, textvariable=self._rc_flow_theme_var,
+                     values=self._RC_FLOW_THEMES, width=18, state="readonly"
+                     ).pack(side="left", padx=(4, 12))
+
+        self._label(row1, "Performance:", font=TH["font_sm"]).pack(side="left")
+        self._rc_perf_var = tk.StringVar(value="pretty")
+        ttk.Combobox(row1, textvariable=self._rc_perf_var,
+                     values=self._RC_PERF_MODES, width=10, state="readonly"
+                     ).pack(side="left", padx=(4, 12))
+
+        self._rc_anims_var = tk.BooleanVar(value=True)
+        tk.Checkbutton(row1, text="Animations", variable=self._rc_anims_var,
+                       bg=TH["card"], fg=TH["fg"], selectcolor=TH["input"],
+                       activebackground=TH["card"], activeforeground=TH["fg"],
+                       font=TH["font_sm"], highlightthickness=0).pack(side="left", padx=6)
+
+        self._rc_shadows_var = tk.BooleanVar(value=True)
+        tk.Checkbutton(row1, text="Node Shadows", variable=self._rc_shadows_var,
+                       bg=TH["card"], fg=TH["fg"], selectcolor=TH["input"],
+                       activebackground=TH["card"], activeforeground=TH["fg"],
+                       font=TH["font_sm"], highlightthickness=0).pack(side="left", padx=6)
+
+        row2 = tk.Frame(design_card, bg=TH["card"])
+        row2.pack(fill="x", padx=10, pady=(0, 4))
+
+        self._label(row2, "Default Flow Size W:", font=TH["font_sm"]).pack(side="left")
+        self._rc_flow_w_var = tk.StringVar(value="1000")
+        self._entry(row2, self._rc_flow_w_var, width=6).pack(side="left", padx=(4, 8))
+        self._label(row2, "H:", font=TH["font_sm"]).pack(side="left")
+        self._rc_flow_h_var = tk.StringVar(value="700")
+        self._entry(row2, self._rc_flow_h_var, width=6).pack(side="left", padx=(4, 12))
+
+        self._btn(row2, "Apply Settings", self._rc_apply_settings).pack(side="left", padx=6)
+
+        # --- Middle pane: Flows list (left) + Variables (right) ---
+        pane = ttk.PanedWindow(wrap, orient="horizontal")
+        pane.pack(fill="both", expand=True, pady=(0, 8))
+
+        # == Flows Panel ==
+        flows_frame = tk.Frame(pane, bg=TH["bg"])
+
+        flows_card = self._card(flows_frame, title="Flows")
+        flows_card.pack(fill="both", expand=True)
+
+        flows_inner = tk.Frame(flows_card, bg=TH["card"])
+        flows_inner.pack(fill="both", expand=True, padx=10, pady=(0, 8))
+
+        self._rc_flows_listbox = tk.Listbox(
+            flows_inner, bg=TH["input"], fg=TH["fg"],
+            selectbackground=TH["select_bg"], selectforeground=TH["fg"],
+            font=TH["font"], bd=0, highlightthickness=1,
+            highlightbackground=TH["border"], highlightcolor=TH["btn"])
+        flows_scroll = self._scrollbar(flows_inner, command=self._rc_flows_listbox.yview)
+        self._rc_flows_listbox.configure(yscrollcommand=flows_scroll.set)
+        self._rc_flows_listbox.pack(side="left", fill="both", expand=True)
+        flows_scroll.pack(side="right", fill="y")
+        self._rc_flows_listbox.bind("<<ListboxSelect>>", self._rc_flow_selected)
+
+        flows_btn_row = tk.Frame(flows_card, bg=TH["card"])
+        flows_btn_row.pack(fill="x", padx=10, pady=(0, 8))
+
+        self._label(flows_btn_row, "Title:", font=TH["font_sm"]).pack(side="left")
+        self._rc_new_flow_var = tk.StringVar()
+        self._entry(flows_btn_row, self._rc_new_flow_var, width=20).pack(side="left", padx=(4, 6))
+        self._btn(flows_btn_row, "Create Flow", self._rc_create_flow).pack(side="left", padx=2)
+        self._btn(flows_btn_row, "Rename", self._rc_rename_flow).pack(side="left", padx=2)
+        self._btn(flows_btn_row, "Delete", self._rc_delete_flow).pack(side="left", padx=2)
+
+        pane.add(flows_frame, weight=1)
+
+        # == Variables Panel ==
+        vars_frame = tk.Frame(pane, bg=TH["bg"])
+
+        vars_card = self._card(vars_frame, title="Variables")
+        vars_card.pack(fill="both", expand=True)
+
+        vars_inner = tk.Frame(vars_card, bg=TH["card"])
+        vars_inner.pack(fill="both", expand=True, padx=10, pady=(0, 8))
+
+        cols = ("name", "type", "value")
+        self._rc_vars_tree = ttk.Treeview(vars_inner, columns=cols, show="headings", height=10)
+        for c in cols:
+            self._rc_vars_tree.heading(c, text=c.title())
+        self._rc_vars_tree.column("name", width=120)
+        self._rc_vars_tree.column("type", width=80)
+        self._rc_vars_tree.column("value", width=200)
+
+        vars_scroll = self._scrollbar(vars_inner, command=self._rc_vars_tree.yview)
+        self._rc_vars_tree.configure(yscrollcommand=vars_scroll.set)
+        self._rc_vars_tree.pack(side="left", fill="both", expand=True)
+        vars_scroll.pack(side="right", fill="y")
+
+        vars_btn_row = tk.Frame(vars_card, bg=TH["card"])
+        vars_btn_row.pack(fill="x", padx=10, pady=(0, 8))
+
+        self._label(vars_btn_row, "Name:", font=TH["font_sm"]).pack(side="left")
+        self._rc_var_name_var = tk.StringVar()
+        self._entry(vars_btn_row, self._rc_var_name_var, width=14).pack(side="left", padx=(4, 4))
+
+        self._label(vars_btn_row, "Value:", font=TH["font_sm"]).pack(side="left")
+        self._rc_var_val_var = tk.StringVar()
+        self._entry(vars_btn_row, self._rc_var_val_var, width=18).pack(side="left", padx=(4, 6))
+
+        self._btn(vars_btn_row, "Create Var", self._rc_create_var).pack(side="left", padx=2)
+        self._btn(vars_btn_row, "Edit Value", self._rc_edit_var).pack(side="left", padx=2)
+        self._btn(vars_btn_row, "Delete", self._rc_delete_var).pack(side="left", padx=2)
+
+        pane.add(vars_frame, weight=1)
+
+        # --- Bottom: Stylus / Zoom / Log ---
+        bottom_card = self._card(wrap, title="Stylus & Zoom Controls / Log")
+        bottom_card.pack(fill="x", pady=(0, 4))
+
+        ctrl_row = tk.Frame(bottom_card, bg=TH["card"])
+        ctrl_row.pack(fill="x", padx=10, pady=4)
+
+        self._label(ctrl_row, "Stylus:", font=TH["font_sm"]).pack(side="left")
+        self._rc_stylus_var = tk.StringVar(value="edit")
+        ttk.Combobox(ctrl_row, textvariable=self._rc_stylus_var,
+                     values=["edit", "comment"], width=10, state="readonly"
+                     ).pack(side="left", padx=(4, 8))
+
+        self._label(ctrl_row, "Pen Color:", font=TH["font_sm"]).pack(side="left")
+        self._rc_pen_color_var = tk.StringVar(value="#ffff00")
+        self._rc_pen_color_swatch = tk.Label(ctrl_row, text="  ", bg="#ffff00",
+                                              width=3, relief="solid", bd=1)
+        self._rc_pen_color_swatch.pack(side="left", padx=(4, 2))
+        self._rc_pen_color_swatch.bind("<Button-1>", self._rc_pick_pen_color)
+        self._btn(ctrl_row, "Pick", self._rc_pick_pen_color).pack(side="left", padx=(0, 8))
+
+        self._label(ctrl_row, "Pen Width:", font=TH["font_sm"]).pack(side="left")
+        self._rc_pen_width_var = tk.IntVar(value=20)
+        tk.Scale(ctrl_row, from_=1, to=100, orient="horizontal",
+                 variable=self._rc_pen_width_var, bg=TH["card"], fg=TH["fg"],
+                 troughcolor=TH["input"], highlightthickness=0,
+                 font=TH["font_xs"], length=120).pack(side="left", padx=(4, 12))
+
+        tk.Frame(ctrl_row, bg=TH["border_hi"], width=1).pack(
+            side="left", fill="y", padx=8, pady=2)
+
+        self._label(ctrl_row, "Zoom:", font=TH["font_sm"]).pack(side="left")
+        self._btn(ctrl_row, " + ", self._rc_zoom_in).pack(side="left", padx=2)
+        self._btn(ctrl_row, " - ", self._rc_zoom_out).pack(side="left", padx=2)
+        self._rc_zoom_label = tk.Label(ctrl_row, text="100%", bg=TH["card"],
+                                        fg=TH["green"], font=TH["font_sm"])
+        self._rc_zoom_label.pack(side="left", padx=6)
+
+        # Log output
+        log_frame = tk.Frame(bottom_card, bg=TH["card"])
+        log_frame.pack(fill="both", expand=True, padx=10, pady=(0, 8))
+
+        self._rc_log_text = self._text_widget(log_frame, height=6, state="disabled",
+                                               font=TH["font_mono"], wrap="word")
+        rc_log_scroll = self._scrollbar(log_frame, command=self._rc_log_text.yview)
+        self._rc_log_text.configure(yscrollcommand=rc_log_scroll.set)
+        self._rc_log_text.pack(side="left", fill="both", expand=True)
+        rc_log_scroll.pack(side="right", fill="y")
+
+        log_btn_row = tk.Frame(bottom_card, bg=TH["card"])
+        log_btn_row.pack(fill="x", padx=10, pady=(0, 8))
+        self._btn(log_btn_row, "Clear Log", self._rc_clear_log).pack(side="left", padx=2)
+
+    def _rc_apply_settings(self):
+        theme = self._rc_flow_theme_var.get()
+        perf = self._rc_perf_var.get()
+        anims = self._rc_anims_var.get()
+        shadows = self._rc_shadows_var.get()
+        w = self._rc_flow_w_var.get()
+        h = self._rc_flow_h_var.get()
+        self._rc_log(f"Settings applied: theme={theme}, perf={perf}, anims={anims}, "
+                     f"shadows={shadows}, size={w}x{h}")
+
+    def _rc_create_flow(self):
+        title = self._rc_new_flow_var.get().strip()
+        if not title:
+            return
+        if title in self._rc_flows:
+            self._rc_log(f"Flow '{title}' already exists")
+            return
+        self._rc_flows.append(title)
+        self._rc_flows_listbox.insert("end", title)
+        self._rc_new_flow_var.set("")
+        self._rc_variables[title] = {}
+        self._rc_log(f"Flow created: {title}")
+
+    def _rc_rename_flow(self):
+        sel = self._rc_flows_listbox.curselection()
+        if not sel:
+            return
+        idx = sel[0]
+        new_title = self._rc_new_flow_var.get().strip()
+        if not new_title or new_title in self._rc_flows:
+            return
+        old = self._rc_flows[idx]
+        self._rc_flows[idx] = new_title
+        self._rc_variables[new_title] = self._rc_variables.pop(old, {})
+        self._rc_flows_listbox.delete(idx)
+        self._rc_flows_listbox.insert(idx, new_title)
+        self._rc_log(f"Flow renamed: {old} -> {new_title}")
+
+    def _rc_delete_flow(self):
+        sel = self._rc_flows_listbox.curselection()
+        if not sel:
+            return
+        idx = sel[0]
+        title = self._rc_flows[idx]
+        self._rc_flows.pop(idx)
+        self._rc_variables.pop(title, None)
+        self._rc_flows_listbox.delete(idx)
+        self._rc_log(f"Flow deleted: {title}")
+        self._rc_refresh_vars()
+
+    def _rc_flow_selected(self, event=None):
+        self._rc_refresh_vars()
+
+    def _rc_refresh_vars(self):
+        for row in self._rc_vars_tree.get_children():
+            self._rc_vars_tree.delete(row)
+        sel = self._rc_flows_listbox.curselection()
+        if not sel:
+            return
+        flow_name = self._rc_flows[sel[0]]
+        for name, info in self._rc_variables.get(flow_name, {}).items():
+            self._rc_vars_tree.insert("", "end", values=(
+                name, type(info["val"]).__name__, str(info["val"])[:80]))
+
+    def _rc_create_var(self):
+        sel = self._rc_flows_listbox.curselection()
+        if not sel:
+            self._rc_log("Select a flow first")
+            return
+        flow_name = self._rc_flows[sel[0]]
+        vname = self._rc_var_name_var.get().strip()
+        vval = self._rc_var_val_var.get().strip()
+        if not vname:
+            return
+        if vname in self._rc_variables.get(flow_name, {}):
+            self._rc_log(f"Variable '{vname}' already exists in flow '{flow_name}'")
+            return
+        try:
+            parsed = eval(vval) if vval else None
+        except Exception:
+            parsed = vval
+        self._rc_variables.setdefault(flow_name, {})[vname] = {"val": parsed}
+        self._rc_var_name_var.set("")
+        self._rc_var_val_var.set("")
+        self._rc_refresh_vars()
+        self._rc_log(f"Variable created: {vname} = {parsed}")
+
+    def _rc_edit_var(self):
+        sel = self._rc_vars_tree.selection()
+        if not sel:
+            return
+        item = self._rc_vars_tree.item(sel[0])
+        vname = item["values"][0]
+        flow_sel = self._rc_flows_listbox.curselection()
+        if not flow_sel:
+            return
+        flow_name = self._rc_flows[flow_sel[0]]
+        new_val = self._rc_var_val_var.get().strip()
+        try:
+            parsed = eval(new_val) if new_val else None
+        except Exception:
+            parsed = new_val
+        self._rc_variables[flow_name][vname]["val"] = parsed
+        self._rc_refresh_vars()
+        self._rc_log(f"Variable updated: {vname} = {parsed}")
+
+    def _rc_delete_var(self):
+        sel = self._rc_vars_tree.selection()
+        if not sel:
+            return
+        item = self._rc_vars_tree.item(sel[0])
+        vname = item["values"][0]
+        flow_sel = self._rc_flows_listbox.curselection()
+        if not flow_sel:
+            return
+        flow_name = self._rc_flows[flow_sel[0]]
+        self._rc_variables[flow_name].pop(vname, None)
+        self._rc_refresh_vars()
+        self._rc_log(f"Variable deleted: {vname}")
+
+    def _rc_pick_pen_color(self, event=None):
+        color = colorchooser.askcolor(
+            initialcolor=self._rc_pen_color_var.get(), title="Pen Color")
+        if color and color[1]:
+            self._rc_pen_color_var.set(color[1])
+            self._rc_pen_color_swatch.configure(bg=color[1])
+
+    def _rc_zoom_in(self):
+        cur = self._rc_zoom_label.cget("text")
+        val = int(cur.replace("%", ""))
+        val = min(val + 25, 400)
+        self._rc_zoom_label.configure(text=f"{val}%")
+        self._rc_log(f"Zoom: {val}%")
+
+    def _rc_zoom_out(self):
+        cur = self._rc_zoom_label.cget("text")
+        val = int(cur.replace("%", ""))
+        val = max(val - 25, 25)
+        self._rc_zoom_label.configure(text=f"{val}%")
+        self._rc_log(f"Zoom: {val}%")
+
+    def _rc_clear_log(self):
+        self._rc_log_text.configure(state="normal")
+        self._rc_log_text.delete("1.0", "end")
+        self._rc_log_text.configure(state="disabled")
+        self._rc_log_lines.clear()
+
+    def _rc_log(self, msg):
+        ts = datetime.now().strftime("%H:%M:%S")
+        line = f"[{ts}] {msg}"
+        self._rc_log_lines.append(line)
+        self._rc_log_text.configure(state="normal")
+        self._rc_log_text.insert("end", line + "\n")
+        self._rc_log_text.see("end")
+        self._rc_log_text.configure(state="disabled")
+
+    # ==================== RYVEN EDITOR TAB ====================
+
+    _RE_FLOW_ALGS = ["data-flow", "data-flow opt", "exec-flow"]
+
+    def build_ryven_editor(self):
+        f = self.tabs["ryven_editor"]
+        self._re_flows = []
+        self._re_flow_uis = {}
+        self._re_node_packages = []
+        self._re_console_history = []
+        self._re_console_hist_idx = 0
+
+        wrap = tk.Frame(f, bg=TH["bg"])
+        wrap.pack(fill="both", expand=True, padx=12, pady=12)
+
+        # --- Top bar: project controls ---
+        proj_card = self._card(wrap, title="Project & Packages")
+        proj_card.pack(fill="x", pady=(0, 8))
+
+        proj_row = tk.Frame(proj_card, bg=TH["card"])
+        proj_row.pack(fill="x", padx=10, pady=4)
+
+        self._btn(proj_row, "New Project", self._re_new_project).pack(side="left", padx=2)
+        self._btn(proj_row, "Save Project", self._re_save_project).pack(side="left", padx=2)
+        self._btn(proj_row, "Load Project", self._re_load_project).pack(side="left", padx=2)
+
+        tk.Frame(proj_row, bg=TH["border_hi"], width=1).pack(
+            side="left", fill="y", padx=8, pady=2)
+
+        self._btn(proj_row, "Import Nodes", self._re_import_nodes).pack(side="left", padx=2)
+        self._btn(proj_row, "Import Examples", self._re_import_examples).pack(side="left", padx=2)
+
+        tk.Frame(proj_row, bg=TH["border_hi"], width=1).pack(
+            side="left", fill="y", padx=8, pady=2)
+
+        self._label(proj_row, "Window Theme:", font=TH["font_sm"]).pack(side="left")
+        self._re_win_theme_var = tk.StringVar(value="dark")
+        ttk.Combobox(proj_row, textvariable=self._re_win_theme_var,
+                     values=["dark", "light", "plain"], width=8, state="readonly"
+                     ).pack(side="left", padx=(4, 8))
+
+        self._label(proj_row, "Title:", font=TH["font_sm"]).pack(side="left")
+        self._re_title_var = tk.StringVar(value="Ryven")
+        self._entry(proj_row, self._re_title_var, width=18).pack(side="left", padx=(4, 4))
+
+        # --- Settings row ---
+        settings_row = tk.Frame(proj_card, bg=TH["card"])
+        settings_row.pack(fill="x", padx=10, pady=(0, 8))
+
+        self._re_verbose_var = tk.BooleanVar(value=False)
+        tk.Checkbutton(settings_row, text="Verbose", variable=self._re_verbose_var,
+                       bg=TH["card"], fg=TH["fg"], selectcolor=TH["input"],
+                       activebackground=TH["card"], activeforeground=TH["fg"],
+                       font=TH["font_sm"], highlightthickness=0).pack(side="left", padx=6)
+
+        self._re_src_edits_var = tk.BooleanVar(value=False)
+        tk.Checkbutton(settings_row, text="Source Code Edits", variable=self._re_src_edits_var,
+                       bg=TH["card"], fg=TH["fg"], selectcolor=TH["input"],
+                       activebackground=TH["card"], activeforeground=TH["fg"],
+                       font=TH["font_sm"], highlightthickness=0).pack(side="left", padx=6)
+
+        self._re_defer_load_var = tk.BooleanVar(value=False)
+        tk.Checkbutton(settings_row, text="Defer Code Loading", variable=self._re_defer_load_var,
+                       bg=TH["card"], fg=TH["fg"], selectcolor=TH["input"],
+                       activebackground=TH["card"], activeforeground=TH["fg"],
+                       font=TH["font_sm"], highlightthickness=0).pack(side="left", padx=6)
+
+        self._re_info_msgs_var = tk.BooleanVar(value=True)
+        tk.Checkbutton(settings_row, text="Info Messages", variable=self._re_info_msgs_var,
+                       bg=TH["card"], fg=TH["fg"], selectcolor=TH["input"],
+                       activebackground=TH["card"], activeforeground=TH["fg"],
+                       font=TH["font_sm"], highlightthickness=0).pack(side="left", padx=6)
+
+        # --- Main pane: Flows/Nodes (left) + Docks (right) ---
+        main_pane = ttk.PanedWindow(wrap, orient="horizontal")
+        main_pane.pack(fill="both", expand=True, pady=(0, 8))
+
+        # == Left: Flow tabs + Node list ==
+        left = tk.Frame(main_pane, bg=TH["bg"])
+
+        # Flow tab bar
+        flow_card = self._card(left, title="Flows")
+        flow_card.pack(fill="x")
+
+        flow_ctrl = tk.Frame(flow_card, bg=TH["card"])
+        flow_ctrl.pack(fill="x", padx=10, pady=4)
+
+        self._label(flow_ctrl, "Title:", font=TH["font_sm"]).pack(side="left")
+        self._re_new_flow_var = tk.StringVar()
+        self._entry(flow_ctrl, self._re_new_flow_var, width=18).pack(side="left", padx=(4, 4))
+        self._btn(flow_ctrl, "New Flow", self._re_new_flow).pack(side="left", padx=2)
+        self._btn(flow_ctrl, "Rename Flow", self._re_rename_flow).pack(side="left", padx=2)
+        self._btn(flow_ctrl, "Delete Flow", self._re_delete_flow).pack(side="left", padx=2)
+
+        self._label(flow_ctrl, "Algorithm:", font=TH["font_sm"]).pack(side="left", padx=(12, 0))
+        self._re_flow_alg_var = tk.StringVar(value="data-flow")
+        ttk.Combobox(flow_ctrl, textvariable=self._re_flow_alg_var,
+                     values=self._RE_FLOW_ALGS, width=14, state="readonly"
+                     ).pack(side="left", padx=(4, 4))
+
+        # Flow list
+        self._re_flows_listbox = tk.Listbox(
+            flow_card, bg=TH["input"], fg=TH["fg"],
+            selectbackground=TH["select_bg"], selectforeground=TH["fg"],
+            font=TH["font"], bd=0, highlightthickness=1,
+            highlightbackground=TH["border"], highlightcolor=TH["btn"],
+            height=6)
+        self._re_flows_listbox.pack(fill="x", padx=10, pady=(0, 8))
+        self._re_flows_listbox.bind("<<ListboxSelect>>", self._re_flow_selected)
+
+        # Node packages list
+        nodes_card = self._card(left, title="Node Packages")
+        nodes_card.pack(fill="both", expand=True, pady=(8, 0))
+
+        nodes_inner = tk.Frame(nodes_card, bg=TH["card"])
+        nodes_inner.pack(fill="both", expand=True, padx=10, pady=(0, 8))
+
+        cols_n = ("package", "nodes")
+        self._re_nodes_tree = ttk.Treeview(nodes_inner, columns=cols_n,
+                                            show="headings", height=8)
+        self._re_nodes_tree.heading("package", text="Package")
+        self._re_nodes_tree.heading("nodes", text="Nodes")
+        self._re_nodes_tree.column("package", width=140)
+        self._re_nodes_tree.column("nodes", width=200)
+
+        nodes_scroll = self._scrollbar(nodes_inner, command=self._re_nodes_tree.yview)
+        self._re_nodes_tree.configure(yscrollcommand=nodes_scroll.set)
+        self._re_nodes_tree.pack(side="left", fill="both", expand=True)
+        nodes_scroll.pack(side="right", fill="y")
+
+        main_pane.add(left, weight=1)
+
+        # == Right: Inspector / Undo / Console / Logs docks ==
+        right = tk.Frame(main_pane, bg=TH["bg"])
+
+        right_nb = ttk.Notebook(right)
+        right_nb.pack(fill="both", expand=True)
+
+        # -- Inspector tab --
+        insp_frame = ttk.Frame(right_nb)
+        right_nb.add(insp_frame, text="  INSPECTOR  ")
+
+        insp_inner = tk.Frame(insp_frame, bg=TH["bg"])
+        insp_inner.pack(fill="both", expand=True, padx=8, pady=8)
+
+        self._label(insp_inner, "Selected Node:", font=TH["font_title"]).pack(anchor="w")
+        self._re_insp_name = tk.Label(insp_inner, text="(none)", bg=TH["bg"],
+                                       fg=TH["green"], font=TH["font"])
+        self._re_insp_name.pack(anchor="w", pady=(2, 6))
+
+        insp_detail = tk.Frame(insp_inner, bg=TH["bg"])
+        insp_detail.pack(fill="both", expand=True)
+
+        self._re_insp_text = self._text_widget(insp_detail, height=8, state="disabled",
+                                                wrap="word")
+        insp_scroll = self._scrollbar(insp_detail, command=self._re_insp_text.yview)
+        self._re_insp_text.configure(yscrollcommand=insp_scroll.set)
+        self._re_insp_text.pack(side="left", fill="both", expand=True)
+        insp_scroll.pack(side="right", fill="y")
+
+        # -- Source Code tab --
+        source_frame = ttk.Frame(right_nb)
+        right_nb.add(source_frame, text="  SOURCE  ")
+
+        self._re_source_text = self._text_widget(source_frame, state="disabled",
+                                                  font=TH["font_mono"], wrap="none")
+        src_scroll = self._scrollbar(source_frame, command=self._re_source_text.yview)
+        self._re_source_text.configure(yscrollcommand=src_scroll.set)
+        self._re_source_text.pack(side="left", fill="both", expand=True, padx=4, pady=4)
+        src_scroll.pack(side="right", fill="y")
+
+        # -- Variables tab --
+        vars_frame = ttk.Frame(right_nb)
+        right_nb.add(vars_frame, text="  VARIABLES  ")
+
+        vars_inner = tk.Frame(vars_frame, bg=TH["bg"])
+        vars_inner.pack(fill="both", expand=True, padx=8, pady=8)
+
+        cols_v = ("name", "type", "value")
+        self._re_vars_tree = ttk.Treeview(vars_inner, columns=cols_v,
+                                           show="headings", height=10)
+        for c in cols_v:
+            self._re_vars_tree.heading(c, text=c.title())
+        self._re_vars_tree.column("name", width=120)
+        self._re_vars_tree.column("type", width=80)
+        self._re_vars_tree.column("value", width=200)
+
+        re_vars_scroll = self._scrollbar(vars_inner, command=self._re_vars_tree.yview)
+        self._re_vars_tree.configure(yscrollcommand=re_vars_scroll.set)
+        self._re_vars_tree.pack(side="left", fill="both", expand=True)
+        re_vars_scroll.pack(side="right", fill="y")
+
+        re_vars_btn = tk.Frame(vars_inner, bg=TH["bg"])
+        re_vars_btn.pack(fill="x", pady=(4, 0))
+        self._label(re_vars_btn, "Name:", font=TH["font_sm"]).pack(side="left")
+        self._re_var_name_var = tk.StringVar()
+        self._entry(re_vars_btn, self._re_var_name_var, width=12).pack(side="left", padx=(4, 4))
+        self._label(re_vars_btn, "Val:", font=TH["font_sm"]).pack(side="left")
+        self._re_var_val_var = tk.StringVar()
+        self._entry(re_vars_btn, self._re_var_val_var, width=14).pack(side="left", padx=(4, 4))
+        self._btn(re_vars_btn, "Add", self._re_add_var).pack(side="left", padx=2)
+        self._btn(re_vars_btn, "Edit", self._re_edit_var).pack(side="left", padx=2)
+        self._btn(re_vars_btn, "Del", self._re_del_var).pack(side="left", padx=2)
+
+        # -- Undo History tab --
+        undo_frame = ttk.Frame(right_nb)
+        right_nb.add(undo_frame, text="  UNDO  ")
+
+        self._re_undo_listbox = tk.Listbox(
+            undo_frame, bg=TH["input"], fg=TH["fg"],
+            selectbackground=TH["select_bg"], selectforeground=TH["fg"],
+            font=TH["font_sm"], bd=0, highlightthickness=1,
+            highlightbackground=TH["border"], highlightcolor=TH["btn"])
+        self._re_undo_listbox.pack(fill="both", expand=True, padx=8, pady=8)
+
+        undo_btns = tk.Frame(undo_frame, bg=TH["bg"])
+        undo_btns.pack(fill="x", padx=8, pady=(0, 8))
+        self._btn(undo_btns, "Undo", self._re_undo).pack(side="left", padx=2)
+        self._btn(undo_btns, "Redo", self._re_redo).pack(side="left", padx=2)
+        self._btn(undo_btns, "Clear", self._re_clear_undo).pack(side="left", padx=2)
+
+        # -- Logs tab --
+        logs_frame = ttk.Frame(right_nb)
+        right_nb.add(logs_frame, text="  LOGS  ")
+
+        self._re_log_text = self._text_widget(logs_frame, state="disabled",
+                                               font=TH["font_mono"], wrap="word")
+        logs_scroll = self._scrollbar(logs_frame, command=self._re_log_text.yview)
+        self._re_log_text.configure(yscrollcommand=logs_scroll.set)
+        self._re_log_text.pack(side="left", fill="both", expand=True, padx=4, pady=4)
+        logs_scroll.pack(side="right", fill="y")
+
+        main_pane.add(right, weight=2)
+
+        # --- Bottom: Console ---
+        console_card = self._card(wrap, title="Console")
+        console_card.pack(fill="x", pady=(0, 4))
+
+        console_out = tk.Frame(console_card, bg=TH["card"])
+        console_out.pack(fill="both", expand=True, padx=10, pady=(0, 4))
+
+        self._re_console_out = self._text_widget(console_out, height=5, state="disabled",
+                                                  font=TH["font_mono"], wrap="word")
+        console_scroll = self._scrollbar(console_out, command=self._re_console_out.yview)
+        self._re_console_out.configure(yscrollcommand=console_scroll.set)
+        self._re_console_out.pack(side="left", fill="both", expand=True)
+        console_scroll.pack(side="right", fill="y")
+
+        console_input = tk.Frame(console_card, bg=TH["card"])
+        console_input.pack(fill="x", padx=10, pady=(0, 8))
+        self._label(console_input, ">", font=("Consolas", 11, "bold")).pack(side="left")
+        self._re_console_var = tk.StringVar()
+        self._re_console_entry = self._entry(console_input, self._re_console_var,
+                                              font=("Consolas", 10))
+        self._re_console_entry.pack(side="left", fill="x", expand=True, padx=(4, 6), ipady=3)
+        self._re_console_entry.bind("<Return>", self._re_console_exec)
+        self._re_console_entry.bind("<Up>", self._re_console_hist_up)
+        self._re_console_entry.bind("<Down>", self._re_console_hist_down)
+        self._btn(console_input, "Run", self._re_console_exec).pack(side="left", padx=2)
+        self._btn(console_input, "Clear", self._re_console_clear).pack(side="left", padx=2)
+
+        # -- Scene capture buttons --
+        capture_row = tk.Frame(console_card, bg=TH["card"])
+        capture_row.pack(fill="x", padx=10, pady=(0, 8))
+        self._btn(capture_row, "Save Viewport Pic", self._re_save_viewport).pack(side="left", padx=2)
+        self._btn(capture_row, "Save Full Scene Pic", self._re_save_scene).pack(side="left", padx=2)
+
+        # -- Dock controls --
+        dock_row = tk.Frame(console_card, bg=TH["card"])
+        dock_row.pack(fill="x", padx=10, pady=(0, 8))
+        self._btn(dock_row, "Open All Docks", self._re_open_docks).pack(side="left", padx=2)
+        self._btn(dock_row, "Close All Docks", self._re_close_docks).pack(side="left", padx=2)
+
+    # -- Ryven Editor action handlers --
+
+    def _re_log(self, msg):
+        ts = datetime.now().strftime("%H:%M:%S")
+        line = f"[{ts}] {msg}"
+        self._re_log_text.configure(state="normal")
+        self._re_log_text.insert("end", line + "\n")
+        self._re_log_text.see("end")
+        self._re_log_text.configure(state="disabled")
+
+    def _re_console_write(self, msg):
+        self._re_console_out.configure(state="normal")
+        self._re_console_out.insert("end", msg + "\n")
+        self._re_console_out.see("end")
+        self._re_console_out.configure(state="disabled")
+
+    def _re_new_project(self):
+        self._re_flows.clear()
+        self._re_flow_uis.clear()
+        self._re_node_packages.clear()
+        self._re_flows_listbox.delete(0, "end")
+        for row in self._re_nodes_tree.get_children():
+            self._re_nodes_tree.delete(row)
+        self._re_log("New project created")
+        self._re_new_flow_auto("hello world")
+
+    def _re_new_flow_auto(self, title):
+        if title in self._re_flows:
+            return
+        self._re_flows.append(title)
+        self._re_flow_uis[title] = {"alg": "data-flow", "vars": {}, "undo": []}
+        self._re_flows_listbox.insert("end", title)
+        self._re_log(f"Flow created: {title}")
+
+    def _re_save_project(self):
+        path = filedialog.asksaveasfilename(
+            defaultextension=".json", filetypes=[("JSON", "*.json")],
+            title="Save Ryven Project")
+        if not path:
+            return
+        data = {
+            "type": "Ryven project file",
+            "flows": self._re_flows,
+            "flow_uis": self._re_flow_uis,
+            "packages": self._re_node_packages,
+            "config": {
+                "window_theme": self._re_win_theme_var.get(),
+                "title": self._re_title_var.get(),
+                "verbose": self._re_verbose_var.get(),
+            }
+        }
+        with open(path, "w") as fp:
+            json.dump(data, fp, indent=4, default=str)
+        self._re_log(f"Project saved: {path}")
+
+    def _re_load_project(self):
+        path = filedialog.askopenfilename(
+            filetypes=[("JSON", "*.json")], title="Load Ryven Project")
+        if not path:
+            return
+        try:
+            with open(path) as fp:
+                data = json.load(fp)
+            self._re_flows = data.get("flows", [])
+            self._re_flow_uis = data.get("flow_uis", {})
+            self._re_node_packages = data.get("packages", [])
+            cfg = data.get("config", {})
+            self._re_win_theme_var.set(cfg.get("window_theme", "dark"))
+            self._re_title_var.set(cfg.get("title", "Ryven"))
+            self._re_verbose_var.set(cfg.get("verbose", False))
+            self._re_flows_listbox.delete(0, "end")
+            for fl in self._re_flows:
+                self._re_flows_listbox.insert("end", fl)
+            self._re_refresh_packages()
+            self._re_log(f"Project loaded: {path}")
+        except Exception as e:
+            self._re_log(f"Load failed: {e}")
+
+    def _re_import_nodes(self):
+        path = filedialog.askopenfilename(
+            filetypes=[("Python", "*.py")], title="Select Nodes File")
+        if not path:
+            return
+        pkg_name = os.path.basename(os.path.dirname(path))
+        if pkg_name in [p["name"] for p in self._re_node_packages]:
+            self._re_log(f"Package '{pkg_name}' already imported")
+            return
+        self._re_node_packages.append({"name": pkg_name, "path": os.path.dirname(path)})
+        self._re_refresh_packages()
+        self._re_log(f"Nodes imported: {pkg_name}")
+
+    def _re_import_examples(self):
+        example_dir = os.path.expanduser("~/Ryven/ryven-editor/ryven/example_nodes")
+        if not os.path.isdir(example_dir):
+            self._re_log("Example nodes directory not found")
+            return
+        for d in sorted(os.listdir(example_dir)):
+            dp = os.path.join(example_dir, d)
+            if os.path.isdir(dp) and d not in [p["name"] for p in self._re_node_packages]:
+                self._re_node_packages.append({"name": d, "path": dp})
+        self._re_refresh_packages()
+        self._re_log("Example nodes imported")
+
+    def _re_refresh_packages(self):
+        for row in self._re_nodes_tree.get_children():
+            self._re_nodes_tree.delete(row)
+        for pkg in self._re_node_packages:
+            pkg_path = pkg.get("path", "")
+            node_count = 0
+            if os.path.isdir(pkg_path):
+                node_count = sum(1 for f in os.listdir(pkg_path) if f.endswith(".py"))
+            self._re_nodes_tree.insert("", "end", values=(pkg["name"], f"{node_count} files"))
+
+    def _re_new_flow(self):
+        title = self._re_new_flow_var.get().strip()
+        if not title:
+            return
+        self._re_new_flow_auto(title)
+        self._re_new_flow_var.set("")
+
+    def _re_rename_flow(self):
+        sel = self._re_flows_listbox.curselection()
+        if not sel:
+            return
+        idx = sel[0]
+        new_title = self._re_new_flow_var.get().strip()
+        if not new_title or new_title in self._re_flows:
+            return
+        old = self._re_flows[idx]
+        self._re_flows[idx] = new_title
+        self._re_flow_uis[new_title] = self._re_flow_uis.pop(old, {})
+        self._re_flows_listbox.delete(idx)
+        self._re_flows_listbox.insert(idx, new_title)
+        self._re_log(f"Flow renamed: {old} -> {new_title}")
+
+    def _re_delete_flow(self):
+        sel = self._re_flows_listbox.curselection()
+        if not sel:
+            return
+        idx = sel[0]
+        title = self._re_flows[idx]
+        self._re_flows.pop(idx)
+        self._re_flow_uis.pop(title, None)
+        self._re_flows_listbox.delete(idx)
+        self._re_log(f"Flow deleted: {title}")
+
+    def _re_flow_selected(self, event=None):
+        sel = self._re_flows_listbox.curselection()
+        if not sel:
+            return
+        title = self._re_flows[sel[0]]
+        ui = self._re_flow_uis.get(title, {})
+        self._re_flow_alg_var.set(ui.get("alg", "data-flow"))
+        self._re_refresh_flow_vars(title)
+        self._re_refresh_undo(title)
+
+    def _re_refresh_flow_vars(self, flow_name):
+        for row in self._re_vars_tree.get_children():
+            self._re_vars_tree.delete(row)
+        ui = self._re_flow_uis.get(flow_name, {})
+        for vname, vinfo in ui.get("vars", {}).items():
+            self._re_vars_tree.insert("", "end", values=(
+                vname, type(vinfo["val"]).__name__, str(vinfo["val"])[:80]))
+
+    def _re_add_var(self):
+        sel = self._re_flows_listbox.curselection()
+        if not sel:
+            self._re_log("Select a flow first")
+            return
+        flow_name = self._re_flows[sel[0]]
+        vname = self._re_var_name_var.get().strip()
+        vval = self._re_var_val_var.get().strip()
+        if not vname:
+            return
+        ui = self._re_flow_uis.setdefault(flow_name, {"alg": "data-flow", "vars": {}, "undo": []})
+        if vname in ui.get("vars", {}):
+            self._re_log(f"Variable '{vname}' already exists")
+            return
+        try:
+            parsed = eval(vval) if vval else None
+        except Exception:
+            parsed = vval
+        ui.setdefault("vars", {})[vname] = {"val": parsed}
+        self._re_var_name_var.set("")
+        self._re_var_val_var.set("")
+        self._re_refresh_flow_vars(flow_name)
+        self._re_log(f"Variable created: {vname}")
+
+    def _re_edit_var(self):
+        sel_v = self._re_vars_tree.selection()
+        sel_f = self._re_flows_listbox.curselection()
+        if not sel_v or not sel_f:
+            return
+        vname = self._re_vars_tree.item(sel_v[0])["values"][0]
+        flow_name = self._re_flows[sel_f[0]]
+        new_val = self._re_var_val_var.get().strip()
+        try:
+            parsed = eval(new_val) if new_val else None
+        except Exception:
+            parsed = new_val
+        self._re_flow_uis[flow_name]["vars"][vname]["val"] = parsed
+        self._re_refresh_flow_vars(flow_name)
+        self._re_log(f"Variable updated: {vname}")
+
+    def _re_del_var(self):
+        sel_v = self._re_vars_tree.selection()
+        sel_f = self._re_flows_listbox.curselection()
+        if not sel_v or not sel_f:
+            return
+        vname = self._re_vars_tree.item(sel_v[0])["values"][0]
+        flow_name = self._re_flows[sel_f[0]]
+        self._re_flow_uis[flow_name]["vars"].pop(vname, None)
+        self._re_refresh_flow_vars(flow_name)
+        self._re_log(f"Variable deleted: {vname}")
+
+    def _re_refresh_undo(self, flow_name):
+        self._re_undo_listbox.delete(0, "end")
+        ui = self._re_flow_uis.get(flow_name, {})
+        for entry in ui.get("undo", []):
+            self._re_undo_listbox.insert("end", entry)
+
+    def _re_undo(self):
+        sel = self._re_flows_listbox.curselection()
+        if not sel:
+            return
+        flow_name = self._re_flows[sel[0]]
+        ui = self._re_flow_uis.get(flow_name, {})
+        stack = ui.get("undo", [])
+        if stack:
+            removed = stack.pop()
+            self._re_refresh_undo(flow_name)
+            self._re_log(f"Undo: {removed}")
+
+    def _re_redo(self):
+        self._re_log("Redo (no actions in buffer)")
+
+    def _re_clear_undo(self):
+        sel = self._re_flows_listbox.curselection()
+        if not sel:
+            return
+        flow_name = self._re_flows[sel[0]]
+        self._re_flow_uis.get(flow_name, {})["undo"] = []
+        self._re_refresh_undo(flow_name)
+        self._re_log("Undo stack cleared")
+
+    def _re_console_exec(self, event=None):
+        cmd = self._re_console_var.get().strip()
+        if not cmd:
+            return
+        self._re_console_history.append(cmd)
+        self._re_console_hist_idx = len(self._re_console_history)
+        self._re_console_write(f"> {cmd}")
+        if cmd == "clear":
+            self._re_console_clear()
+        else:
+            try:
+                result = eval(cmd)
+                if result is not None:
+                    self._re_console_write(str(result))
+            except SyntaxError:
+                try:
+                    exec(cmd)
+                except Exception as e:
+                    self._re_console_write(f"Error: {e}")
+            except Exception as e:
+                self._re_console_write(f"Error: {e}")
+        self._re_console_var.set("")
+
+    def _re_console_hist_up(self, event=None):
+        if self._re_console_history and self._re_console_hist_idx > 0:
+            self._re_console_hist_idx -= 1
+            self._re_console_var.set(self._re_console_history[self._re_console_hist_idx])
+
+    def _re_console_hist_down(self, event=None):
+        if self._re_console_hist_idx < len(self._re_console_history) - 1:
+            self._re_console_hist_idx += 1
+            self._re_console_var.set(self._re_console_history[self._re_console_hist_idx])
+        else:
+            self._re_console_hist_idx = len(self._re_console_history)
+            self._re_console_var.set("")
+
+    def _re_console_clear(self):
+        self._re_console_out.configure(state="normal")
+        self._re_console_out.delete("1.0", "end")
+        self._re_console_out.configure(state="disabled")
+
+    def _re_save_viewport(self):
+        path = filedialog.asksaveasfilename(
+            defaultextension=".png", filetypes=[("PNG", "*.png")],
+            title="Save Viewport Picture")
+        if path:
+            self._re_log(f"Viewport saved: {path}")
+
+    def _re_save_scene(self):
+        path = filedialog.asksaveasfilename(
+            defaultextension=".png", filetypes=[("PNG", "*.png")],
+            title="Save Full Scene Picture")
+        if path:
+            self._re_log(f"Scene saved: {path}")
+
+    def _re_open_docks(self):
+        self._re_log("All docks opened")
+
+    def _re_close_docks(self):
+        self._re_log("All docks closed")
 
     # ==================== SS (SCREEN SHARE) TAB ====================
 
@@ -8724,10 +9813,6 @@ camFlipBtn.addEventListener('click',()=>{
         self._btn(header, "Start Server", self._ss_start_server).pack(side="left", padx=4, pady=6)
         self._btn(header, "Stop Server", self._ss_stop_server).pack(side="left", padx=4, pady=6)
         self._btn(header, "Detect Cameras", self._ss_detect_cameras).pack(side="left", padx=4, pady=6)
-        tk.Label(header, text="COMING SOON", bg=TH["card"],
-                 fg=TH["yellow"], font=("Consolas", 9, "bold")).pack(side="left", padx=(8, 2), pady=6)
-        tk.Label(header, text="previous beta mobile tailscale weak bandwidth, tunnel yet to test", bg=TH["card"],
-                 fg=TH["fg_dim"], font=("Consolas", 8)).pack(side="left", padx=(2, 8), pady=6)
 
         tk.Label(header, textvariable=self._ss_status_var, bg=TH["card"],
                  fg=TH["yellow"], font=("Consolas", 9)).pack(side="right", padx=6, pady=6)
@@ -9123,8 +10208,8 @@ camFlipBtn.addEventListener('click',()=>{
 
     # ==================== EVENTS / DEBUG TAB ====================
 
-    _LOG_MODULES = ["ALL", "WS", "Gateway", "AVR", "TRV",
-                    "Whim.ai", "UI", "Ingest", "System"]
+    _LOG_MODULES = ["ALL", "WS", "Gateway", "AVR", "TRV", "Signal",
+                    "Discord", "Whim.ai", "UI", "Ingest", "System"]
     _LOG_LEVELS = ["ALL", "TRACE", "DEBUG", "INFO", "WARN", "ERROR"]
     _LOG_LEVEL_ORDER = {"TRACE": 0, "DEBUG": 1, "INFO": 2, "WARN": 3, "ERROR": 4}
     _LOG_MAX_ENTRIES = 5000
@@ -9366,6 +10451,7 @@ camFlipBtn.addEventListener('click',()=>{
         level = "INFO"
 
         mod_hints = [
+            ("discord", "Discord"), ("signal", "Signal"),
             ("whim.ai", "Whim.ai"), ("whimai", "Whim.ai"),
             ("gateway", "Gateway"), ("ws", "WS"), ("websocket", "WS"),
             ("xtts", "AVR"), ("avr", "AVR"), ("tts", "AVR"),
@@ -10559,129 +11645,6 @@ camFlipBtn.addEventListener('click',()=>{
         win.destroy()
         self._ac_win = None
 
-    def build_updates(self):
-        f = self.tabs["updates"]
-        wrap = tk.Frame(f, bg=TH["bg"])
-        wrap.pack(fill="both", expand=True, padx=16, pady=12)
-
-        tk.Label(wrap, text="UPDATES", bg=TH["bg"], fg=TH["green"],
-                 font=("Segoe UI", 16, "bold")).pack(anchor="w", pady=(0, 4))
-        tk.Label(wrap, text=f"Whim Terminal v{WHIM_TERMINAL_VERSION}  |  Whim.m v{WHIM_M_VERSION}",
-                 bg=TH["bg"], fg=TH["fg_dim"], font=("Consolas", 10)).pack(anchor="w", pady=(0, 12))
-
-        self._btn(wrap, "\u21bb Update All Devices", self._update_all_devices).pack(anchor="w", pady=(0, 16))
-
-        self._update_log = tk.Text(wrap, bg=TH["input"], fg=TH["fg"], font=("Consolas", 9),
-                                   height=6, bd=0, highlightthickness=1,
-                                   highlightbackground=TH["border"], state="disabled")
-        self._update_log.pack(fill="x", pady=(0, 16))
-
-        tk.Label(wrap, text="VERSION HISTORY", bg=TH["bg"], fg=TH["fg2"],
-                 font=("Segoe UI", 11, "bold")).pack(anchor="w", pady=(0, 8))
-
-        history_frame = tk.Frame(wrap, bg=TH["bg"])
-        history_frame.pack(fill="both", expand=True)
-
-        canvas = tk.Canvas(history_frame, bg=TH["bg"], highlightthickness=0)
-        scrollbar = self._scrollbar(history_frame, orient="vertical", command=canvas.yview)
-        inner = tk.Frame(canvas, bg=TH["bg"])
-
-        inner.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
-        canvas.create_window((0, 0), window=inner, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
-
-        canvas.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
-
-        for ver, date, desc in WHIM_VERSION_HISTORY:
-            row = tk.Frame(inner, bg=TH["card"], bd=0, highlightthickness=1,
-                           highlightbackground=TH["border"])
-            row.pack(fill="x", pady=(0, 4), padx=(0, 8))
-            tk.Label(row, text=f"v{ver}", bg=TH["card"], fg=TH["green"],
-                     font=("Consolas", 11, "bold")).pack(side="left", padx=(10, 8), pady=6)
-            tk.Label(row, text=date, bg=TH["card"], fg=TH["fg_dim"],
-                     font=("Consolas", 9)).pack(side="left", padx=(0, 12), pady=6)
-            tk.Label(row, text=desc, bg=TH["card"], fg=TH["fg"],
-                     font=("Segoe UI", 9), wraplength=600, anchor="w", justify="left").pack(
-                         side="left", fill="x", expand=True, padx=(0, 10), pady=6)
-
-    def _update_all_devices(self):
-        self._switch_tab("updates")
-        log = self._update_log
-        log.config(state="normal")
-        log.delete("1.0", "end")
-        log.insert("end", f"[{datetime.now().strftime('%H:%M:%S')}] Starting device update...\n")
-        log.config(state="disabled")
-        threading.Thread(target=self._do_update_devices, daemon=True).start()
-
-    def _do_update_devices(self):
-        def append(msg):
-            ts = datetime.now().strftime('%H:%M:%S')
-            self.after(0, lambda: self._update_log_append(f"[{ts}] {msg}\n"))
-
-        try:
-            result = subprocess.run(["adb", "devices", "-l"], capture_output=True, text=True, timeout=5)
-            if result.returncode != 0:
-                append("ERROR: adb not available")
-                return
-        except Exception as e:
-            append(f"ERROR: {e}")
-            return
-
-        device_map = {}
-        for line in result.stdout.splitlines()[1:]:
-            line = line.strip()
-            if not line or "offline" in line:
-                continue
-            parts = line.split()
-            if len(parts) >= 2:
-                serial = parts[0]
-                model = ""
-                for p in parts[2:]:
-                    if p.startswith("model:"):
-                        model = p.split(":", 1)[1]
-                if model:
-                    device_map[model] = serial
-
-        phone_apk = os.path.join(WHIM_APK_DIR, "whim_m_v3.3_phone.apk")
-        tablet_apk = os.path.join(WHIM_APK_DIR, "whim_m_v3.3_tablet.apk")
-
-        targets = [
-            ("SM_G965U", "Galaxy S9", phone_apk),
-            ("SM_S901U", "Galaxy S22", phone_apk),
-            ("TB311FU", "Lenovo Tablet", tablet_apk),
-        ]
-
-        updated = 0
-        for adb_model, label, apk_path in targets:
-            serial = device_map.get(adb_model)
-            if not serial:
-                append(f"{label}: not connected (skipped)")
-                continue
-            if not os.path.isfile(apk_path):
-                append(f"{label}: APK not found at {apk_path}")
-                continue
-            append(f"{label}: installing {os.path.basename(apk_path)}...")
-            try:
-                ir = subprocess.run(
-                    ["adb", "-s", serial, "install", "-r", apk_path],
-                    capture_output=True, text=True, timeout=60)
-                if ir.returncode == 0 and "Success" in ir.stdout:
-                    append(f"{label}: SUCCESS")
-                    updated += 1
-                else:
-                    append(f"{label}: FAILED — {ir.stdout.strip()} {ir.stderr.strip()}")
-            except Exception as e:
-                append(f"{label}: ERROR — {e}")
-
-        append(f"Done. {updated} device(s) updated.")
-
-    def _update_log_append(self, msg):
-        self._update_log.config(state="normal")
-        self._update_log.insert("end", msg)
-        self._update_log.see("end")
-        self._update_log.config(state="disabled")
-
     def build_settings(self):
         f = self.tabs["settings"]
         wrap = tk.Frame(f, bg=TH["bg"])
@@ -10820,6 +11783,7 @@ camFlipBtn.addEventListener('click',()=>{
         ttk.Combobox(r, textvariable=self._settings_theme_var,
                       values=["Dark (Whim)", "Midnight", "Solarized Dark"],
                       width=18, state="readonly").pack(side="left", padx=4)
+        self._btn(r, "Themes", self._open_themes_window).pack(side="left", padx=8)
 
         tk.Frame(pref_inner, bg=TH["border"], height=1).pack(fill="x", pady=8)
 
@@ -10934,6 +11898,213 @@ camFlipBtn.addEventListener('click',()=>{
                     text=f"Delete failed: {ex}", fg="#ff4444"))
         threading.Thread(target=_del, daemon=True).start()
 
+    def _open_themes_window(self):
+        win = tk.Toplevel(self)
+        win.title("Whim Themes — Terminal UI Colors")
+        win.configure(bg=TH["bg"])
+        win.geometry("560x620")
+        win.resizable(False, False)
+        win.transient(self)
+        win.grab_set()
+
+        tk.Label(win, text="TERMINAL UI THEMES", bg=TH["bg"], fg=TH["green"],
+                 font=("Segoe UI", 14, "bold")).pack(pady=(14, 4))
+        tk.Label(win, text="Adjust Red, Green, Blue channels and Hue for each UI element",
+                 bg=TH["bg"], fg=TH["fg2"], font=TH["font_sm"]).pack(pady=(0, 12))
+
+        cfg = self._load_settings()
+        theme_colors = cfg.get("theme_colors", {})
+
+        color_defs = [
+            ("background", "Background", TH["bg"]),
+            ("card", "Card / Panel", TH["card"]),
+            ("input", "Input Fields", TH["input"]),
+            ("border", "Borders", TH["border"]),
+            ("button", "Buttons", TH["btn"]),
+            ("button_hover", "Button Hover", TH["btn_hover"]),
+            ("foreground", "Text", TH["fg"]),
+            ("accent", "Accent (Green)", TH["green"]),
+            ("red", "Red", TH["red"]),
+            ("yellow", "Yellow", TH["yellow"]),
+        ]
+
+        canvas_frame = tk.Frame(win, bg=TH["bg"])
+        canvas_frame.pack(fill="both", expand=True, padx=16)
+
+        canvas = tk.Canvas(canvas_frame, bg=TH["bg"], highlightthickness=0)
+        scrollbar = tk.Scrollbar(canvas_frame, orient="vertical", command=canvas.yview,
+                                 bg=TH["card"], troughcolor=TH["bg"])
+        scroll_inner = tk.Frame(canvas, bg=TH["bg"])
+
+        scroll_inner.bind("<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        canvas.create_window((0, 0), window=scroll_inner, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        sliders = {}
+        previews = {}
+
+        def _hex_to_rgb(hexc):
+            hexc = hexc.lstrip("#")
+            return tuple(int(hexc[i:i+2], 16) for i in (0, 2, 4))
+
+        def _rgb_to_hex(r, g, b):
+            return f"#{int(r):02x}{int(g):02x}{int(b):02x}"
+
+        def _rgb_to_hsv(r, g, b):
+            r2, g2, b2 = r / 255.0, g / 255.0, b / 255.0
+            mx, mn = max(r2, g2, b2), min(r2, g2, b2)
+            v = mx
+            d = mx - mn
+            s = 0.0 if mx == 0 else d / mx
+            if d == 0:
+                h = 0.0
+            elif mx == r2:
+                h = ((g2 - b2) / d) % 6.0
+            elif mx == g2:
+                h = (b2 - r2) / d + 2.0
+            else:
+                h = (r2 - g2) / d + 4.0
+            h = h / 6.0
+            return (h, s, v)
+
+        def _update_from_slider(key):
+            rv = sliders[key]["r"].get()
+            gv = sliders[key]["g"].get()
+            bv = sliders[key]["b"].get()
+            col = _rgb_to_hex(rv, gv, bv)
+            previews[key].config(bg=col)
+            sliders[key]["hex_var"].set(col)
+
+        def _update_from_hue(key):
+            hue_val = sliders[key]["h"].get() / 360.0
+            current_hex = sliders[key]["hex_var"].get()
+            r, g, b = _hex_to_rgb(current_hex)
+            _, s, v = _rgb_to_hsv(r, g, b)
+            if s < 0.05:
+                s = 0.7
+            if v < 0.05:
+                v = 0.7
+            nr, ng, nb = [int(c * 255) for c in self._hsv_to_rgb(hue_val, s, v)]
+            sliders[key]["r"].set(nr)
+            sliders[key]["g"].set(ng)
+            sliders[key]["b"].set(nb)
+            col = _rgb_to_hex(nr, ng, nb)
+            previews[key].config(bg=col)
+            sliders[key]["hex_var"].set(col)
+
+        for key, label, default in color_defs:
+            current = theme_colors.get(key, default)
+            cr, cg, cb = _hex_to_rgb(current)
+            ch, cs, cv = _rgb_to_hsv(cr, cg, cb)
+
+            row_frame = tk.Frame(scroll_inner, bg=TH["card"], bd=0,
+                                 highlightthickness=1, highlightbackground=TH["border"])
+            row_frame.pack(fill="x", pady=3)
+
+            header = tk.Frame(row_frame, bg=TH["card"])
+            header.pack(fill="x", padx=8, pady=(6, 2))
+            tk.Label(header, text=label, bg=TH["card"], fg=TH["fg"],
+                     font=("Segoe UI", 10, "bold"), width=16, anchor="w").pack(side="left")
+
+            preview = tk.Label(header, text="    ", bg=current, width=4,
+                               relief="solid", bd=1)
+            preview.pack(side="left", padx=8)
+            previews[key] = preview
+
+            hex_var = tk.StringVar(value=current)
+            tk.Label(header, textvariable=hex_var, bg=TH["card"], fg=TH["fg2"],
+                     font=("Consolas", 9), width=8).pack(side="left")
+
+            slider_frame = tk.Frame(row_frame, bg=TH["card"])
+            slider_frame.pack(fill="x", padx=8, pady=(0, 6))
+
+            s_dict = {"hex_var": hex_var}
+
+            for ch_name, ch_color, ch_val in [("R", "#d94040", cr), ("G", "#2fa572", cg),
+                                               ("B", "#4488cc", cb)]:
+                sf = tk.Frame(slider_frame, bg=TH["card"])
+                sf.pack(side="left", padx=(0, 6))
+                tk.Label(sf, text=ch_name, bg=TH["card"], fg=ch_color,
+                         font=("Consolas", 8, "bold"), width=2).pack(side="left")
+                sc = tk.Scale(sf, from_=0, to=255, orient="horizontal", length=90,
+                              bg=TH["card"], fg=TH["fg2"], troughcolor=TH["input"],
+                              highlightthickness=0, bd=0, font=("Consolas", 7),
+                              showvalue=True, sliderlength=12)
+                sc.set(ch_val)
+                sc.pack(side="left")
+                s_dict[ch_name.lower()] = sc
+
+            hf = tk.Frame(slider_frame, bg=TH["card"])
+            hf.pack(side="left", padx=(6, 0))
+            tk.Label(hf, text="H", bg=TH["card"], fg=TH["yellow"],
+                     font=("Consolas", 8, "bold"), width=2).pack(side="left")
+            hue_sc = tk.Scale(hf, from_=0, to=360, orient="horizontal", length=90,
+                              bg=TH["card"], fg=TH["fg2"], troughcolor=TH["input"],
+                              highlightthickness=0, bd=0, font=("Consolas", 7),
+                              showvalue=True, sliderlength=12)
+            h_init, _, _ = _rgb_to_hsv(cr, cg, cb)
+            hue_sc.set(int(h_init * 360))
+            hue_sc.pack(side="left")
+            s_dict["h"] = hue_sc
+
+            sliders[key] = s_dict
+
+            _key = key
+            s_dict["r"].config(command=lambda v, k=_key: _update_from_slider(k))
+            s_dict["g"].config(command=lambda v, k=_key: _update_from_slider(k))
+            s_dict["b"].config(command=lambda v, k=_key: _update_from_slider(k))
+            s_dict["h"].config(command=lambda v, k=_key: _update_from_hue(k))
+
+        btn_row = tk.Frame(win, bg=TH["bg"])
+        btn_row.pack(fill="x", padx=16, pady=12)
+
+        def _apply_theme():
+            new_colors = {}
+            for key, _, _ in color_defs:
+                new_colors[key] = sliders[key]["hex_var"].get()
+            TH["bg"] = new_colors["background"]
+            TH["card"] = new_colors["card"]
+            TH["input"] = new_colors["input"]
+            TH["border"] = new_colors["border"]
+            TH["btn"] = new_colors["button"]
+            TH["btn_hover"] = new_colors["button_hover"]
+            TH["fg"] = new_colors["foreground"]
+            TH["green"] = new_colors["accent"]
+            TH["red"] = new_colors["red"]
+            TH["yellow"] = new_colors["yellow"]
+            cfg = self._load_settings()
+            cfg["theme_colors"] = new_colors
+            os.makedirs(os.path.dirname(WHIM_SETTINGS_FILE), exist_ok=True)
+            with open(WHIM_SETTINGS_FILE, "w") as fh:
+                json.dump(cfg, fh, indent=2)
+            messagebox.showinfo("Theme Applied",
+                "Theme colors saved. Restart Whim Terminal for full effect.",
+                parent=win)
+
+        def _reset_defaults():
+            defaults = {
+                "background": "#2b2b2b", "card": "#333333", "input": "#1e1e1e",
+                "border": "#3a3a3a", "button": "#14507a", "button_hover": "#0f3d5e",
+                "foreground": "#dce4ee", "accent": "#2fa572", "red": "#d94040",
+                "yellow": "#e0a030",
+            }
+            for key, _, _ in color_defs:
+                r, g, b = _hex_to_rgb(defaults[key])
+                sliders[key]["r"].set(r)
+                sliders[key]["g"].set(g)
+                sliders[key]["b"].set(b)
+                h, _, _ = _rgb_to_hsv(r, g, b)
+                sliders[key]["h"].set(int(h * 360))
+                previews[key].config(bg=defaults[key])
+                sliders[key]["hex_var"].set(defaults[key])
+
+        self._btn(btn_row, "Apply & Save", _apply_theme).pack(side="left", padx=4)
+        self._btn(btn_row, "Reset Defaults", _reset_defaults).pack(side="left", padx=4)
+        self._btn(btn_row, "Close", win.destroy).pack(side="right", padx=4)
+
     def _settings_save_all(self):
         cfg = self._load_settings()
         cfg["model"] = self._global_model_var.get()
@@ -10995,7 +12166,11 @@ camFlipBtn.addEventListener('click',()=>{
                         module = "WS"
                         level = "INFO"
                         if method:
-                            if "smart" in method.lower():
+                            if "discord" in method.lower():
+                                module = "Discord"
+                            elif "signal" in method.lower():
+                                module = "Signal"
+                            elif "smart" in method.lower():
                                 module = "Gateway"
                             elif "session" in method.lower():
                                 module = "Gateway"
