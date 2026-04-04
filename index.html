@@ -590,46 +590,54 @@ table code {
     </div>
     <div class="toc-item">
       <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">12</span>
-      <a href="#archive">Archive Tab Editor</a>
+      <a href="#geof">GeoF &mdash; Geofence Tracker</a>
     </div>
     <div class="toc-item">
       <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">13</span>
-      <a href="#screenshare">Screen Share System</a>
+      <a href="#nodeflow">NodeFlow &mdash; Visual Node Editor</a>
     </div>
     <div class="toc-item">
       <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">14</span>
-      <a href="#adb">ADB Portal &amp; Emulator</a>
+      <a href="#archive">Archive Tab Editor</a>
     </div>
     <div class="toc-item">
       <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">15</span>
-      <a href="#gateway">OpenClaw Gateway</a>
+      <a href="#screenshare">Screen Share System</a>
     </div>
     <div class="toc-item">
       <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">16</span>
-      <a href="#settingstab">Settings Tab</a>
+      <a href="#adb">ADB Portal &amp; Emulator</a>
     </div>
     <div class="toc-item">
       <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">17</span>
-      <a href="#audiocapture">Audio Capture Tool</a>
+      <a href="#gateway">OpenClaw Gateway</a>
     </div>
     <div class="toc-item">
       <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">18</span>
-      <a href="#tech">Technical Stack &amp; Config</a>
+      <a href="#settingstab">Settings Tab</a>
     </div>
     <div class="toc-item">
       <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">19</span>
-      <a href="#desktop-env">Desktop Environment Customizations</a>
+      <a href="#audiocapture">Audio Capture Tool</a>
     </div>
     <div class="toc-item">
       <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">20</span>
-      <a href="#windows11">Windows 11 Support</a>
-    </div>
-    <div class="toc-item">
-      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">20.5</span>
-      <a href="#ios">iOS Support (Tahoe)</a>
+      <a href="#tech">Technical Stack &amp; Config</a>
     </div>
     <div class="toc-item">
       <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">21</span>
+      <a href="#desktop-env">Desktop Environment Customizations</a>
+    </div>
+    <div class="toc-item">
+      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">22</span>
+      <a href="#windows11">Windows 11 Support</a>
+    </div>
+    <div class="toc-item">
+      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">22.5</span>
+      <a href="#ios">iOS Support (Tahoe)</a>
+    </div>
+    <div class="toc-item">
+      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">23</span>
       <a href="#sync">Multi-Terminal Sync</a>
     </div>
   </div>
@@ -830,6 +838,8 @@ table code {
       <tr><td><span class="badge badge-orange">PERSONA</span></td><td>persona</td><td>Voice personality manager: coined response playlists per voice clone, confidence-gated, context-aware, XTTS pre-render pipeline, behavioral categories.</td></tr>
 
       <tr><td><span class="badge badge-orange">TRV CIPHER</span></td><td>hearmeout</td><td>Audio transcription workstation with spectrogram, playback transport, Whisper transcription, ODT export, and scrub tools.</td></tr>
+      <tr><td><span class="badge badge-green">GEOF</span></td><td>geof</td><td>Geofence tracker with canvas map, collar status table, LoRa bridge integration, 20-minute heartbeat monitor, and fence pin management for livestock tracking.</td></tr>
+      <tr><td><span class="badge badge-orange">NODEFLOW</span></td><td>nodeflow</td><td>Visual node-based flow editor showing active droids, LLM reasoning, OpenClaw telemetry, and data flow connections with drag-and-drop canvas, auto-poll, and node inspector.</td></tr>
       <tr><td><span class="badge badge-yellow">ARCHIVE</span></td><td>archive</td><td>Rich text editor with formatting toolbar, font selection, alignment, bullet lists, find/replace, word count, and file browser.</td></tr>
 
       <tr><td><span class="badge badge-blue">SS</span></td><td>ss</td><td>Screen share server with QR code, phone camera feed, desktop preview, FPS/quality settings, and MJPEG streaming.</td></tr>
@@ -1592,11 +1602,234 @@ sudo systemctl status whim-tunnel.service</div>
   </ul>
 </section>
 
-<!-- ==================== 12 ARCHIVE ==================== -->
-<section class="section" id="archive">
+<!-- ==================== GEOF ==================== -->
+<section class="section" id="geof">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
     <span class="sec-num">12</span>
+    <h2>GeoF &mdash; Geofence Tracker</h2>
+  </div>
+  <p>
+    The GEOF tab is a geofencing and livestock tracking system designed for hilly terrain (Ozarks). It combines a canvas-based map with real-time collar monitoring via LoRa radio, GPS point-in-polygon fence checking, and ESP32-S3 collar firmware with deep sleep power management.
+  </p>
+
+  <div class="screenshot-container">
+    <img src="manual_assets/GeoF.png" alt="GeoF Desktop Tab">
+  </div>
+
+  <div class="card" style="margin: 20px 0;">
+    <div class="card-title">Not Just for Livestock</div>
+    <p style="font-size: 14px; color: var(--fg);">
+      GeoF works just as well for the four-legged family members who think the backyard fence is more of a suggestion than a rule. If your dog has mastered the art of the great escape &mdash; or simply can't resist chasing squirrels into the neighbor's yard &mdash; a lightweight GPS collar with GeoF gives you peace of mind without the drama. You'll get a gentle heads-up the moment your adventurous pup wanders past the boundary, so you can call them back before they make it three blocks down the street. Same LoRa collar, same map, same alerts &mdash; just swap "Cow-1" for "Biscuit" and you're set.
+    </p>
+  </div>
+
+  <h3>Architecture</h3>
+  <div class="conn-diagram">
+    <span class="node">Phone (GPS Pins)</span>
+    <span class="arrow">&rarr; JSON sync &rarr;</span>
+    <span class="node">Whim GeoF Tab</span>
+    <span class="arrow">&larr; LoRa Bridge &larr;</span>
+    <span class="node">LoRa Gateway</span>
+    <span class="arrow">&larr; SF12 radio &larr;</span>
+    <span class="node">ESP32-S3 Collars</span>
+  </div>
+
+  <h3>Layout</h3>
+  <table>
+    <thead><tr><th>Panel</th><th>Content</th></tr></thead>
+    <tbody>
+      <tr><td>Toolbar</td><td>Sync Pins, Load/Save/Clear Fence, Start/Stop Bridge, Start/Stop Heartbeat</td></tr>
+      <tr><td>Left (60%)</td><td>Canvas map with pan, zoom, grid lines, fence polygon, pin markers, and collar positions (color-coded by status)</td></tr>
+      <tr><td>Right (40%)</td><td>Collar status treeview, detail panel, and LoRa log</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Collar Status Indicators</h3>
+  <table>
+    <thead><tr><th>Status</th><th>Color</th><th>Condition</th></tr></thead>
+    <tbody>
+      <tr><td><strong>OK</strong></td><td style="color:#2fa572">Green</td><td>Heartbeat received within 20 minutes and inside fence</td></tr>
+      <tr><td><strong>STALE</strong></td><td style="color:#e0a030">Yellow</td><td>No heartbeat for 20&ndash;40 minutes</td></tr>
+      <tr><td><strong>OFFLINE</strong></td><td style="color:#d94040">Red</td><td>No heartbeat for &gt;40 minutes</td></tr>
+      <tr><td><strong>ALERT</strong></td><td style="color:#ff3333">Bright Red</td><td>Collar reported position outside the geofence boundary</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Pin Sync &amp; Fence Management</h3>
+  <ul>
+    <li><strong>Sync Pins</strong> &mdash; Import GPS coordinates from a mobile JSON file (supports <code>[{lat, lon}]</code> or <code>{pins: [...]}</code> format). Auto-builds fence polygon from 3+ pins.</li>
+    <li><strong>Load / Save Fence</strong> &mdash; Persists fence vertices and collar registry to <code>~/.openclaw/fence_config.json</code></li>
+    <li><strong>Clear Pins</strong> &mdash; Resets all pins and fence boundary</li>
+    <li><strong>Canvas Interaction</strong> &mdash; Click-drag to pan, scroll wheel to zoom (levels 1&ndash;20), coordinate display in status bar</li>
+  </ul>
+
+  <h3>LoRa Bridge Service</h3>
+  <p>
+    The LoRa bridge (<code>services/lora_bridge.py</code>) runs as a subprocess managed from the GeoF tab. It supports three modes:
+  </p>
+  <table>
+    <thead><tr><th>Mode</th><th>Flag</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td>Serial</td><td><code>--port /dev/ttyUSB0</code></td><td>Reads from a hardware LoRa gateway via serial (default 115200 baud)</td></tr>
+      <tr><td>TCP</td><td><code>--tcp 0.0.0.0:9600</code></td><td>Accepts collar packets over TCP sockets</td></tr>
+      <tr><td>Simulated</td><td><code>--simulate</code></td><td>Generates synthetic collar data for testing without hardware</td></tr>
+    </tbody>
+  </table>
+  <p>
+    The bridge performs <strong>ray-casting point-in-polygon</strong> geofence checks on every packet. If a collar reports a position outside the fence boundary, the packet is tagged with <code>OUTSIDE_FENCE</code> alert.
+  </p>
+
+  <h3>LoRa Configuration</h3>
+  <table>
+    <thead><tr><th>Parameter</th><th>Default</th><th>Note</th></tr></thead>
+    <tbody>
+      <tr><td>Frequency</td><td>915 MHz</td><td>US ISM band</td></tr>
+      <tr><td>Spreading Factor</td><td><strong>SF12</strong></td><td>Maximum range for hilly Ozarks terrain. Slower data rate but signals &ldquo;bend&rdquo; over ridges.</td></tr>
+      <tr><td>TX Power</td><td>20 dBm</td><td>Maximum allowed for LoRa in US</td></tr>
+      <tr><td>CRC</td><td>Enabled</td><td>Error detection on all packets</td></tr>
+    </tbody>
+  </table>
+
+  <h3>ESP32-S3 Collar Firmware</h3>
+  <p>
+    Each livestock collar runs on an ESP32-S3 with GPS, LoRa radio (SX1276), and IMU accelerometer. The firmware (<code>Collar/firmware/main.cpp</code>) uses a deep sleep cycle:
+  </p>
+  <ul>
+    <li><strong>20-minute heartbeat</strong> &mdash; Wake from deep sleep, acquire GPS fix, check fence boundary, send LoRa status packet (collar ID, lat/lon, battery %), return to sleep</li>
+    <li><strong>5-minute motion interval</strong> &mdash; When the IMU detects movement, sleep interval decreases to 5 minutes for higher-resolution tracking</li>
+    <li><strong>Emergency broadcast</strong> &mdash; If GPS position is outside the fence polygon, immediately transmit 3 rapid emergency packets before sleeping</li>
+    <li><strong>Battery monitoring</strong> &mdash; ADC reads voltage divider on LiPo cell (4.2V=100%, 3.0V=0%)</li>
+  </ul>
+
+  <h3>Packet Format</h3>
+  <p>Collars transmit CSV over LoRa: <code>COLLAR_ID,LAT,LON,BATTERY,NAME[,OUTSIDE_FENCE]</code></p>
+  <div class="code-block">C001,36.350123,-93.200456,87,Cow-1
+C002,36.341000,-93.195000,62,Cow-2,OUTSIDE_FENCE</div>
+
+  <h3>File Structure</h3>
+  <table>
+    <thead><tr><th>Path</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td><code>services/lora_bridge.py</code></td><td>LoRa bridge service (serial/TCP/simulated)</td></tr>
+      <tr><td><code>Collar/firmware/main.cpp</code></td><td>ESP32-S3 Arduino firmware</td></tr>
+      <tr><td><code>Collar/config/fence.json</code></td><td>Default fence config (flash to ESP32 SPIFFS)</td></tr>
+      <tr><td><code>~/.openclaw/fence_config.json</code></td><td>Active fence config (desktop)</td></tr>
+      <tr><td><code>~/.openclaw/geof_pins.json</code></td><td>Cached pin data from mobile sync</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Heartbeat Monitor</h3>
+  <p>
+    The heartbeat monitor runs as a background timer in the Whim Terminal. Every 20 minutes it scans all registered collars and flags any that have gone silent as STALE or OFFLINE. Alerts appear in the LoRa Log panel and collar table rows change color accordingly.
+  </p>
+
+  <div class="card">
+    <div class="card-title">Ozarks Terrain Tip</div>
+    <p style="font-size: 14px; color: var(--yellow);">
+      SF12 (Spreading Factor 12) is critical for hilly terrain. It trades data rate for range, significantly increasing the chance of a signal clearing ridgelines between the collar and your antenna mast. Expect 2&ndash;5 km line-of-sight range, or 500m&ndash;1.5 km over hills with SF12 + 20 dBm.
+    </p>
+  </div>
+</section>
+
+<!-- ==================== NODEFLOW ==================== -->
+<section class="section" id="nodeflow">
+  <div class="section-header">
+    <img class="flame-sm" src="manual_assets/fire.png" alt="">
+    <span class="sec-num">13</span>
+    <h2>NodeFlow &mdash; Visual Node Editor</h2>
+  </div>
+  <p>
+    The NodeFlow tab is a visual node-based flow editor that maps the real-time data pipeline inside Whim. It renders each active component &mdash; User Input, Whim Brain (LLM), Opus Droid, OpenClaw Telemetry, and Wisp/GPS &mdash; as draggable nodes on an infinite canvas, with dashed edges showing how data flows between them.
+  </p>
+
+  <div class="screenshot-container">
+    <img src="manual_assets/nodeflow.png" alt="NodeFlow Desktop Tab">
+  </div>
+
+  <div class="screenshot-row">
+    <div class="screenshot-container">
+      <img src="manual_assets/nodeflow2.png" alt="NodeFlow — Full Graph with Wisp/GPS Node">
+      <div class="screenshot-caption">Full node graph showing all five default nodes connected with dashed edge lines and the Wisp/GPS endpoint visible</div>
+    </div>
+    <div class="screenshot-container">
+      <img src="manual_assets/node3.png" alt="NodeFlow — Node Inspector Detail">
+      <div class="screenshot-caption">Selecting the Wisp/GPS node populates the Node Inspector with type, position, description, and upstream connections</div>
+    </div>
+  </div>
+
+  <h3>Architecture</h3>
+  <div class="conn-diagram">
+    <span class="node">User Input</span>
+    <span class="arrow">&rarr;</span>
+    <span class="node">Whim Brain (LLM)</span>
+    <span class="arrow">&rarr;</span>
+    <span class="node">Opus Droid</span>
+    <span class="arrow">&rarr;</span>
+    <span class="node">Wisp / GPS</span>
+  </div>
+  <div class="conn-diagram" style="margin-top: 4px;">
+    <span style="visibility:hidden" class="node">User Input</span>
+    <span style="visibility:hidden" class="arrow">&rarr;</span>
+    <span class="node">Whim Brain (LLM)</span>
+    <span class="arrow">&rarr;</span>
+    <span class="node">OpenClaw Telemetry</span>
+    <span class="arrow">&rarr;</span>
+    <span class="node">Wisp / GPS</span>
+  </div>
+
+  <h3>Default Nodes</h3>
+  <table>
+    <thead><tr><th>Node</th><th>Type</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><strong>User Input</strong></td><td>input</td><td>Prompt and command entry point for the pipeline</td></tr>
+      <tr><td><strong>Whim Brain (LLM)</strong></td><td>brain</td><td>Local Ollama model handling reasoning, tool calls, and token streaming</td></tr>
+      <tr><td><strong>Opus Droid</strong></td><td>droid</td><td>Code execution, syntax analysis, and active path highlighting</td></tr>
+      <tr><td><strong>OpenClaw Telemetry</strong></td><td>openclaw</td><td>Hardware telemetry: RSSI, battery level, heartbeat status</td></tr>
+      <tr><td><strong>Wisp / GPS</strong></td><td>wisp</td><td>GPS coordinates, geofence status, and LoRa packet data</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Layout</h3>
+  <table>
+    <thead><tr><th>Panel</th><th>Content</th></tr></thead>
+    <tbody>
+      <tr><td>Header</td><td>Title, Refresh / Auto-Poll / Reset View buttons, idle/active status indicator</td></tr>
+      <tr><td>Canvas (left, 75%)</td><td>Infinite dark canvas with grid lines, color-coded draggable nodes, dashed edge connections, zoom (scroll wheel), and pan (right-click drag)</td></tr>
+      <tr><td>Node Inspector (right top)</td><td>Detail card showing the selected node&rsquo;s label, type, metadata, and connection list</td></tr>
+      <tr><td>Flow Log (right bottom)</td><td>Timestamped event log with color-coded severity (info, ok, warn, err)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Interaction</h3>
+  <ul>
+    <li><strong>Drag Nodes</strong> &mdash; Click and drag any node to reposition it on the canvas; edges redraw automatically</li>
+    <li><strong>Select Node</strong> &mdash; Click a node to populate the Node Inspector with its details</li>
+    <li><strong>Zoom</strong> &mdash; Scroll wheel zooms in/out on the canvas</li>
+    <li><strong>Pan</strong> &mdash; Right-click (or middle-click) drag to pan the viewport</li>
+    <li><strong>Refresh</strong> &mdash; Re-query all node states from the running system</li>
+    <li><strong>Auto-Poll</strong> &mdash; Toggle continuous polling to keep node data live</li>
+    <li><strong>Reset View</strong> &mdash; Snap zoom and pan back to the default viewport</li>
+  </ul>
+
+  <h3>Node Color Scheme</h3>
+  <table>
+    <thead><tr><th>Type</th><th>Border Color</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td><strong>brain</strong></td><td style="color:#9b59b6">Purple</td><td>LLM reasoning engine</td></tr>
+      <tr><td><strong>droid</strong></td><td style="color:#27ae60">Green</td><td>Code execution agents</td></tr>
+      <tr><td><strong>openclaw</strong></td><td style="color:#e8793a">Orange</td><td>Hardware telemetry sources</td></tr>
+      <tr><td><strong>wisp</strong></td><td style="color:#2980b9">Blue</td><td>GPS and geofence endpoints</td></tr>
+      <tr><td><strong>input</strong></td><td style="color:#8a7a6a">Tan</td><td>User entry points</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ==================== ARCHIVE ==================== -->
+<section class="section" id="archive">
+  <div class="section-header">
+    <img class="flame-sm" src="manual_assets/fire.png" alt="">
+    <span class="sec-num">14</span>
     <h2>Archive Tab Editor</h2>
   </div>
   <p>
@@ -1649,7 +1882,7 @@ Notes: User notes here
 <section class="section" id="screenshare">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">13</span>
+    <span class="sec-num">15</span>
     <h2>Screen Share System</h2>
   </div>
   <p>
@@ -1701,7 +1934,7 @@ Notes: User notes here
 <section class="section" id="adb">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">14</span>
+    <span class="sec-num">16</span>
     <h2>ADB Portal &amp; Emulator</h2>
   </div>
   <p>
@@ -1738,7 +1971,7 @@ Notes: User notes here
 <section class="section" id="gateway">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">15</span>
+    <span class="sec-num">17</span>
     <h2>OpenClaw Gateway</h2>
   </div>
   <p>
@@ -1789,7 +2022,7 @@ Notes: User notes here
 <section class="section" id="settingstab">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">16</span>
+    <span class="sec-num">18</span>
     <h2>Settings Tab</h2>
   </div>
   <p>
@@ -1847,7 +2080,7 @@ Notes: User notes here
 <section class="section" id="audiocapture">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">17</span>
+    <span class="sec-num">19</span>
     <h2>Audio Capture Tool</h2>
   </div>
   <p>
@@ -1900,7 +2133,7 @@ Notes: User notes here
 <section class="section" id="tech">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">18</span>
+    <span class="sec-num">20</span>
     <h2>Technical Stack &amp; Configuration</h2>
   </div>
 
@@ -1969,7 +2202,7 @@ Notes: User notes here
 <section class="section" id="desktop-env">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">19</span>
+    <span class="sec-num">21</span>
     <h2>Desktop Environment Customizations</h2>
   </div>
   <p>
@@ -2058,7 +2291,7 @@ Notes: User notes here
 <section class="section" id="windows11">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">20</span>
+    <span class="sec-num">22</span>
     <h2>Windows 11 Support</h2>
   </div>
   <p>
@@ -2176,7 +2409,7 @@ scripts/
 <section class="section" id="ios">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">20.5</span>
+    <span class="sec-num">22.5</span>
     <h2>iOS Support (Tahoe)</h2>
   </div>
   <p>
@@ -2236,7 +2469,7 @@ scripts/
 <section class="section" id="sync">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">21</span>
+    <span class="sec-num">23</span>
     <h2>Multi-Terminal Sync</h2>
   </div>
   <p>
@@ -2364,7 +2597,7 @@ scripts/
   <img src="manual_assets/fire.png" style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px; opacity: 0.6;">
   <strong>Whim</strong> &mdash; Complete Manual v1.5 &mdash; April 2026<br>
   <span style="color: var(--fg-muted); font-size: 11px;">
-    Built on CARRARA &bull; Python &bull; Tkinter &bull; Ollama &bull; SSH Tunnel + Tailscale Hybrid &bull; OpenClaw &bull; Windows 11 + Linux + iOS (Tahoe) &bull; Multi-Terminal Sync
+    Built on CARRARA &bull; Python &bull; Tkinter &bull; Ollama &bull; SSH Tunnel + Tailscale Hybrid &bull; OpenClaw &bull; Windows 11 + Linux + iOS (Tahoe) &bull; Multi-Terminal Sync &bull; GeoF + LoRa + ESP32 &bull; NodeFlow
   </span>
 </footer>
 
