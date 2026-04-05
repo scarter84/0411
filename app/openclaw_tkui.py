@@ -1428,7 +1428,7 @@ class ModernApp(tk.Tk):
             tk.Label(header, image=self._logo_img, bg=TH["card"]).pack(side="left", padx=(12, 4), pady=8)
         tk.Label(header, text="Whim", bg=TH["card"], fg="#00ff00",
                  font=("28 Days Later", 24, "bold")).pack(side="left", padx=4, pady=8)
-        tk.Label(header, text="v3.3.0", bg=TH["card"], fg="#e08030",
+        tk.Label(header, text="v3.4.0", bg=TH["card"], fg="#e08030",
                  font=("JetBrains Mono", 10)).pack(side="left", padx=(0, 8), pady=8)
 
         if self._settings_img:

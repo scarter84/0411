@@ -31,7 +31,7 @@ TTS_OUTPUT_DIR = os.path.expanduser("~/xtts_tts_cache")
 CMD_REPORT_LOG = os.path.expanduser("~/vaults/WHIM/mobile/cmd_reports.jsonl")
 LOCATION_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config", "device_locations.json")
 DEFAULT_PORT = 8089
-WHIM_M_VERSION = "3.3.0"
+WHIM_M_VERSION = "3.4.0"
 
 # Hybrid connection: VPS tunnel (default) + Tailscale (fallback)
 TAILSCALE_IP = "100.69.17.20"
@@ -85,6 +85,10 @@ _device_chat_messages = []
 _device_chat_lock = threading.Lock()
 _CHAT_MAX_MESSAGES = 200
 
+_device_presence = {}
+_device_presence_lock = threading.Lock()
+_PRESENCE_TIMEOUT = 15
+
 WHIM_ICON_B64 = ""
 _icon_path = os.path.expanduser("~/.openclaw/Whim.png")
 if os.path.isfile(_icon_path):
@@ -106,7 +110,7 @@ MANIFEST = json.dumps({
 })
 
 SW_JS = """
-var CACHE_VERSION = 'whim-v3.3';
+var CACHE_VERSION = 'whim-v3.4';
 self.addEventListener('install', function(e) {
   self.skipWaiting();
 });
@@ -400,7 +404,7 @@ body.kb-open .tab-bar{display:none}
     <div><h1 style="font-size:20px;margin:0">Whim.ai</h1><p class="sub" style="margin:2px 0 0">powered by llama + openclaw</p></div>
   </div>
   <div id="aiChatBox" style="flex:1;width:90%;background:#111111;border:1px solid #3a3a3a;border-radius:10px;overflow-y:auto;padding:12px;margin-bottom:12px;min-height:60px">
-    <div class="ai-msg assistant"><span class="msg-prefix">whim.ai</span>Welcome. Ask me anything.</div>
+    <div class="ai-msg assistant"><span class="msg-prefix">whim.ai</span>Welcome. Ask me anything. Try /browse incoming, /search, or /diagnose.</div>
   </div>
   <div class="kb-input-row" id="aiInputRow" style="width:90%;max-width:var(--max-w);display:flex;gap:8px;padding-bottom:env(safe-area-inset-bottom);margin:0 auto 16px;flex-shrink:0">
     <input type="text" id="aiChatInput" placeholder="Ask anything..." style="flex:1;min-width:0;padding:12px;background:#2b2b2b;color:#dce4ee;border:1px solid #3a3a3a;border-radius:10px;font-size:15px;outline:none;font-family:inherit" autocomplete="off">
@@ -1009,7 +1013,7 @@ dcFileInput.addEventListener('change',()=>{
   }).catch(()=>{})});
 
 function pollDC(){
-  fetch('/device/chat?since='+lastMsgId).then(r=>{Reconnect.setConnected(true);return r.json()}).then(msgs=>{
+  fetch('/device/chat?since='+lastMsgId+'&device='+encodeURIComponent(deviceName||'')).then(r=>{Reconnect.setConnected(true);return r.json()}).then(msgs=>{
     msgs.forEach(m=>{
       lastMsgId=Math.max(lastMsgId,m.id);
       const d=document.createElement('div');
@@ -1277,8 +1281,10 @@ class RecorderHandler(BaseHTTPRequestHandler):
             self._serve_cmd_reports()
         elif self.path.startswith("/tts_audio/"):
             self._serve_tts_audio()
-        elif self.path == "/device/chat":
+        elif self.path.startswith("/device/chat"):
             self._serve_device_chat()
+        elif self.path.startswith("/device/presence"):
+            self._serve_device_presence()
         elif self.path.startswith("/search_files"):
             self._handle_file_search()
         elif self.path == "/connection_mode":
@@ -1323,10 +1329,192 @@ class RecorderHandler(BaseHTTPRequestHandler):
         "VOICE & MEDIA: record, transcribe (Whisper), tts (XTTS), playback, scrub.\n"
         "SIGNAL / DISCORD: sig.send, sig.recv, sig.contacts, disc.send, disc.react, disc.search.\n"
         "ARCHIVE & FILES: archive.new, archive.save, archive.open, journal, ingest.\n"
+        "FOLDER OPS: /browse <incoming|downloads|vaults> [query] (list/search folder), "
+        "/search <query> (search across all three folders), /diagnose (run Whim health checks).\n"
         "SYSTEM: read/write files, shell commands, SmartThings, SSH tunnel, sessions.\n\n"
         "Always respond conversationally AND include the command block when an action is needed. "
         "Be concise and direct."
     )
+
+    _BROWSE_DIRS = {
+        "incoming": os.path.expanduser("~/Incoming"),
+        "downloads": os.path.expanduser("~/Downloads"),
+        "vaults": os.path.expanduser("~/vaults"),
+    }
+
+    def _cmd_browse(self, folder_key, query=None):
+        dirpath = self._BROWSE_DIRS[folder_key]
+        if not os.path.isdir(dirpath):
+            return f"[{folder_key}] Directory not found: {dirpath}"
+        entries = []
+        for entry in os.scandir(dirpath):
+            name = entry.name
+            if query and query not in name.lower():
+                continue
+            if entry.is_dir(follow_symlinks=False):
+                entries.append(f"  [DIR]  {name}/")
+            else:
+                try:
+                    size = entry.stat().st_size
+                    if size < 1024:
+                        sz = f"{size} B"
+                    elif size < 1048576:
+                        sz = f"{size / 1024:.1f} KB"
+                    else:
+                        sz = f"{size / 1048576:.1f} MB"
+                except OSError:
+                    sz = "?"
+                entries.append(f"  {sz:>10}  {name}")
+        entries.sort(key=lambda e: e.lower())
+        header = f"── {folder_key.upper()} ({dirpath}) ──"
+        if query:
+            header += f'  filter: "{query}"'
+        header += f"  ({len(entries)} items)"
+        lines = [header, ""] + entries if entries else [header, "", "  (no matching files)"]
+        return "\n".join(lines)
+
+    def _cmd_search_all(self, query):
+        results = []
+        for key, dirpath in self._BROWSE_DIRS.items():
+            if not os.path.isdir(dirpath):
+                continue
+            try:
+                for root, dirs, files in os.walk(dirpath):
+                    dirs[:] = [d for d in dirs if not d.startswith(".")]
+                    rel = os.path.relpath(root, dirpath)
+                    for fn in files:
+                        if query.lower() in fn.lower():
+                            loc = f"{key}/{rel}/{fn}" if rel != "." else f"{key}/{fn}"
+                            try:
+                                sz = os.path.getsize(os.path.join(root, fn))
+                                if sz < 1024:
+                                    szs = f"{sz} B"
+                                elif sz < 1048576:
+                                    szs = f"{sz / 1024:.1f} KB"
+                                else:
+                                    szs = f"{sz / 1048576:.1f} MB"
+                            except OSError:
+                                szs = "?"
+                            results.append(f"  {szs:>10}  {loc}")
+            except PermissionError:
+                results.append(f"  [permission denied: {dirpath}]")
+        header = f'── SEARCH: "{query}" across Incoming, Downloads, Vaults ── ({len(results)} hits)'
+        lines = [header, ""] + results if results else [header, "", "  (no matches found)"]
+        return "\n".join(lines)
+
+    def _cmd_diagnose(self):
+        import urllib.request as _ur
+        checks = []
+        ollama_url = "http://localhost:11434"
+        try:
+            req = _ur.Request(f"{ollama_url}/api/tags", method="GET",
+                              headers={"Accept": "application/json"})
+            with _ur.urlopen(req, timeout=5) as resp:
+                data = json.loads(resp.read())
+                models = [m["name"] for m in data.get("models", [])]
+                checks.append(f"  [OK]  Ollama running at {ollama_url}")
+                checks.append(f"        Models: {', '.join(models) if models else '(none loaded)'}")
+        except Exception as e:
+            checks.append(f"  [FAIL] Ollama at {ollama_url}: {e}")
+        gw_url = "http://localhost:3000"
+        try:
+            req = _ur.Request(gw_url, method="GET")
+            with _ur.urlopen(req, timeout=5) as resp:
+                checks.append(f"  [OK]  OpenClaw gateway reachable at {gw_url}")
+        except Exception as e:
+            checks.append(f"  [WARN] OpenClaw gateway at {gw_url}: {e}")
+        for key, dirpath in self._BROWSE_DIRS.items():
+            if os.path.isdir(dirpath):
+                try:
+                    count = len(os.listdir(dirpath))
+                    checks.append(f"  [OK]  {key}: {dirpath} ({count} items)")
+                except PermissionError:
+                    checks.append(f"  [WARN] {key}: {dirpath} (permission denied)")
+            else:
+                checks.append(f"  [FAIL] {key}: {dirpath} (not found)")
+        config_files = [
+            ("OpenClaw config", os.path.expanduser("~/.openclaw/openclaw.json")),
+            ("Whim settings", os.path.expanduser("~/.openclaw/whim_settings.json")),
+            ("Voice engine", os.path.expanduser("~/.openclaw/voice_engine.json")),
+            ("Device locations", os.path.expanduser("~/vaults/WHIM/config/device_locations.json")),
+        ]
+        for label, path in config_files:
+            if os.path.isfile(path):
+                checks.append(f"  [OK]  {label}: {path}")
+            else:
+                checks.append(f"  [MISS] {label}: {path}")
+        procs_to_check = ["ollama", "openclaw", "signal-cli"]
+        for proc_name in procs_to_check:
+            try:
+                import subprocess
+                result = subprocess.run(
+                    ["pgrep", "-f", proc_name],
+                    capture_output=True, text=True, timeout=3)
+                pids = result.stdout.strip().split("\n")
+                pids = [p for p in pids if p]
+                if pids:
+                    checks.append(f"  [OK]  Process '{proc_name}' running (PID: {', '.join(pids[:3])})")
+                else:
+                    checks.append(f"  [WARN] Process '{proc_name}' not found")
+            except Exception:
+                checks.append(f"  [??]  Could not check process '{proc_name}'")
+        try:
+            st = os.statvfs(os.path.expanduser("~"))
+            free_gb = (st.f_bavail * st.f_frsize) / (1024 ** 3)
+            total_gb = (st.f_blocks * st.f_frsize) / (1024 ** 3)
+            pct = ((total_gb - free_gb) / total_gb) * 100 if total_gb else 0
+            tag = "[OK]" if pct < 85 else "[WARN]" if pct < 95 else "[CRIT]"
+            checks.append(f"  {tag}  Disk: {free_gb:.1f} GB free / {total_gb:.1f} GB total ({pct:.0f}% used)")
+        except Exception:
+            pass
+        header = "── WHIM DIAGNOSTICS ──"
+        return "\n".join([header, ""] + checks)
+
+    def _try_slash_command(self, messages):
+        """Check if the last user message is a slash command. Returns response text or None."""
+        if not messages:
+            return None
+        last = None
+        for m in reversed(messages):
+            if m.get("role") == "user":
+                last = m.get("content", "").strip()
+                break
+        if not last or not last.startswith("/"):
+            return None
+        lower = last.lower()
+        if lower.startswith("/browse") or lower.startswith("/ls"):
+            parts = last.split(None, 2)
+            folder_key = parts[1].lower() if len(parts) > 1 else None
+            query = parts[2].lower() if len(parts) > 2 else None
+            if folder_key and folder_key in self._BROWSE_DIRS:
+                return self._cmd_browse(folder_key, query)
+            return f"Usage: /browse <{'|'.join(self._BROWSE_DIRS.keys())}> [search query]"
+        if lower.startswith("/search "):
+            query = last.split(None, 1)[1].strip() if len(last.split(None, 1)) > 1 else ""
+            if query:
+                return self._cmd_search_all(query)
+            return "Usage: /search <query>"
+        if lower.startswith("/diagnose") or lower.startswith("/diag"):
+            return self._cmd_diagnose()
+        return None
+
+    def _send_local_response(self, text):
+        """Send a slash-command result in the same ndjson streaming format Ollama uses."""
+        self.send_response(200)
+        self.send_header("Content-Type", "application/x-ndjson")
+        self._cors()
+        self.end_headers()
+        msg_line = json.dumps({
+            "message": {"role": "assistant", "content": text},
+            "done": False
+        }).encode("utf-8") + b"\n"
+        self.wfile.write(msg_line)
+        done_line = json.dumps({
+            "message": {"role": "assistant", "content": ""},
+            "done": True
+        }).encode("utf-8") + b"\n"
+        self.wfile.write(done_line)
+        self.wfile.flush()
 
     def do_POST(self):
         if self.path == "/upload":
@@ -1359,6 +1547,10 @@ class RecorderHandler(BaseHTTPRequestHandler):
             body = self.rfile.read(content_length)
             data = json.loads(body)
             messages = data.get("messages", [])
+            local_result = self._try_slash_command(messages)
+            if local_result is not None:
+                self._send_local_response(local_result)
+                return
             if not messages or messages[0].get("role") != "system":
                 messages.insert(0, {"role": "system", "content": self._OPENCLAW_SYSTEM})
             payload = json.dumps({
@@ -1644,6 +1836,7 @@ class RecorderHandler(BaseHTTPRequestHandler):
     # --- Device-to-device chat ---
     def _serve_device_chat(self):
         since = 0
+        device = ""
         if "?" in self.path:
             qs = self.path.split("?", 1)[1]
             for part in qs.split("&"):
@@ -1652,9 +1845,26 @@ class RecorderHandler(BaseHTTPRequestHandler):
                         since = int(part.split("=", 1)[1])
                     except ValueError:
                         pass
+                elif part.startswith("device="):
+                    import urllib.parse
+                    device = urllib.parse.unquote(part.split("=", 1)[1]).strip()[:32]
+        if device:
+            with _device_presence_lock:
+                _device_presence[device] = time.time()
         with _device_chat_lock:
             msgs = [m for m in _device_chat_messages if m["id"] > since]
         self._json_response(200, msgs)
+
+    def _serve_device_presence(self):
+        now = time.time()
+        with _device_presence_lock:
+            devices = []
+            for name, last_seen in _device_presence.items():
+                active = (now - last_seen) < _PRESENCE_TIMEOUT
+                devices.append({"name": name, "active": active,
+                                "last_seen": int(last_seen)})
+        devices.sort(key=lambda d: d["name"])
+        self._json_response(200, devices)
 
     def _handle_device_chat_post(self):
         try:
