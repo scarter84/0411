@@ -527,9 +527,9 @@ table code {
   <h1>WHIM</h1>
   <div class="subtitle">Complete Application Manual</div>
   <p style="color: var(--fg-dim); font-size: 14px; margin-top: 8px;">
-    The Unified Desktop &amp; Mobile Ecosystem for Voice, AI, Connectivity, and Automation
+    The Unified Desktop, Mobile &amp; Vehicle Ecosystem for Voice, AI, Geofencing, Weather Radar, HAM Radio, and Automation
   </p>
-  <div class="version-badge">v0.3.4 &mdash; April 2026 &mdash; CARRARA Mint &mdash; Hybrid Connection</div>
+  <div class="version-badge">v0.3.4 &mdash; April 2026 &mdash; CARRARA Mint &mdash; Hybrid Connection &mdash; Whim Terminal + Whim.m + Whim.V</div>
 </header>
 
 <!-- ==================== TABLE OF CONTENTS ==================== -->
@@ -667,31 +667,57 @@ table code {
     <h2>Application Overview</h2>
   </div>
   <p>
-    <strong>Whim</strong> is a comprehensive desktop and mobile ecosystem built in Python (Tkinter) that unifies voice recording, AI-powered conversation, messaging, IoT automation, screen sharing, and document editing into a single dark-themed application. It runs on Linux (CARRARA Mint) and connects to Samsung Android devices via a reverse SSH tunnel through a public VPS, LAN, or USB/ADB.
+    <strong>Whim</strong> is a three-tier local-first ecosystem &mdash; desktop terminal, mobile companion, and vehicle dashboard &mdash; built in Python that unifies AI chat, voice cloning, geofence tracking, weather radar, HAM/APRS monitoring, IoT automation, messaging, screen sharing, and document editing into a single dark-themed platform. It runs on Linux (CARRARA Mint), Windows 11, and macOS, connecting to Android devices and vehicle displays via reverse SSH tunnel, Tailscale mesh VPN, LAN, or USB/ADB. No cloud APIs. No telemetry. ~2 MB of code.
   </p>
 
   <div class="screenshot-container">
     <img src="manual_assets/Whimai.png" alt="Whim Desktop — Sessions Tab">
-    <div class="screenshot-caption">Whim desktop application showing the Sessions tab with all 14 module tabs visible across the header.</div>
+    <div class="screenshot-caption">Whim desktop application showing the Sessions tab with all module tabs visible across the header.</div>
   </div>
+
+  <h3>The Whim Ecosystem</h3>
+  <table>
+    <thead><tr><th>Platform</th><th>App</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Desktop</strong></td><td>Whim Terminal v3.4</td><td>Full-featured Tkinter application with 18 tabs: AI chat, voice cloning (XTTS v2), wake word engine, GeoF geofence tracker with LoRa collar integration, Doppler weather radar with NWS NEXRAD overlay, HAM/APRS station monitor with Direwolf, SmartThings IoT, Signal/Discord messaging, NodeFlow visual editor, screen share, archive editor, and more. Runs on Linux, Windows 11, and macOS.</td></tr>
+      <tr><td><strong>Mobile</strong></td><td>Whim.m v3.4</td><td>Android companion app (APK + PWA) with five tabs: REC (voice recording), LIBRARY (file browser), CHAT (Ollama AI proxy), WAKE (voice commands), DEVICES (mesh messaging). Runs on Samsung Galaxy S22, Galaxy S9, and Lenovo TB311FU tablet.</td></tr>
+      <tr><td><strong>Vehicle</strong></td><td>Whim.V v1.0</td><td>Touch-optimized vehicle dashboard for 13.6&Prime; Tesla-style displays (Ubuntu) or Android tablets. Five panels: GeoF geofence map, NWS Doppler radar, LibreOffice document viewer, AI chat, system logs. Flask server + WebView APK with green-dot launcher icon.</td></tr>
+    </tbody>
+  </table>
 
   <h3>Key Highlights</h3>
   <div class="feature-grid">
     <div class="feature-card">
-      <div class="fc-title">18 Module Tabs (2 Rows)</div>
-      <div class="fc-desc">Chat, Whim.AI, SmartThings, Sys Status, AVR Lab, Voice Engine, Live, TRV Cipher, Library | Archive, Discord, Signal, RyvenCore, Ryven Editor, Sessions, Events/Debug, <strong>Settings</strong></div>
+      <div class="fc-title">18 Desktop Tabs (2 Rows)</div>
+      <div class="fc-desc">Chat, Whim.AI, SmartThings, AVR Lab, Voice Engine, Live, TRV Cipher, Library, Archive, Persona, GeoF, Doppler, HAM/APRS, NodeFlow, Screen Share, Sync, <strong>Settings</strong></div>
     </div>
     <div class="feature-card">
-      <div class="fc-title">Mobile Companion</div>
-      <div class="fc-desc">Whim.m v3.4 provides a five-tab mobile experience (REC, LIBRARY, CHAT, WAKE, DEVICES) with voice recording, AI chat, wake word commands, cross-device file sharing, and inter-device messaging &mdash; accessible over LAN or VPS reverse SSH tunnel. Runs on Samsung Galaxy S22, Galaxy S9, and Lenovo TB311FU tablet.</div>
+      <div class="fc-title">GeoF &mdash; Geofence Tracker</div>
+      <div class="fc-desc">Canvas map with draggable fence vertices, LoRa collar bridge (ESP32 gateway), 20-minute heartbeat monitor, in/out detection, battery tracking, and pin management for livestock and pet tracking across Ozark terrain.</div>
+    </div>
+    <div class="feature-card">
+      <div class="fc-title">HAM &mdash; APRS Monitor</div>
+      <div class="fc-desc">Embedded OSM tile map with station markers, Direwolf integration (KISS/AGWPE/simulate modes), distance-filtered station list, base station config, raw packet log, and auto-polling for real-time position tracking.</div>
+    </div>
+    <div class="feature-card">
+      <div class="fc-title">Doppler &mdash; Weather Radar</div>
+      <div class="fc-desc">NWS NEXRAD base reflectivity overlay on OSM tiles, Open-Meteo 7-day forecast, anemometer, NWR audio (web stream + RTL-SDR), severe weather alerts pushed to mobile via Whim.m.</div>
+    </div>
+    <div class="feature-card">
+      <div class="fc-title">Mobile Companion (Whim.m)</div>
+      <div class="fc-desc">Five-tab Android app: voice recording, file library, AI chat via Ollama proxy, wake word commands, and cross-device messaging. VPS tunnel or Tailscale mesh. Runs on Galaxy S22, S9, and Lenovo tablet.</div>
+    </div>
+    <div class="feature-card">
+      <div class="fc-title">Vehicle Dashboard (Whim.V)</div>
+      <div class="fc-desc">Touch-optimized vertical UI for vehicle displays and tablets. GeoF map, Doppler radar, LibreOffice document viewer (headless .xlsx/.docx rendering), AI chat, and system status &mdash; all in a high-contrast dark theme for driving visibility.</div>
     </div>
     <div class="feature-card">
       <div class="fc-title">Local-First AI</div>
-      <div class="fc-desc">All AI inference runs locally through Ollama with DeepSeek R1:32B and Llama 3.1:8B-16K. No cloud dependency.</div>
+      <div class="fc-desc">All AI inference runs locally through Ollama with DeepSeek R1:32B, Llama 3.1:8B-16K, and Qwen3-Coder:32B. No cloud dependency. Streaming chat with presets, observability, tool trace, and context metering.</div>
     </div>
     <div class="feature-card">
-      <div class="fc-title">System Tray Integration</div>
-      <div class="fc-desc">Minimizes to system tray with a dynamic tunnel status icon (grey/yellow/green) showing connection health at a glance. Header bar shows real-time Tunnel and Whim status dots.</div>
+      <div class="fc-title">Three-Platform Networking</div>
+      <div class="fc-desc">Reverse SSH tunnel (primary) + Tailscale mesh VPN (fallback) + LAN/ADB connects desktop, mobile, and vehicle. Whim Terminal on port 18789 (WebSocket), Whim.m on 8089 (HTTP), Whim.V on 8099 (Flask).</div>
     </div>
   </div>
 </section>
@@ -726,6 +752,27 @@ table code {
       <span class="node">Journal Ingest Server</span>
       <span class="arrow">&larr; file &rarr;</span>
       <span class="node">~/Journal</span>
+    </div>
+    <div style="margin-bottom: 16px;">
+      <span class="node">Whim.V (Vehicle/Tablet)</span>
+      <span class="arrow">&larr; HTTP :8099 (LAN / Tailscale) &rarr;</span>
+      <span class="node">Whim.V Flask Server</span>
+      <span class="arrow">&larr; REST &rarr;</span>
+      <span class="node">Ollama + LibreOffice</span>
+    </div>
+    <div style="margin-bottom: 16px;">
+      <span class="node">ESP32 LoRa Gateway</span>
+      <span class="arrow">&larr; Serial / TCP &rarr;</span>
+      <span class="node">lora_bridge.py (GeoF)</span>
+      <span class="arrow">&larr; events &rarr;</span>
+      <span class="node">GeoF Tab Canvas Map</span>
+    </div>
+    <div style="margin-bottom: 16px;">
+      <span class="node">Direwolf / RTL-SDR</span>
+      <span class="arrow">&larr; KISS / AGWPE &rarr;</span>
+      <span class="node">HAM/APRS Tab</span>
+      <span class="arrow">&larr; decode &rarr;</span>
+      <span class="node">Station Map + Packet Log</span>
     </div>
     <div>
       <span class="node">SS Server :8091</span>
@@ -794,6 +841,24 @@ table code {
         <td>USB / TCP</td>
         <td>5555</td>
         <td>Android device management, APK install, screenshots</td>
+      </tr>
+      <tr>
+        <td>Whim.V Dashboard</td>
+        <td>HTTP (Flask)</td>
+        <td>8099</td>
+        <td>Vehicle/tablet dashboard: GeoF map, Doppler radar, document viewer, AI chat, system logs</td>
+      </tr>
+      <tr>
+        <td>LoRa Bridge (GeoF)</td>
+        <td>Serial / TCP</td>
+        <td>&mdash;</td>
+        <td>ESP32 collar gateway for geofence tracking (lora_bridge.py subprocess)</td>
+      </tr>
+      <tr>
+        <td>Direwolf (HAM)</td>
+        <td>KISS / AGWPE</td>
+        <td>8001</td>
+        <td>APRS packet decode from RTL-SDR or soundcard for station monitoring</td>
       </tr>
       <tr>
         <td>Singleton Lock</td>
@@ -2911,9 +2976,9 @@ adb install vehicle/apk_build/out/whim_v.apk</code></pre>
 <!-- ==================== FOOTER ==================== -->
 <footer class="manual-footer">
   <img src="manual_assets/fire.png" style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px; opacity: 0.6;">
-  <strong>Whim</strong> &mdash; Complete Manual v1.5 &mdash; April 2026<br>
+  <strong>Whim</strong> &mdash; Complete Manual v1.6 &mdash; April 2026<br>
   <span style="color: var(--fg-muted); font-size: 11px;">
-    Built on CARRARA &bull; Python &bull; Tkinter &bull; Ollama &bull; SSH Tunnel + Tailscale Hybrid &bull; OpenClaw &bull; Windows 11 + Linux + iOS (Tahoe) &bull; Multi-Terminal Sync &bull; GeoF + LoRa + ESP32 &bull; NodeFlow
+    Built on CARRARA &bull; Whim Terminal + Whim.m + Whim.V &bull; Python &bull; Tkinter &bull; Flask &bull; Ollama &bull; SSH Tunnel + Tailscale Hybrid &bull; OpenClaw &bull; GeoF + LoRa + ESP32 &bull; Doppler + NWS NEXRAD &bull; HAM/APRS + Direwolf &bull; LibreOffice Headless &bull; Windows 11 + Linux + macOS + iOS (Tahoe) &bull; Multi-Terminal Sync &bull; NodeFlow
   </span>
 </footer>
 
