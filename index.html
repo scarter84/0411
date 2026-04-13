@@ -590,7 +590,15 @@ table code {
     </div>
     <div class="toc-item">
       <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">12</span>
+      <a href="#doppler">Doppler &mdash; Weather Radar &amp; NWR</a>
+    </div>
+    <div class="toc-item">
+      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">12.5</span>
       <a href="#geof">GeoF &mdash; Geofence Tracker</a>
+    </div>
+    <div class="toc-item">
+      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">12.6</span>
+      <a href="#ham">HAM &mdash; APRS Monitor</a>
     </div>
     <div class="toc-item">
       <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">13</span>
@@ -635,6 +643,10 @@ table code {
     <div class="toc-item">
       <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">22.5</span>
       <a href="#ios">iOS Support (Tahoe)</a>
+    </div>
+    <div class="toc-item">
+      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">22.7</span>
+      <a href="#macos">macOS Support</a>
     </div>
     <div class="toc-item">
       <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">23</span>
@@ -817,7 +829,7 @@ table code {
     <h2>Desktop Tabs &amp; Features</h2>
   </div>
   <p>
-    Whim organizes its functionality into 14 dedicated tabs, each serving a specific domain within the ecosystem.
+    Whim organizes its functionality into 16 dedicated tabs, each serving a specific domain within the ecosystem.
   </p>
 
   <table>
@@ -838,7 +850,9 @@ table code {
       <tr><td><span class="badge badge-orange">PERSONA</span></td><td>persona</td><td>Voice personality manager: coined response playlists per voice clone, confidence-gated, context-aware, XTTS pre-render pipeline, behavioral categories.</td></tr>
 
       <tr><td><span class="badge badge-orange">TRV CIPHER</span></td><td>hearmeout</td><td>Audio transcription workstation with spectrogram, playback transport, Whisper transcription, ODT export, and scrub tools.</td></tr>
+      <tr><td><span class="badge badge-orange">DOPPLER</span></td><td>doppler</td><td>Weather radar with embedded OSM tile map, NWS NEXRAD precipitation overlay, Open-Meteo conditions &amp; 7-day forecast, anemometer, NWR audio (web stream + RTL-SDR), and severe weather alerts pushed to S22.</td></tr>
       <tr><td><span class="badge badge-green">GEOF</span></td><td>geof</td><td>Geofence tracker with canvas map, collar status table, LoRa bridge integration, 20-minute heartbeat monitor, and fence pin management for livestock tracking.</td></tr>
+      <tr><td><span class="badge badge-green">HAM</span></td><td>ham</td><td>APRS station monitor with embedded tile map, Direwolf integration (KISS/AGWPE/simulate), station list with distance filtering, base station config, and raw packet log.</td></tr>
       <tr><td><span class="badge badge-orange">NODEFLOW</span></td><td>nodeflow</td><td>Visual node-based flow editor showing active droids, LLM reasoning, OpenClaw telemetry, and data flow connections with drag-and-drop canvas, auto-poll, and node inspector.</td></tr>
       <tr><td><span class="badge badge-yellow">ARCHIVE</span></td><td>archive</td><td>Rich text editor with formatting toolbar, font selection, alignment, bullet lists, find/replace, word count, and file browser.</td></tr>
 
@@ -867,6 +881,22 @@ table code {
     <div class="screenshot-container">
       <img src="manual_assets/TRVCIPHER.png" alt="TRV Cipher Desktop Tab">
       <div class="screenshot-caption">TRV Cipher Tab</div>
+    </div>
+  </div>
+  <div class="screenshot-row">
+    <div class="screenshot-container">
+      <img src="manual_assets/desktop_doppler_tab.png" alt="Doppler Desktop Tab">
+      <div class="screenshot-caption">Doppler Tab &mdash; Radar Map, NWR Audio, 7-Day Forecast</div>
+    </div>
+    <div class="screenshot-container">
+      <img src="manual_assets/desktop_geof_tab_v2.png" alt="GeoF Desktop Tab">
+      <div class="screenshot-caption">GeoF Tab &mdash; Geofence Map &amp; Collar Status</div>
+    </div>
+  </div>
+  <div class="screenshot-row">
+    <div class="screenshot-container">
+      <img src="manual_assets/desktop_ham_tab.png" alt="HAM Desktop Tab">
+      <div class="screenshot-caption">HAM Tab &mdash; APRS Map &amp; Direwolf</div>
     </div>
   </div>
 </section>
@@ -1732,6 +1762,123 @@ C002,36.341000,-93.195000,62,Cow-2,OUTSIDE_FENCE</div>
   </div>
 </section>
 
+<!-- ==================== DOPPLER ==================== -->
+<section class="section" id="doppler">
+  <div class="section-header">
+    <img class="flame-sm" src="manual_assets/fire.png" alt="">
+    <span class="sec-num">12</span>
+    <h2>Doppler &mdash; Weather Radar &amp; NWR Audio</h2>
+  </div>
+  <p>
+    The DOPPLER tab is a full weather radar and situational awareness station, designed for monitoring storm activity, wind conditions, and precipitation relative to your assigned GPS coordinates. It combines text-based weather data from <strong>Open-Meteo</strong> with a visual <strong>NWS NEXRAD radar overlay</strong> on an embedded tile map, plus live <strong>NOAA Weather Radio (NWR)</strong> audio.
+  </p>
+
+  <img src="manual_assets/desktop_doppler_tab.png" alt="Doppler Desktop Tab" class="full-screenshot">
+
+  <h3>Layout (Top to Bottom)</h3>
+  <table>
+    <thead><tr><th>Tier</th><th>Content</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Header</strong></td><td>DOPPLER FEED title, GPS coordinate input (LAT/LON), FETCH button, "Pet Alert &rarr; S22" checkbox, last-update timestamp.</td></tr>
+      <tr><td><strong>Current Conditions</strong></td><td>Compact horizontal strip: WMO weather icon, temperature (&deg;F), description, anemometer (wind speed + bearing), humidity, assigned GPS.</td></tr>
+      <tr><td><strong>Radar Map</strong></td><td>Largest area &mdash; embedded OSM tile map (same engine as GeoF/HAM) with transparent NWS NEXRAD base reflectivity overlay, crosshair at assigned GPS, [+]/[&ndash;] zoom, scroll-wheel zoom, right-click pan, CENTER HOME, EMBED/DETACH MAP toggle.</td></tr>
+      <tr><td><strong>NWR Audio</strong></td><td>LIVE NWR AUDIO strip: source selector (Web Stream / RTL-SDR), configurable URL or frequency, LISTEN / STOP buttons, online/offline status indicator.</td></tr>
+      <tr><td><strong>7-Day Forecast</strong></td><td>Compressed high-contrast tiles: date, WMO icon, description, high/low temps, precipitation probability.</td></tr>
+      <tr><td><strong>Feed Log</strong></td><td>Timestamped log of all fetches, radar updates, NWR events, and alert pushes.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Data Sources</h3>
+  <table>
+    <thead><tr><th>Source</th><th>API</th><th>Data</th></tr></thead>
+    <tbody>
+      <tr><td>Open-Meteo</td><td><code>api.open-meteo.com/v1/forecast</code></td><td>Temperature, wind, humidity, weather code, 7-day forecast. Refreshes every 15 minutes.</td></tr>
+      <tr><td>NWS NEXRAD (IEM)</td><td><code>mesonet.agron.iastate.edu WMS</code></td><td>Transparent radar reflectivity PNG overlay (green/yellow/red precipitation). Refreshes every 5 minutes.</td></tr>
+      <tr><td>OSM Tiles</td><td><code>tile.openstreetmap.org</code></td><td>Base map tiles, cached locally at <code>~/.openclaw/map_tiles/</code>.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>NWR Audio Sources</h3>
+  <table>
+    <thead><tr><th>Mode</th><th>Tool</th><th>Default</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Web Stream</strong></td><td><code>ffplay</code></td><td><code>https://wxradio.org/MO-Shelbina-WXL70</code></td><td>Internet-based NWR relay. ~30&ndash;60s behind real-time.</td></tr>
+      <tr><td><strong>RTL-SDR</strong></td><td><code>rtl_fm</code> + <code>ffplay</code></td><td><code>162.400M</code></td><td>Direct radio reception from local NWR transmitter. Real-time, works offline. Requires RTL-SDR dongle (~$30).</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Severe Weather Alerts</h3>
+  <p>
+    When the WMO weather code indicates severe conditions (freezing rain, heavy snow, thunderstorms, hail), the tab displays a red alert banner and automatically pushes a notification to the Galaxy S22 via the Whim.m <code>/device/chat</code> endpoint. Alerts are cooldown-limited to one per weather code per 30 minutes.
+  </p>
+
+  <h3>Cross-Platform Notes</h3>
+  <table>
+    <thead><tr><th>Feature</th><th>Linux</th><th>Windows 11</th><th>macOS</th></tr></thead>
+    <tbody>
+      <tr><td>Tile Map</td><td>Full (TileMapRenderer)</td><td>Full (TileMapRenderer)</td><td>Full (TileMapRenderer)</td></tr>
+      <tr><td>Radar Overlay</td><td>Full (urllib + PIL)</td><td>Full (urllib + PIL)</td><td>Full (urllib + PIL)</td></tr>
+      <tr><td>NWR Web Stream</td><td><code>ffplay</code></td><td><code>ffplay</code> (add to PATH)</td><td><code>ffplay</code> (via Homebrew)</td></tr>
+      <tr><td>NWR RTL-SDR</td><td><code>rtl_fm</code> (native)</td><td><code>rtl_fm</code> (Zadig driver)</td><td><code>rtl_fm</code> (via Homebrew)</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ==================== HAM ==================== -->
+<section class="section" id="ham">
+  <div class="section-header">
+    <img class="flame-sm" src="manual_assets/fire.png" alt="">
+    <span class="sec-num">12.6</span>
+    <h2>HAM &mdash; APRS Monitor</h2>
+  </div>
+  <p>
+    The HAM tab is a real-time APRS (Automatic Packet Reporting System) station monitor that integrates with <strong>Direwolf</strong>, a software-defined TNC. It displays received APRS packets on an embedded tile map, tracks station positions relative to a configurable base station, and logs raw packet data.
+  </p>
+
+  <img src="manual_assets/desktop_ham_tab.png" alt="HAM Desktop Tab" class="full-screenshot">
+
+  <h3>Layout</h3>
+  <table>
+    <thead><tr><th>Area</th><th>Content</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Left Column</strong></td><td>Sub-tabbed controls (LINK / BASE / SEARCH): Direwolf connection settings (Simulate/KISS/AGWPE), host/port, callsign, base station GPS, radius filter, search-by-callsign.</td></tr>
+      <tr><td><strong>Station List</strong></td><td>Treeview table: Callsign, Lat, Lon, Distance (mi), Comment, Last Heard. Color-coded by age (green/yellow/red).</td></tr>
+      <tr><td><strong>APRS Map</strong></td><td>Embedded OSM tile map with station markers, base station icon, [+]/[&ndash;] zoom, scroll-wheel, right-click pan, EMBED/DETACH MAP toggle. Same TileMapRenderer as GeoF and Doppler.</td></tr>
+      <tr><td><strong>Raw Packets</strong></td><td>Timestamped raw APRS packet log with color-coded tags (alert, ok, info, packet).</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Direwolf Connection Modes</h3>
+  <table>
+    <thead><tr><th>Mode</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Simulate</strong></td><td>Generates synthetic APRS packets for testing without radio hardware. Good for verifying map rendering and UI layout.</td></tr>
+      <tr><td><strong>KISS</strong></td><td>Connects to Direwolf via KISS TCP protocol on the specified host/port. Standard TNC interface.</td></tr>
+      <tr><td><strong>AGWPE</strong></td><td>Connects via AGWPE protocol. Compatible with other TNC software that speaks AGWPE.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Station Aging</h3>
+  <table>
+    <thead><tr><th>State</th><th>Threshold</th><th>Map Color</th></tr></thead>
+    <tbody>
+      <tr><td>Active</td><td>&lt; 10 minutes</td><td style="color:#00ff00">Green</td></tr>
+      <tr><td>Stale</td><td>10&ndash;30 minutes</td><td style="color:#e0a030">Yellow</td></tr>
+      <tr><td>Offline</td><td>&gt; 30 minutes</td><td style="color:#d94040">Red</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Cross-Platform Notes</h3>
+  <table>
+    <thead><tr><th>Feature</th><th>Linux</th><th>Windows 11</th><th>macOS</th></tr></thead>
+    <tbody>
+      <tr><td>Direwolf</td><td>Native package (<code>apt install direwolf</code>)</td><td>Windows build from <a href="https://github.com/wb2osz/direwolf">GitHub</a></td><td>Homebrew or build from source</td></tr>
+      <tr><td>Tile Map</td><td>Full (TileMapRenderer)</td><td>Full (TileMapRenderer)</td><td>Full (TileMapRenderer)</td></tr>
+      <tr><td>KISS/AGWPE</td><td>TCP socket (cross-platform)</td><td>TCP socket (cross-platform)</td><td>TCP socket (cross-platform)</td></tr>
+    </tbody>
+  </table>
+</section>
+
 <!-- ==================== NODEFLOW ==================== -->
 <section class="section" id="nodeflow">
   <div class="section-header">
@@ -2396,12 +2543,18 @@ scripts/
   </p>
   <div class="code-block"><code>ssh -N -R 8089:localhost:8089 user@YOUR_VPS_IP</code></div>
 
+  <h3>New Tabs on Windows</h3>
+  <p>
+    The <strong>DOPPLER</strong> and <strong>HAM</strong> tabs are fully functional on Windows 11. The tile map engine, Open-Meteo weather API, and NWS radar overlay work identically. For NWR audio, ensure <code>ffplay</code> (from FFmpeg) is on your PATH. For RTL-SDR support, install the Zadig USB driver and <code>rtl_fm</code> from the librtlsdr project. Direwolf for HAM/APRS is available as a Windows build from <a href="https://github.com/wb2osz/direwolf">GitHub</a>.
+  </p>
+
   <h3>Known Limitations</h3>
   <ul>
     <li>Voice Engine audio capture uses <code>sounddevice</code> instead of PipeWire monitor sources</li>
     <li>The Linux Control Panel (<code>control_panel.py</code>) is Cinnamon-specific and not included</li>
     <li>ADB Portal requires Android SDK platform-tools in PATH</li>
     <li>Some font rendering may differ slightly between Linux and Windows</li>
+    <li>RTL-SDR requires Zadig driver setup for USB device access</li>
   </ul>
 </section>
 
@@ -2462,6 +2615,76 @@ scripts/
     <li><strong>Audio Codec</strong> &mdash; Safari's MediaRecorder outputs MP4/AAC instead of WebM/Opus. The server handles both formats transparently.</li>
     <li><strong>Screen Share</strong> &mdash; iOS does not support <code>getDisplayMedia()</code> in PWAs, so the desktop-to-phone Screen Share viewer works but phone-to-desktop camera capture may be limited.</li>
     <li><strong>File Picker</strong> &mdash; iOS restricts filesystem access to the Photo Library and Files app; no direct path selection.</li>
+  </ul>
+</section>
+
+<!-- ==================== 20.7 macOS SUPPORT ==================== -->
+<section class="section" id="macos">
+  <div class="section-header">
+    <img class="flame-sm" src="manual_assets/fire.png" alt="">
+    <span class="sec-num">22.7</span>
+    <h2>macOS Support</h2>
+  </div>
+  <p>
+    Whim Terminal runs on macOS (Intel and Apple Silicon) using the same cross-platform <code>platform_compat.py</code> abstraction layer. The core codebase, including all 16 tabs, is identical to the Linux build. Tkinter ships with Python on macOS or can be installed via Homebrew.
+  </p>
+
+  <h3>Prerequisites</h3>
+  <table>
+    <thead><tr><th>Software</th><th>Required</th><th>Install</th></tr></thead>
+    <tbody>
+      <tr><td>Python 3.10+ (with Tkinter)</td><td><span class="badge badge-green">Required</span></td><td><code>brew install python-tk@3.12</code> or <a href="https://python.org">python.org</a></td></tr>
+      <tr><td>Ollama</td><td><span class="badge badge-green">Required</span></td><td><a href="https://ollama.com/download/mac">ollama.com</a></td></tr>
+      <tr><td>FFmpeg</td><td><span class="badge badge-yellow">Recommended</span></td><td><code>brew install ffmpeg</code> (for NWR audio, voice engine, audio capture)</td></tr>
+      <tr><td>Tailscale</td><td><span class="badge badge-yellow">Optional</span></td><td><a href="https://tailscale.com/download/mac">tailscale.com</a> or Mac App Store</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Quick Start</h3>
+  <div class="card">
+    <div class="code-block"><code>git clone https://github.com/scarter84/0411.git
+cd 0411
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r app/requirements.txt
+python3 app/openclaw_tkui.py</code></div>
+  </div>
+
+  <h3>macOS Path Mapping</h3>
+  <table>
+    <thead><tr><th>Linux Path</th><th>macOS Path</th></tr></thead>
+    <tbody>
+      <tr><td><code>~/.openclaw/</code></td><td><code>~/.openclaw/</code> (same)</td></tr>
+      <tr><td><code>~/Journal/</code></td><td><code>~/Journal/</code> (same)</td></tr>
+      <tr><td><code>~/ARCHIVE/</code></td><td><code>~/ARCHIVE/</code> (same)</td></tr>
+      <tr><td><code>~/voices/</code></td><td><code>~/voices/</code> (same)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Platform Differences</h3>
+  <table>
+    <thead><tr><th>Feature</th><th>Linux</th><th>macOS</th></tr></thead>
+    <tbody>
+      <tr><td>File opener</td><td><code>xdg-open</code></td><td><code>open</code> (native)</td></tr>
+      <tr><td>Service check</td><td><code>systemctl is-active</code></td><td><code>launchctl list</code></td></tr>
+      <tr><td>Audio sources</td><td><code>pactl</code> (PipeWire)</td><td><code>sounddevice</code> (CoreAudio)</td></tr>
+      <tr><td>SSH Tunnel</td><td>systemd service</td><td><code>autossh</code> via launchd plist or manual</td></tr>
+      <tr><td>DPI scaling</td><td>System native</td><td>Retina-aware (auto-detected)</td></tr>
+      <tr><td>Direwolf</td><td><code>apt install</code></td><td><code>brew install direwolf</code> or build from source</td></tr>
+      <tr><td>RTL-SDR</td><td><code>apt install rtl-sdr</code></td><td><code>brew install librtlsdr</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3>Doppler &amp; HAM Tabs on macOS</h3>
+  <p>
+    All map, radar, and weather features work identically. For NWR audio streaming, install FFmpeg via Homebrew (<code>brew install ffmpeg</code>) to get <code>ffplay</code>. RTL-SDR requires <code>brew install librtlsdr</code> and a compatible USB dongle. Direwolf for APRS is available via Homebrew.
+  </p>
+
+  <h3>Known Limitations</h3>
+  <ul>
+    <li>The Linux Control Panel (<code>control_panel.py</code>) is Cinnamon-specific and not included</li>
+    <li>Voice Engine uses <code>sounddevice</code> for CoreAudio instead of PipeWire monitor sources</li>
+    <li>Tkinter on macOS may require <code>python-tk</code> Homebrew formula for full widget support</li>
+    <li>macOS Gatekeeper may prompt for permission when first running audio capture or network services</li>
   </ul>
 </section>
 

@@ -52,6 +52,7 @@ screenshots/
 config/openclaw.json
 config/device_locations.json
 config/connection_mode.json
+config/driving_mode.json
 
 # ── User data directories ──
 Journal/

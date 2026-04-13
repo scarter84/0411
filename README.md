@@ -12,7 +12,7 @@ Whim is a Python desktop terminal and Android mobile companion that runs entirel
 
 | Component | Description |
 |-----------|-------------|
-| **Whim Terminal** | Tkinter desktop app with 16 tabs: AI chat, voice cloning, wake word, SmartThings IoT, Signal/Discord, screen share, archive editor, audio capture, and more |
+| **Whim Terminal** | Tkinter desktop app with 18 tabs: AI chat, voice cloning, wake word, SmartThings IoT, Signal/Discord, screen share, Doppler weather radar, APRS/HAM monitor, geofence tracker, archive editor, audio capture, and more |
 | **CURSOR tab** | Built-in code editor with file browser, syntax highlighting, and AI assist. Pick any local Ollama model from a dropdown, hit Explain/Fix/Refactor/Complete/Tests, stream the response, apply diffs |
 | **Whim.AI** | Streaming Ollama chat with presets, observability (tokens/s, VRAM, context meter), tool trace, export |
 | **AVR Lab** | XTTS v2 voice cloning with speaker references and spectrogram visualization |
