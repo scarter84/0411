@@ -649,6 +649,10 @@ table code {
       <a href="#macos">macOS Support</a>
     </div>
     <div class="toc-item">
+      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">22.8</span>
+      <a href="#whimv">Whim.V &mdash; Vehicle Dashboard</a>
+    </div>
+    <div class="toc-item">
       <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">23</span>
       <a href="#sync">Multi-Terminal Sync</a>
     </div>
@@ -2686,6 +2690,95 @@ python3 app/openclaw_tkui.py</code></div>
     <li>Tkinter on macOS may require <code>python-tk</code> Homebrew formula for full widget support</li>
     <li>macOS Gatekeeper may prompt for permission when first running audio capture or network services</li>
   </ul>
+</section>
+
+<!-- ==================== 22.8 WHIM.V VEHICLE DASHBOARD ==================== -->
+<section class="section" id="whimv">
+  <div class="section-header">
+    <img class="flame-sm" src="manual_assets/fire.png" alt="">
+    <span class="sec-num">22.8</span>
+    <h2>Whim.V &mdash; Vehicle Dashboard</h2>
+  </div>
+  <p>
+    Whim.V is a touch-optimized vehicle dashboard designed for vertical 13.6&Prime; Tesla-style displays running Ubuntu, or any Android tablet connected to the Whim ecosystem. It delivers a subset of the full Whim Terminal&rsquo;s capabilities in a high-contrast, glanceable interface built for use in the field or on the road.
+  </p>
+  <p>
+    The dashboard runs as a lightweight Flask web server on the desktop (or vehicle Ubuntu machine) and is accessed via a WebView-based Android APK on the tablet. A green-dot launcher icon installs to the home screen for one-tap access.
+  </p>
+
+  <h3>Architecture</h3>
+  <table>
+    <thead><tr><th>Component</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Server</strong></td><td><code>whim_v.py</code> &mdash; Flask server on port 8099, serves the full dashboard as a single-page web app</td></tr>
+      <tr><td><strong>Client</strong></td><td>Android APK (<code>com.whim.v</code>) &mdash; fullscreen WebView wrapper with green-dot launcher icon, FLAG_KEEP_SCREEN_ON</td></tr>
+      <tr><td><strong>Connection</strong></td><td>LAN (192.168.x.x) or Tailscale mesh (100.69.17.20) &mdash; same hybrid networking as Whim.m</td></tr>
+      <tr><td><strong>Document Engine</strong></td><td>LibreOffice headless &mdash; converts .xlsx, .docx, .ods, .odt to PDF for inline viewing</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Dashboard Tabs</h3>
+  <table>
+    <thead><tr><th>Tab</th><th>Function</th></tr></thead>
+    <tbody>
+      <tr><td><strong>GEOF</strong></td><td>Geofence map with collar pins, touch pan/zoom, fence polygon overlay, collar status table (ID, name, in/out, battery, coordinates, last seen)</td></tr>
+      <tr><td><strong>RADAR</strong></td><td>Embedded NWS Doppler radar &mdash; one-tap station switching between KSRX (Ozarks), KLZK (Little Rock), KSGF (Springfield)</td></tr>
+      <tr><td><strong>DOCS</strong></td><td>Document viewer with directory browser (Home, Documents, Incoming, Journal). Opens .xlsx/.docx/.ods via LibreOffice headless, renders .pdf/.txt/.csv/.md natively</td></tr>
+      <tr><td><strong>AI</strong></td><td>Whim.AI chat with Ollama model selector, streaming responses. Supports all local models (llama3.1, deepseek-r1, qwen3-coder)</td></tr>
+      <tr><td><strong>LOGS</strong></td><td>System status &mdash; Ollama model inventory, Tailscale mesh peers, disk usage, uptime</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Screenshots</h3>
+
+  <div class="screenshot-container">
+    <img src="manual_assets/whimv_docs_tab.png" alt="Whim.V Document Viewer Tab">
+    <div class="screenshot-caption">DOCS tab &mdash; Document Viewer with directory browser (Home, Documents, Incoming, Journal) and LibreOffice headless rendering</div>
+  </div>
+
+  <div class="screenshot-container">
+    <img src="manual_assets/whimv_ai_chat.png" alt="Whim.V AI Chat Tab">
+    <div class="screenshot-caption">AI tab &mdash; Whim.AI streaming chat with qwen3-coder:32b model, touch-friendly input bar</div>
+  </div>
+
+  <div class="screenshot-container">
+    <img src="manual_assets/whimv_ai_model_select.png" alt="Whim.V AI Model Selection">
+    <div class="screenshot-caption">AI tab &mdash; Ollama model selector dropdown with all locally available models</div>
+  </div>
+
+  <div class="screenshot-container">
+    <img src="manual_assets/whimv_system_logs.png" alt="Whim.V System Logs Tab">
+    <div class="screenshot-caption">LOGS tab &mdash; System status showing Ollama (5 models), Tailscale mesh (CARRARAmint + 3 peers), disk usage, and uptime</div>
+  </div>
+
+  <h3>Quick Start</h3>
+  <pre><code># Start the Whim.V server on your desktop or vehicle Ubuntu machine
+python3 vehicle/whim_v.py --port 8099
+
+# Open in any browser on the same network
+# http://&lt;your-ip&gt;:8099
+
+# Or install the Android APK for a native launcher icon
+adb install vehicle/apk_build/out/whim_v.apk</code></pre>
+
+  <h3>Download</h3>
+  <p>
+    <a href="releases/Whim-Vehicle.zip" style="color:#e8793a;font-weight:bold;">Download Whim-Vehicle.zip</a> &mdash; contains <code>whim_v.py</code> server, Android APK source, and build script.
+  </p>
+
+  <h3>Platform Compatibility</h3>
+  <table>
+    <thead><tr><th>Feature</th><th>Ubuntu Vehicle Dash</th><th>Android Tablet</th><th>Desktop Browser</th></tr></thead>
+    <tbody>
+      <tr><td>GeoF Map</td><td>&check;</td><td>&check;</td><td>&check;</td></tr>
+      <tr><td>Doppler Radar</td><td>&check;</td><td>&check;</td><td>&check;</td></tr>
+      <tr><td>Document Viewer</td><td>&check;</td><td>&check;</td><td>&check;</td></tr>
+      <tr><td>AI Chat (Ollama)</td><td>&check;</td><td>&check;</td><td>&check;</td></tr>
+      <tr><td>System Logs</td><td>&check;</td><td>&check;</td><td>&check;</td></tr>
+      <tr><td>Touch Gestures</td><td>&check;</td><td>&check;</td><td>Mouse</td></tr>
+      <tr><td>Home Screen Icon</td><td>Desktop shortcut</td><td>APK launcher</td><td>Bookmark</td></tr>
+    </tbody>
+  </table>
 </section>
 
 <!-- ==================== 21 MULTI-TERMINAL SYNC ==================== -->
