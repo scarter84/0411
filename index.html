@@ -11,8 +11,8 @@
   --bg: #0e0e0e;
   --bg-card: #1a1a1a;
   --bg-elevated: #222222;
-  --border: #2a2a2a;
-  --border-hi: #3a3a3a;
+  --border: #1f1f1f;
+  --border-hi: #333333;
   --green: #00ff00;
   --green-dim: #2fa572;
   --blue: #14507a;
@@ -24,6 +24,8 @@
   --fg-dim: #888888;
   --fg-muted: #555555;
   --accent: #00ff00;
+  --transition-fast: 150ms ease;
+  --transition-med: 250ms ease;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -40,7 +42,7 @@ body {
   font-size: 15px;
 }
 
-a { color: var(--green); text-decoration: none; }
+a { color: var(--green); text-decoration: none; transition: opacity var(--transition-fast), color var(--transition-fast); }
 a:hover { text-decoration: underline; opacity: 0.85; }
 
 ::selection { background: var(--blue); color: #fff; }
@@ -64,6 +66,12 @@ a:hover { text-decoration: underline; opacity: 0.85; }
   height: 72px;
   margin-bottom: 12px;
   filter: drop-shadow(0 0 24px rgba(255, 100, 0, 0.5));
+  animation: flamePulse 2.5s ease-in-out infinite alternate;
+}
+
+@keyframes flamePulse {
+  from { filter: drop-shadow(0 0 24px rgba(255, 100, 0, 0.4)); transform: scale(1); }
+  to { filter: drop-shadow(0 0 32px rgba(255, 100, 0, 0.65)); transform: scale(1.03); }
 }
 
 .hero h1 {
@@ -74,6 +82,12 @@ a:hover { text-decoration: underline; opacity: 0.85; }
   letter-spacing: 6px;
   margin-bottom: 8px;
   text-shadow: 0 0 40px rgba(0, 255, 0, 0.3);
+  animation: heroGlow 3s ease-in-out infinite alternate;
+}
+
+@keyframes heroGlow {
+  from { text-shadow: 0 0 40px rgba(0, 255, 0, 0.2); }
+  to { text-shadow: 0 0 60px rgba(0, 255, 0, 0.4), 0 0 20px rgba(0, 255, 0, 0.15); }
 }
 
 .hero .subtitle {
@@ -150,6 +164,10 @@ a:hover { text-decoration: underline; opacity: 0.85; }
   font-weight: 400;
 }
 
+.toc-item a {
+  transition: color var(--transition-fast);
+}
+
 .toc-item a:hover { color: var(--green); }
 
 /* ===== SECTIONS ===== */
@@ -181,21 +199,24 @@ a:hover { text-decoration: underline; opacity: 0.85; }
 }
 
 .section-header h2 {
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 700;
   color: var(--fg);
+  letter-spacing: 0.5px;
 }
 
 .section p {
   margin-bottom: 16px;
   color: var(--fg);
+  font-size: 15px;
 }
 
 .section h3 {
-  font-size: 17px;
+  font-size: 18px;
   font-weight: 600;
   color: var(--green-dim);
-  margin: 24px 0 12px;
+  margin: 28px 0 14px;
+  letter-spacing: 0.3px;
 }
 
 .section ul, .section ol {
@@ -218,6 +239,12 @@ a:hover { text-decoration: underline; opacity: 0.85; }
   border-radius: 10px;
   padding: 24px;
   margin-bottom: 20px;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-med);
+}
+
+.card:hover {
+  border-color: var(--border-hi);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
 }
 
 .card-title {
@@ -243,11 +270,13 @@ a:hover { text-decoration: underline; opacity: 0.85; }
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 20px;
-  transition: border-color 0.2s;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-med), transform var(--transition-fast);
 }
 
 .feature-card:hover {
-  border-color: var(--border-hi);
+  border-color: var(--green-dim);
+  box-shadow: 0 4px 16px rgba(0, 255, 0, 0.06);
+  transform: translateY(-1px);
 }
 
 .feature-card .fc-title {
@@ -280,7 +309,7 @@ table th {
   color: var(--blue-light);
   font-weight: 600;
   text-align: left;
-  padding: 7px 8px;
+  padding: 10px 12px;
   border: 1px solid var(--border);
   font-size: 11px;
   text-transform: uppercase;
@@ -288,13 +317,22 @@ table th {
 }
 
 table td {
-  padding: 7px 8px;
+  padding: 9px 12px;
   border: 1px solid var(--border);
   color: var(--fg);
+  transition: background var(--transition-fast);
+}
+
+table tr:hover td {
+  background: var(--bg-elevated);
 }
 
 table tr:nth-child(even) td {
   background: var(--bg-card);
+}
+
+table tr:nth-child(even):hover td {
+  background: var(--bg-elevated);
 }
 
 table code {
@@ -304,11 +342,17 @@ table code {
 
 /* ===== SCREENSHOTS ===== */
 .screenshot-container {
-  margin: 20px 0;
+  margin: 24px 0;
   border-radius: 10px;
   overflow: hidden;
   border: 1px solid var(--border-hi);
-  background: var(--bg-card);
+  background: #000;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+  transition: box-shadow var(--transition-med);
+}
+
+.screenshot-container:hover {
+  box-shadow: 0 6px 32px rgba(0, 0, 0, 0.7);
 }
 
 .screenshot-container img {
@@ -355,8 +399,9 @@ table code {
 
 /* ===== CODE BLOCKS ===== */
 .code-block {
-  background: #111;
+  background: #0a0a0a;
   border: 1px solid var(--border);
+  border-left: 3px solid var(--green-dim);
   border-radius: 8px;
   padding: 16px 20px;
   font-family: 'JetBrains Mono', monospace;
@@ -365,17 +410,23 @@ table code {
   overflow-x: auto;
   margin-bottom: 16px;
   white-space: pre;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 /* ===== BADGE / TAG ===== */
 .badge {
   display: inline-block;
-  padding: 2px 10px;
+  padding: 3px 12px;
   border-radius: 12px;
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 1px;
+  transition: transform var(--transition-fast);
+}
+
+.badge:hover {
+  transform: scale(1.05);
 }
 
 .badge-green { background: #1a3a2a; color: var(--green-dim); }
@@ -406,6 +457,12 @@ table code {
   padding: 6px 16px;
   color: var(--green);
   font-weight: 600;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.conn-diagram .node:hover {
+  border-color: var(--green-dim);
+  box-shadow: 0 0 8px rgba(0, 255, 0, 0.1);
 }
 
 .conn-diagram .arrow {
@@ -588,76 +645,80 @@ table code {
       <a href="#messaging">Signal &amp; Discord Integration</a>
     </div>
     <div class="toc-item">
-      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">11</span>
+      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">13</span>
       <a href="#smartthings">SmartThings IoT Control</a>
     </div>
     <div class="toc-item">
-      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">12</span>
+      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">14</span>
       <a href="#doppler">Doppler &mdash; Weather Radar &amp; NWR</a>
     </div>
     <div class="toc-item">
-      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">12.5</span>
+      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">14.1</span>
       <a href="#geof">GeoF &mdash; Geofence Tracker</a>
     </div>
     <div class="toc-item">
-      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">12.6</span>
+      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">14.2</span>
       <a href="#ham">HAM &mdash; APRS Monitor</a>
     </div>
     <div class="toc-item">
-      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">13</span>
+      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">15</span>
       <a href="#nodeflow">NodeFlow &mdash; Visual Node Editor</a>
     </div>
     <div class="toc-item">
-      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">14</span>
+      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">16</span>
       <a href="#archive">Archive Tab Editor</a>
     </div>
     <div class="toc-item">
-      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">15</span>
+      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">17</span>
       <a href="#screenshare">Screen Share System</a>
     </div>
     <div class="toc-item">
-      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">16</span>
+      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">18</span>
       <a href="#adb">ADB Portal &amp; Emulator</a>
     </div>
     <div class="toc-item">
-      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">17</span>
+      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">19</span>
       <a href="#gateway">OpenClaw Gateway</a>
     </div>
     <div class="toc-item">
-      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">18</span>
+      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">20</span>
       <a href="#settingstab">Settings Tab</a>
     </div>
     <div class="toc-item">
-      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">19</span>
+      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">21</span>
       <a href="#audiocapture">Audio Capture Tool</a>
     </div>
     <div class="toc-item">
-      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">20</span>
+      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">22</span>
       <a href="#tech">Technical Stack &amp; Config</a>
     </div>
     <div class="toc-item">
-      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">21</span>
+      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">23</span>
       <a href="#desktop-env">Desktop Environment Customizations</a>
     </div>
     <div class="toc-item">
-      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">22</span>
+      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">24</span>
       <a href="#windows11">Windows 11 Support</a>
     </div>
     <div class="toc-item">
-      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">22.5</span>
+      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">24.1</span>
       <a href="#ios">iOS Support (Tahoe)</a>
     </div>
     <div class="toc-item">
-      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">22.7</span>
+      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">24.2</span>
       <a href="#macos">macOS Support</a>
     </div>
     <div class="toc-item">
-      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">22.8</span>
+      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">24.3</span>
       <a href="#whimv">Whim.V &mdash; Vehicle Dashboard</a>
     </div>
     <div class="toc-item">
-      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">23</span>
+      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">25</span>
       <a href="#sync">Multi-Terminal Sync</a>
+    </div>
+    <div class="toc-item">
+      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">26</span>
+      <a href="#zipline">Zipline &mdash; File Transfer CLI</a>
     </div>
   </div>
 </nav>
@@ -869,6 +930,12 @@ table code {
         <td>48891</td>
         <td>Prevents duplicate Whim instances, sends SHOW signal</td>
       </tr>
+      <tr>
+        <td>Zipline CLI</td>
+        <td>HTTP (Tailscale)</td>
+        <td>8089</td>
+        <td>Local-first file transfer between mesh devices via Whim.m endpoints</td>
+      </tr>
     </tbody>
   </table>
 
@@ -1074,7 +1141,16 @@ table code {
     Whim.m v3.4 is a full-featured mobile companion app served as a native APK or Progressive Web App (PWA) from either the desktop Whim app or a standalone Python server. It provides voice recording, AI chat (via Ollama proxy), wake word voice commands, a cross-device file library, and inter-device messaging &mdash; all organized into five dedicated bottom navigation tabs: <strong>REC</strong>, <strong>LIBRARY</strong>, <strong>CHAT</strong>, <strong>WAKE</strong>, and <strong>DEVICES</strong>. A persistent "Listening for Hey Whim" banner runs across the top of every tab, giving always-on wake word access regardless of which tab is active. The app uses a hybrid connection strategy: VPS tunnel by default with Tailscale as an opt-in fallback, switchable from a dropdown in the mobile UI or from the desktop Control Panel.
   </p>
 
-  <h3>v3.4 &mdash; Five-Tab Navigation</h3>
+  <h3>v3.4.4 &mdash; Five-Tab Navigation</h3>
+
+  <div class="card">
+    <div class="card-title">v3.4.4 Patch (April 2026)</div>
+    <ul>
+      <li><strong>White screen fix</strong> &mdash; Leaflet JS/CSS tags made non-blocking (<code>async</code> script, <code>media="print" onload</code> stylesheet) to prevent render-blocking on slow or offline internet connections. Previously caused a blank white screen on the Lenovo tablet when the CDN was unreachable.</li>
+      <li><strong>GeoF map retry</strong> &mdash; <code>geofInitMap()</code> now retries up to 10 times (5 seconds) while Leaflet loads asynchronously, instead of silently failing.</li>
+      <li><strong>Service Worker cache bump</strong> &mdash; Cache version updated to <code>whim-v3.4.4-fire</code> to force stale page flush on all connected devices.</li>
+    </ul>
+  </div>
 
   <h3>Lenovo Tablet (TB311FU)</h3>
   <div class="phone-screenshot-row">
@@ -1639,7 +1715,7 @@ sudo systemctl status whim-tunnel.service</div>
 <section class="section" id="messaging">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">10</span>
+    <span class="sec-num">12</span>
     <h2>Signal &amp; Discord Integration</h2>
   </div>
 
@@ -1670,11 +1746,11 @@ sudo systemctl status whim-tunnel.service</div>
   </ul>
 </section>
 
-<!-- ==================== 11 SMARTTHINGS ==================== -->
+<!-- ==================== 13 SMARTTHINGS ==================== -->
 <section class="section" id="smartthings">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">11</span>
+    <span class="sec-num">13</span>
     <h2>SmartThings IoT Control</h2>
   </div>
   <p>
@@ -1704,11 +1780,11 @@ sudo systemctl status whim-tunnel.service</div>
   </ul>
 </section>
 
-<!-- ==================== GEOF ==================== -->
+<!-- ==================== 14.1 GEOF ==================== -->
 <section class="section" id="geof">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">12</span>
+    <span class="sec-num">14.1</span>
     <h2>GeoF &mdash; Geofence Tracker</h2>
   </div>
   <p>
@@ -1834,11 +1910,11 @@ C002,36.341000,-93.195000,62,Cow-2,OUTSIDE_FENCE</div>
   </div>
 </section>
 
-<!-- ==================== DOPPLER ==================== -->
+<!-- ==================== 14 DOPPLER ==================== -->
 <section class="section" id="doppler">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">12</span>
+    <span class="sec-num">14</span>
     <h2>Doppler &mdash; Weather Radar &amp; NWR Audio</h2>
   </div>
   <p>
@@ -1896,11 +1972,11 @@ C002,36.341000,-93.195000,62,Cow-2,OUTSIDE_FENCE</div>
   </table>
 </section>
 
-<!-- ==================== HAM ==================== -->
+<!-- ==================== 14.2 HAM ==================== -->
 <section class="section" id="ham">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">12.6</span>
+    <span class="sec-num">14.2</span>
     <h2>HAM &mdash; APRS Monitor</h2>
   </div>
   <p>
@@ -1951,11 +2027,11 @@ C002,36.341000,-93.195000,62,Cow-2,OUTSIDE_FENCE</div>
   </table>
 </section>
 
-<!-- ==================== NODEFLOW ==================== -->
+<!-- ==================== 15 NODEFLOW ==================== -->
 <section class="section" id="nodeflow">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">13</span>
+    <span class="sec-num">15</span>
     <h2>NodeFlow &mdash; Visual Node Editor</h2>
   </div>
   <p>
@@ -2044,11 +2120,11 @@ C002,36.341000,-93.195000,62,Cow-2,OUTSIDE_FENCE</div>
   </table>
 </section>
 
-<!-- ==================== ARCHIVE ==================== -->
+<!-- ==================== 16 ARCHIVE ==================== -->
 <section class="section" id="archive">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">14</span>
+    <span class="sec-num">16</span>
     <h2>Archive Tab Editor</h2>
   </div>
   <p>
@@ -2097,11 +2173,11 @@ Notes: User notes here
 (document content)</div>
 </section>
 
-<!-- ==================== 13 SCREEN SHARE ==================== -->
+<!-- ==================== 17 SCREEN SHARE ==================== -->
 <section class="section" id="screenshare">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">15</span>
+    <span class="sec-num">17</span>
     <h2>Screen Share System</h2>
   </div>
   <p>
@@ -2149,11 +2225,11 @@ Notes: User notes here
   </table>
 </section>
 
-<!-- ==================== 14 ADB PORTAL ==================== -->
+<!-- ==================== 18 ADB PORTAL ==================== -->
 <section class="section" id="adb">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">16</span>
+    <span class="sec-num">18</span>
     <h2>ADB Portal &amp; Emulator</h2>
   </div>
   <p>
@@ -2186,11 +2262,11 @@ Notes: User notes here
   </p>
 </section>
 
-<!-- ==================== 15 GATEWAY ==================== -->
+<!-- ==================== 19 GATEWAY ==================== -->
 <section class="section" id="gateway">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">17</span>
+    <span class="sec-num">19</span>
     <h2>OpenClaw Gateway</h2>
   </div>
   <p>
@@ -2237,11 +2313,11 @@ Notes: User notes here
   </ul>
 </section>
 
-<!-- ==================== 16 SETTINGS ==================== -->
+<!-- ==================== 20 SETTINGS ==================== -->
 <section class="section" id="settingstab">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">18</span>
+    <span class="sec-num">20</span>
     <h2>Settings Tab</h2>
   </div>
   <p>
@@ -2295,11 +2371,11 @@ Notes: User notes here
   </ul>
 </section>
 
-<!-- ==================== 17 AUDIO CAPTURE ==================== -->
+<!-- ==================== 21 AUDIO CAPTURE ==================== -->
 <section class="section" id="audiocapture">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">19</span>
+    <span class="sec-num">21</span>
     <h2>Audio Capture Tool</h2>
   </div>
   <p>
@@ -2348,11 +2424,11 @@ Notes: User notes here
   </div>
 </section>
 
-<!-- ==================== 18 TECH STACK ==================== -->
+<!-- ==================== 22 TECH STACK ==================== -->
 <section class="section" id="tech">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">20</span>
+    <span class="sec-num">22</span>
     <h2>Technical Stack &amp; Configuration</h2>
   </div>
 
@@ -2417,11 +2493,11 @@ Notes: User notes here
   </p>
 </section>
 
-<!-- ==================== 19 DESKTOP ENV ==================== -->
+<!-- ==================== 23 DESKTOP ENV ==================== -->
 <section class="section" id="desktop-env">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">21</span>
+    <span class="sec-num">23</span>
     <h2>Desktop Environment Customizations</h2>
   </div>
   <p>
@@ -2506,11 +2582,11 @@ Notes: User notes here
   </div>
 </section>
 
-<!-- ==================== 20 WINDOWS 11 ==================== -->
+<!-- ==================== 24 WINDOWS 11 ==================== -->
 <section class="section" id="windows11">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">22</span>
+    <span class="sec-num">24</span>
     <h2>Windows 11 Support</h2>
   </div>
   <p>
@@ -2630,11 +2706,11 @@ scripts/
   </ul>
 </section>
 
-<!-- ==================== 20.5 iOS TAHOE ==================== -->
+<!-- ==================== 24.1 iOS TAHOE ==================== -->
 <section class="section" id="ios">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">22.5</span>
+    <span class="sec-num">24.1</span>
     <h2>iOS Support (Tahoe)</h2>
   </div>
   <p>
@@ -2690,11 +2766,11 @@ scripts/
   </ul>
 </section>
 
-<!-- ==================== 20.7 macOS SUPPORT ==================== -->
+<!-- ==================== 24.2 macOS SUPPORT ==================== -->
 <section class="section" id="macos">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">22.7</span>
+    <span class="sec-num">24.2</span>
     <h2>macOS Support</h2>
   </div>
   <p>
@@ -2760,11 +2836,11 @@ python3 app/openclaw_tkui.py</code></div>
   </ul>
 </section>
 
-<!-- ==================== 22.8 WHIM.V VEHICLE DASHBOARD ==================== -->
+<!-- ==================== 24.3 WHIM.V VEHICLE DASHBOARD ==================== -->
 <section class="section" id="whimv">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">22.8</span>
+    <span class="sec-num">24.3</span>
     <h2>Whim.V &mdash; Vehicle Dashboard</h2>
   </div>
   <p>
@@ -2849,11 +2925,11 @@ adb install vehicle/apk_build/out/whim_v.apk</code></pre>
   </table>
 </section>
 
-<!-- ==================== 21 MULTI-TERMINAL SYNC ==================== -->
+<!-- ==================== 25 MULTI-TERMINAL SYNC ==================== -->
 <section class="section" id="sync">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">23</span>
+    <span class="sec-num">25</span>
     <h2>Multi-Terminal Sync</h2>
   </div>
   <p>
@@ -2976,12 +3052,117 @@ adb install vehicle/apk_build/out/whim_v.apk</code></pre>
   </div>
 </section>
 
+<!-- ==================== 26 ZIPLINE ==================== -->
+<section class="section" id="zipline">
+  <div class="section-header">
+    <img class="flame-sm" src="manual_assets/fire.png" alt="">
+    <span class="sec-num">26</span>
+    <h2>Zipline &mdash; File Transfer CLI</h2>
+  </div>
+
+  <p>
+    Zipline is a local-first command-line file transfer tool for the Whim ecosystem. It sends and pulls files
+    between devices over the Tailscale mesh using Whim.m HTTP endpoints &mdash; no cloud, no external dependencies,
+    pure Python stdlib. Think of it as a sovereign AirDrop for the Whim mesh.
+  </p>
+
+  <h3>Architecture</h3>
+  <p>
+    Zipline talks directly to the Whim.m HTTP server (port 8089) running on each device. It uses the existing
+    <code>/library/upload</code>, <code>/library/download/</code>, <code>/upload</code>, <code>/audio/</code>,
+    <code>/files</code>, and <code>/library</code> endpoints &mdash; no additional server or daemon required.
+  </p>
+
+  <table>
+    <tr><th>Component</th><th>Description</th></tr>
+    <tr><td>Script</td><td><code>~/vaults/WHIM/scripts/zipline.py</code></td></tr>
+    <tr><td>Symlink</td><td><code>~/.local/bin/zipline</code></td></tr>
+    <tr><td>Transport</td><td>HTTP over Tailscale mesh (WireGuard encrypted)</td></tr>
+    <tr><td>Server</td><td>Whim.m on port 8089 (existing &mdash; no extra setup)</td></tr>
+    <tr><td>Downloads</td><td><code>~/Incoming/zipline/</code></td></tr>
+    <tr><td>Dependencies</td><td>None (Python 3 stdlib only)</td></tr>
+  </table>
+
+  <h3>Commands</h3>
+  <table>
+    <tr><th>Command</th><th>Description</th></tr>
+    <tr><td><code>zipline send &lt;file&gt; &lt;target&gt;</code></td><td>Send a file to a device's shared library</td></tr>
+    <tr><td><code>zipline send &lt;file&gt; &lt;target&gt; --journal</code></td><td>Send to the device's journal (audio upload path)</td></tr>
+    <tr><td><code>zipline pull &lt;filename&gt; &lt;target&gt;</code></td><td>Pull a file from a device's shared library</td></tr>
+    <tr><td><code>zipline pull &lt;filename&gt; &lt;target&gt; --journal</code></td><td>Pull from the device's journal</td></tr>
+    <tr><td><code>zipline ls &lt;target&gt;</code></td><td>List files on a device's shared library</td></tr>
+    <tr><td><code>zipline ls &lt;target&gt; --journal</code></td><td>List a device's journal files</td></tr>
+    <tr><td><code>zipline devices</code></td><td>List all known devices with online/offline status</td></tr>
+    <tr><td><code>zipline ping &lt;target&gt;</code></td><td>Check if a device's Whim.m server is reachable</td></tr>
+  </table>
+
+  <h3>Device Aliases</h3>
+  <p>Targets can be friendly aliases or raw Tailscale IPs:</p>
+  <table>
+    <tr><th>Alias(es)</th><th>Tailscale IP</th><th>Device</th></tr>
+    <tr><td><code>pc</code>, <code>carraramint</code>, <code>mint</code></td><td>100.69.17.20</td><td>PC (CARRARA Mint)</td></tr>
+    <tr><td><code>s22</code>, <code>galaxy-s22</code></td><td>100.77.59.2</td><td>Samsung Galaxy S22</td></tr>
+    <tr><td><code>s9</code>, <code>galaxy-s9</code></td><td>100.97.96.1</td><td>Samsung Galaxy S9</td></tr>
+    <tr><td><code>tablet</code>, <code>lenovo</code></td><td>100.64.255.124</td><td>Lenovo TB311FU</td></tr>
+  </table>
+
+  <h3>Usage Examples</h3>
+  <div class="card">
+    <div class="card-title">Send &amp; Pull</div>
+<pre style="background:#1e1e1e; padding:12px; border-radius:6px; overflow-x:auto; color:#dce4ee; font-size:13px;">
+# Send a config file to the S22's library
+zipline send ./new_model_config s22
+
+# Send audio to the PC's journal
+zipline send recording.webm pc --journal
+
+# Pull a screenshot from the tablet
+zipline pull Screenshot_20260414.png tablet
+
+# List what's on the S22's library
+zipline ls s22
+
+# Check all device connectivity
+zipline devices
+
+# Quick reachability check
+zipline ping tablet
+</pre>
+  </div>
+
+  <h3>Data Flow</h3>
+  <div class="card">
+<pre style="background:#1e1e1e; padding:12px; border-radius:6px; overflow-x:auto; color:#dce4ee; font-size:13px;">
+SEND:  Local File &rarr; HTTP POST &rarr; Tailscale Mesh &rarr; Whim.m :8089 &rarr; ~/Shared (library) or ~/Journal (journal)
+PULL:  Whim.m :8089 &rarr; Tailscale Mesh &rarr; HTTP GET &rarr; ~/Incoming/zipline/
+</pre>
+  </div>
+
+  <h3>How It Works</h3>
+  <ul>
+    <li><strong>Send (library)</strong> &mdash; Multipart POST to <code>/library/upload</code> with field name <code>file</code>. Saved to <code>~/Shared/</code> on the target.</li>
+    <li><strong>Send (journal)</strong> &mdash; Multipart POST to <code>/upload</code> with field name <code>audio</code>. Saved to <code>~/Journal/</code> with a timestamp prefix.</li>
+    <li><strong>Pull (library)</strong> &mdash; GET from <code>/library/download/&lt;name&gt;</code>. Saved to <code>~/Incoming/zipline/</code> locally.</li>
+    <li><strong>Pull (journal)</strong> &mdash; GET from <code>/audio/&lt;name&gt;</code>. Saved to <code>~/Incoming/zipline/</code> locally.</li>
+    <li><strong>Connectivity</strong> &mdash; TCP socket probe to port 8089 before every operation. Fails fast with clear error if target is offline.</li>
+    <li><strong>Duplicate handling</strong> &mdash; If a file already exists in <code>~/Incoming/zipline/</code>, a Unix timestamp suffix is appended to prevent overwrites.</li>
+  </ul>
+
+  <h3>Security</h3>
+  <ul>
+    <li>All traffic runs over Tailscale (WireGuard encrypted end-to-end)</li>
+    <li>No cloud intermediary &mdash; packets never leave the mesh</li>
+    <li>No credentials stored in the script &mdash; relies on Tailscale device authentication</li>
+    <li>Filenames are sanitized via <code>os.path.basename()</code> on both send and receive</li>
+  </ul>
+</section>
+
 <!-- ==================== FOOTER ==================== -->
 <footer class="manual-footer">
   <img src="manual_assets/fire.png" style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px; opacity: 0.6;">
-  <strong>Whim</strong> &mdash; Complete Manual v1.6 &mdash; April 2026<br>
+  <strong>Whim</strong> &mdash; Complete Manual v1.7 &mdash; April 2026<br>
   <span style="color: var(--fg-muted); font-size: 11px;">
-    Built on CARRARA &bull; Whim Terminal + Whim.m + Whim.V &bull; Python &bull; Tkinter &bull; Flask &bull; Ollama &bull; SSH Tunnel + Tailscale Hybrid &bull; OpenClaw &bull; GeoF + LoRa + ESP32 &bull; Doppler + NWS NEXRAD &bull; HAM/APRS + Direwolf &bull; LibreOffice Headless &bull; Windows 11 + Linux + macOS + iOS (Tahoe) &bull; Multi-Terminal Sync &bull; NodeFlow
+    Built on CARRARA &bull; Whim Terminal + Whim.m + Whim.V &bull; Python &bull; Tkinter &bull; Flask &bull; Ollama &bull; SSH Tunnel + Tailscale Hybrid &bull; OpenClaw &bull; GeoF + LoRa + ESP32 &bull; Doppler + NWS NEXRAD &bull; HAM/APRS + Direwolf &bull; LibreOffice Headless &bull; Windows 11 + Linux + macOS + iOS (Tahoe) &bull; Multi-Terminal Sync &bull; NodeFlow &bull; Zipline CLI
   </span>
 </footer>
 
