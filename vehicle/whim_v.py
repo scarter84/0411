@@ -5,11 +5,13 @@ Vertical touch-optimized web UI for 1200x1920 (or any resolution).
 Runs as a Flask server; open in browser on tablet or vehicle display.
 
 Features:
-  - GeoF geofence map with collar tracking
-  - Doppler / NWS radar overlay
+  - GeoF geofence map with Leaflet satellite tiles and collar tracking
+  - Doppler / NWS radar overlay (7 regional stations)
+  - Named locations with address geocoding and per-site geofences
   - AI Chat via Ollama
   - LibreOffice headless document/spreadsheet viewer
   - System logs and vehicle status
+  - Service Worker for offline caching
   - High-contrast dark theme for driving
 
 Usage:
@@ -39,14 +41,50 @@ OLLAMA_URL = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434")
 FENCE_CONFIG = os.path.join(HOME, ".openclaw", "fence_config.json")
 GEOF_PINS = os.path.join(HOME, ".openclaw", "geof_pins.json")
 WHIM_SETTINGS = os.path.join(HOME, ".openclaw", "whim_settings.json")
+LOCATIONS_FILE = os.path.join(HOME, ".openclaw", "whimv_locations.json")
 DOCS_DIR = os.path.join(HOME, "Documents")
 INCOMING_DIR = os.path.join(HOME, "Incoming")
 JOURNAL_DIR = os.path.join(HOME, "Journal")
 ARCHIVE_DIR = os.path.join(HOME, "ARCHIVE")
 
-WHIM_V_VERSION = "1.0.0"
+WHIM_V_VERSION = "1.1.0"
 
 app = Flask(__name__)
+
+# ── Default named locations ──
+DEFAULT_LOCATIONS = [
+    {
+        "id": "parents_house",
+        "name": "Parents' House",
+        "lat": 39.6335,
+        "lon": -92.0033,
+        "address": "",
+        "fence_type": "rectangle",
+        "acres": 1,
+        "direction": "ns"
+    },
+    {
+        "id": "lake_house",
+        "name": "Parents' Lake House",
+        "lat": 39.6965089,
+        "lon": -92.015889,
+        "address": "Lake of the Ozarks, MO",
+        "fence_type": "rectangle",
+        "acres": 2,
+        "direction": "ns"
+    },
+    {
+        "id": "jasons_house",
+        "name": "Jason's House",
+        "lat": 39.325519892068,
+        "lon": -92.41546784880909,
+        "address": "",
+        "fence_type": "square",
+        "acres": 5,
+        "direction": "ns"
+    }
+]
+
 
 # ── LibreOffice document conversion ──
 
@@ -79,7 +117,6 @@ def ollama_models():
         return []
 
 def ollama_chat_stream(model, messages, temperature=0.7):
-    """Generator that yields streamed Ollama response chunks."""
     payload = {
         "model": model,
         "messages": messages,
@@ -109,7 +146,7 @@ def load_fence():
                 return json.load(f)
         except Exception:
             pass
-    return {"vertices": [], "center": [36.35, -93.2], "zoom": 12}
+    return {"vertices": [], "center": [39.6335, -92.0033], "zoom": 16}
 
 def load_pins():
     if os.path.isfile(GEOF_PINS):
@@ -121,10 +158,26 @@ def load_pins():
     return []
 
 
+# ── Locations ──
+
+def load_locations():
+    if os.path.isfile(LOCATIONS_FILE):
+        try:
+            with open(LOCATIONS_FILE) as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return list(DEFAULT_LOCATIONS)
+
+def save_locations(locs):
+    os.makedirs(os.path.dirname(LOCATIONS_FILE), exist_ok=True)
+    with open(LOCATIONS_FILE, "w") as f:
+        json.dump(locs, f, indent=2)
+
+
 # ── File browser ──
 
 def list_documents(directory, extensions=None):
-    """List files in a directory, optionally filtered by extension."""
     if not os.path.isdir(directory):
         return []
     exts = extensions or [".xlsx", ".xls", ".ods", ".csv", ".doc", ".docx",
@@ -147,7 +200,53 @@ def list_documents(directory, extensions=None):
 
 
 # ════════════════════════════════════════════════════════════
-#  DASHBOARD HTML (single-page vertical layout)
+#  SERVICE WORKER
+# ════════════════════════════════════════════════════════════
+
+SERVICE_WORKER_JS = """
+const CACHE_NAME = 'whimv-cache-v1';
+const STATIC_ASSETS = [
+  '/',
+  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
+  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
+];
+
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS))
+  );
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+    )
+  );
+  self.clients.claim();
+});
+
+self.addEventListener('fetch', event => {
+  if (event.request.url.includes('/api/')) return;
+  event.respondWith(
+    caches.match(event.request).then(cached => {
+      const fetched = fetch(event.request).then(response => {
+        if (response && response.status === 200) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+        }
+        return response;
+      }).catch(() => cached);
+      return cached || fetched;
+    })
+  );
+});
+"""
+
+
+# ════════════════════════════════════════════════════════════
+#  DASHBOARD HTML
 # ════════════════════════════════════════════════════════════
 
 DASHBOARD_HTML = r"""<!DOCTYPE html>
@@ -158,6 +257,8 @@ DASHBOARD_HTML = r"""<!DOCTYPE html>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <title>Whim.V</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 :root {
   --bg: #141210;
@@ -182,7 +283,6 @@ body {
   -webkit-user-select: none; user-select: none;
 }
 
-/* Header */
 .header {
   background: var(--card); padding: 12px 16px;
   display: flex; align-items: center; justify-content: space-between;
@@ -197,7 +297,6 @@ body {
 .status-dot.offline { background: var(--red); }
 .status-label { font-size: 11px; color: var(--fg2); }
 
-/* Tab bar */
 .tab-bar {
   display: flex; background: var(--card); border-bottom: 1px solid var(--border);
   overflow-x: auto; -webkit-overflow-scrolling: touch;
@@ -211,11 +310,9 @@ body {
 .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); background: var(--bg); }
 .tab-btn:active { background: rgba(232,121,58,0.1); }
 
-/* Panels */
 .panel { display: none; padding: 12px; min-height: calc(100vh - 110px); }
 .panel.active { display: block; }
 
-/* Cards */
 .v-card {
   background: var(--card); border-radius: 8px; padding: 14px;
   margin-bottom: 12px; border: 1px solid var(--border);
@@ -225,15 +322,12 @@ body {
   text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;
 }
 
-/* Map */
 #geof-map {
   width: 100%; height: 50vh; background: var(--input);
-  border-radius: 6px; border: 1px solid var(--border); position: relative;
-  overflow: hidden; touch-action: none;
+  border-radius: 6px; border: 1px solid var(--border);
+  z-index: 1;
 }
-#geof-map canvas { width: 100%; height: 100%; }
 
-/* Collar table */
 .collar-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .collar-table th {
   background: var(--input); color: var(--accent); padding: 8px 6px;
@@ -243,7 +337,6 @@ body {
 .collar-table td { padding: 8px 6px; border-bottom: 1px solid var(--border); }
 .collar-table tr:active { background: rgba(232,121,58,0.1); }
 
-/* Chat */
 #chat-log {
   background: var(--input); border-radius: 6px; padding: 12px;
   height: 55vh; overflow-y: auto; font-size: 14px; line-height: 1.6;
@@ -265,8 +358,10 @@ body {
   transition: background 0.15s; min-width: 44px; min-height: 44px;
 }
 .chat-input-row button:active, .v-btn:active { background: var(--btn-hover); }
+.v-btn.secondary { background: var(--card); color: var(--fg); border: 1px solid var(--border); }
+.v-btn.secondary:active { background: var(--input); }
+.v-btn.danger { background: var(--red); }
 
-/* Document viewer */
 #doc-viewer {
   width: 100%; height: 65vh; border: 1px solid var(--border);
   border-radius: 6px; background: #fff;
@@ -280,7 +375,6 @@ body {
 .file-name { color: var(--fg); font-size: 14px; }
 .file-meta { color: var(--fg2); font-size: 11px; }
 
-/* Logs */
 #log-output {
   background: var(--input); color: var(--green); font-family: 'Courier New', monospace;
   font-size: 12px; padding: 12px; border-radius: 6px; height: 60vh;
@@ -288,20 +382,75 @@ body {
   -webkit-overflow-scrolling: touch;
 }
 
-/* Radar */
-#radar-frame {
-  width: 100%; height: 60vh; border: none; border-radius: 6px;
-  background: var(--input);
+.radar-container {
+  width: 100%; aspect-ratio: 4/3; position: relative;
+  border-radius: 6px; overflow: hidden; background: var(--input);
+}
+.radar-container iframe {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  border: none;
 }
 
-/* Model selector */
+.radar-btn-grid {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px;
+}
+.radar-btn-grid .v-btn { padding: 8px 12px; font-size: 11px; flex: 1; min-width: 100px; text-align: center; }
+.radar-btn-grid .v-btn.active-station { border: 2px solid var(--accent); }
+
 .model-select {
   background: var(--input); color: var(--fg); border: 1px solid var(--border);
   padding: 8px 12px; border-radius: 6px; font-size: 13px; width: 100%;
   margin-bottom: 10px;
 }
 
-/* Responsive touches */
+.loc-select {
+  background: var(--input); color: var(--fg); border: 1px solid var(--border);
+  padding: 8px 12px; border-radius: 6px; font-size: 13px; width: 100%;
+}
+
+/* Location manager modal */
+.modal-overlay {
+  display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.7); z-index: 500; align-items: center;
+  justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal-box {
+  background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+  padding: 20px; width: 90%; max-width: 500px; max-height: 85vh;
+  overflow-y: auto;
+}
+.modal-box h3 { color: var(--accent); margin-bottom: 14px; }
+.modal-field { margin-bottom: 10px; }
+.modal-field label { display: block; font-size: 12px; color: var(--fg2); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 1px; }
+.modal-field input, .modal-field select {
+  width: 100%; background: var(--input); border: 1px solid var(--border);
+  color: var(--fg); padding: 10px 12px; border-radius: 6px; font-size: 14px;
+}
+.modal-field input:focus { border-color: var(--accent); outline: none; }
+.modal-actions { display: flex; gap: 8px; margin-top: 14px; }
+.modal-actions .v-btn { flex: 1; text-align: center; }
+
+.loc-card {
+  background: var(--input); border: 1px solid var(--border); border-radius: 6px;
+  padding: 10px 12px; margin-bottom: 8px; display: flex;
+  justify-content: space-between; align-items: center; cursor: pointer;
+}
+.loc-card:active { border-color: var(--accent); }
+.loc-card .lc-name { font-weight: 700; color: var(--fg); font-size: 14px; }
+.loc-card .lc-coords { font-size: 11px; color: var(--fg2); font-family: 'Courier New', monospace; }
+.loc-card .lc-address { font-size: 11px; color: var(--fg2); }
+.loc-card .lc-meta { font-size: 11px; color: var(--accent); }
+.loc-card-actions { display: flex; gap: 6px; }
+.loc-card-actions .v-btn { padding: 6px 10px; font-size: 11px; min-width: 32px; min-height: 32px; }
+
+.geof-toolbar {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 8px; flex-wrap: wrap; gap: 6px;
+}
+.geof-toolbar .left { display: flex; gap: 6px; flex: 1; align-items: center; flex-wrap: wrap; }
+.geof-toolbar .right { display: flex; gap: 6px; }
+
 @media (min-width: 800px) {
   .panel { padding: 16px 24px; }
   .tab-btn { font-size: 13px; padding: 14px 12px; }
@@ -336,12 +485,19 @@ body {
 <div class="panel active" id="panel-geof">
   <div class="v-card">
     <h3>Geofence Tracker</h3>
-    <div id="geof-map"><canvas id="geof-canvas"></canvas></div>
-    <div style="display:flex;justify-content:space-between;margin-top:8px;">
-      <span style="font-size:12px;color:var(--fg2);" id="geof-info">Center: 36.35, -93.20 | Zoom: 12</span>
-      <div style="display:flex;gap:6px;">
-        <button class="v-btn" style="padding:8px 14px;font-size:12px;" onclick="geof.zoomIn()">+</button>
-        <button class="v-btn" style="padding:8px 14px;font-size:12px;" onclick="geof.zoomOut()">-</button>
+    <div style="margin-bottom:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <select class="loc-select" id="geof-loc-select" style="flex:1;min-width:160px;" onchange="geof.goToLocation(this.value)">
+        <option value="">-- Select Location --</option>
+      </select>
+      <button class="v-btn" style="padding:8px 14px;font-size:12px;" onclick="locMgr.openModal()">Manage</button>
+    </div>
+    <div id="geof-map"></div>
+    <div class="geof-toolbar">
+      <div class="left">
+        <span style="font-size:12px;color:var(--fg2);" id="geof-info">Loading...</span>
+      </div>
+      <div class="right">
+        <button class="v-btn" style="padding:8px 14px;font-size:12px;" onclick="geof.toggleTiles()">Tiles</button>
         <button class="v-btn" style="padding:8px 14px;font-size:12px;" onclick="geof.refresh()">Refresh</button>
       </div>
     </div>
@@ -361,19 +517,19 @@ body {
 <div class="panel" id="panel-radar">
   <div class="v-card">
     <h3>Doppler Radar — NWS</h3>
-    <iframe id="radar-frame"
-      src="https://radar.weather.gov/station/KSRX/standard"
-      loading="lazy" allowfullscreen></iframe>
-    <div style="margin-top:8px;display:flex;gap:8px;">
-      <button class="v-btn" style="padding:8px 14px;font-size:12px;"
-        onclick="document.getElementById('radar-frame').src='https://radar.weather.gov/station/KSRX/standard'">
-        KSRX (Ozarks)</button>
-      <button class="v-btn" style="padding:8px 14px;font-size:12px;"
-        onclick="document.getElementById('radar-frame').src='https://radar.weather.gov/station/KLZK/standard'">
-        KLZK (Little Rock)</button>
-      <button class="v-btn" style="padding:8px 14px;font-size:12px;"
-        onclick="document.getElementById('radar-frame').src='https://radar.weather.gov/station/KSGF/standard'">
-        KSGF (Springfield)</button>
+    <div class="radar-container">
+      <iframe id="radar-frame"
+        src="https://radar.weather.gov/station/KSGF/standard"
+        loading="lazy" allowfullscreen></iframe>
+    </div>
+    <div class="radar-btn-grid" id="radar-btns">
+      <button class="v-btn active-station" data-station="KSGF" onclick="radar.set('KSGF',this)">KSGF Springfield</button>
+      <button class="v-btn" data-station="KSRX" onclick="radar.set('KSRX',this)">KSRX Ozarks</button>
+      <button class="v-btn" data-station="KEAX" onclick="radar.set('KEAX',this)">KEAX Kansas City</button>
+      <button class="v-btn" data-station="KLSX" onclick="radar.set('KLSX',this)">KLSX St. Louis</button>
+      <button class="v-btn" data-station="KILX" onclick="radar.set('KILX',this)">KILX Quincy/Lincoln</button>
+      <button class="v-btn" data-station="KEAX" onclick="radar.set('KEAX',this)">KEAX Columbia</button>
+      <button class="v-btn" data-station="KLZK" onclick="radar.set('KLZK',this)">KLZK Little Rock</button>
     </div>
   </div>
 </div>
@@ -391,7 +547,7 @@ body {
     <div class="file-list" id="file-list"></div>
   </div>
   <div class="v-card" id="doc-viewer-card" style="display:none;">
-    <h3 id="doc-title">—</h3>
+    <h3 id="doc-title">-</h3>
     <iframe id="doc-viewer" src="about:blank"></iframe>
   </div>
 </div>
@@ -422,6 +578,67 @@ body {
   </div>
 </div>
 
+<!-- ═══════ LOCATION MANAGER MODAL ═══════ -->
+<div class="modal-overlay" id="loc-modal">
+  <div class="modal-box">
+    <h3 id="loc-modal-title">Manage Locations</h3>
+
+    <div id="loc-list-view">
+      <div id="loc-list-container"></div>
+      <div style="margin-top:12px;">
+        <button class="v-btn" style="width:100%;text-align:center;" onclick="locMgr.showAddForm()">+ Add Location</button>
+      </div>
+      <div style="margin-top:8px;">
+        <button class="v-btn secondary" style="width:100%;text-align:center;" onclick="locMgr.closeModal()">Close</button>
+      </div>
+    </div>
+
+    <div id="loc-form-view" style="display:none;">
+      <div class="modal-field">
+        <label>Name</label>
+        <input type="text" id="loc-name" placeholder="e.g. Jason's House">
+      </div>
+      <div class="modal-field">
+        <label>Address (auto-fills GPS)</label>
+        <div style="display:flex;gap:6px;">
+          <input type="text" id="loc-address" placeholder="123 Main St, City, MO" style="flex:1;">
+          <button class="v-btn" style="padding:8px 12px;font-size:12px;" onclick="locMgr.geocode()">Lookup</button>
+        </div>
+      </div>
+      <div class="modal-field" style="display:flex;gap:8px;">
+        <div style="flex:1;">
+          <label>Latitude</label>
+          <input type="number" step="any" id="loc-lat" placeholder="39.6965">
+        </div>
+        <div style="flex:1;">
+          <label>Longitude</label>
+          <input type="number" step="any" id="loc-lon" placeholder="-92.0158">
+        </div>
+      </div>
+      <div class="modal-field" style="display:flex;gap:8px;">
+        <div style="flex:1;">
+          <label>Fence Shape</label>
+          <select id="loc-fence-type">
+            <option value="rectangle">Rectangle</option>
+            <option value="square">Square</option>
+            <option value="none">None</option>
+          </select>
+        </div>
+        <div style="flex:1;">
+          <label>Acres</label>
+          <input type="number" step="0.1" id="loc-acres" value="2" placeholder="2">
+        </div>
+      </div>
+      <div id="loc-geocode-status" style="font-size:12px;color:var(--fg2);margin-bottom:8px;"></div>
+      <input type="hidden" id="loc-edit-id">
+      <div class="modal-actions">
+        <button class="v-btn secondary" onclick="locMgr.showList()">Cancel</button>
+        <button class="v-btn" onclick="locMgr.save()">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 // ── Tab switching ──
 document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -430,6 +647,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+    if (btn.dataset.tab === 'geof' && geof.map) geof.map.invalidateSize();
   });
 });
 
@@ -453,122 +671,318 @@ async function checkOllama() {
       dot.className = 'status-dot offline';
       lbl.textContent = 'Ollama: Offline';
     }
-  } catch(e) { /* ignore */ }
+  } catch(e) {}
 }
 checkOllama();
 setInterval(checkOllama, 30000);
 
-// ══════════ GEOF ══════════
+// ══════════ LOCATIONS ══════════
+let _locations = [];
+
+async function loadLocations() {
+  try {
+    const r = await fetch('/api/locations');
+    _locations = await r.json();
+  } catch(e) { _locations = []; }
+  updateLocationSelects();
+}
+
+function updateLocationSelects() {
+  const sel = document.getElementById('geof-loc-select');
+  const val = sel.value;
+  sel.innerHTML = '<option value="">-- Select Location --</option>';
+  _locations.forEach(l => {
+    const opt = document.createElement('option');
+    opt.value = l.id;
+    opt.textContent = l.name + ' (' + l.lat.toFixed(4) + ', ' + l.lon.toFixed(4) + ')';
+    sel.appendChild(opt);
+  });
+  if (val) sel.value = val;
+}
+
+// ══════════ GEOF (Leaflet) ══════════
 const geof = {
-  center: [36.35, -93.2], zoom: 12, pins: [], fence: [],
-  canvas: null, ctx: null, dragging: false, lastTouch: null,
+  map: null, tileLayer: null, useSatellite: true,
+  fenceLayer: null, pinMarkers: [], locationFences: [],
 
   init() {
-    this.canvas = document.getElementById('geof-canvas');
-    this.ctx = this.canvas.getContext('2d');
-    this.resize();
-    window.addEventListener('resize', () => this.resize());
-    this.canvas.addEventListener('touchstart', e => this.onTouchStart(e), {passive:false});
-    this.canvas.addEventListener('touchmove', e => this.onTouchMove(e), {passive:false});
-    this.canvas.addEventListener('touchend', () => this.dragging = false);
-    this.canvas.addEventListener('mousedown', e => { this.dragging = true; this.lastTouch = {x:e.clientX, y:e.clientY}; });
-    this.canvas.addEventListener('mousemove', e => { if(this.dragging) this.pan(e.clientX, e.clientY); });
-    this.canvas.addEventListener('mouseup', () => this.dragging = false);
-    this.canvas.addEventListener('wheel', e => { e.preventDefault(); this.zoom += e.deltaY > 0 ? -1 : 1; this.zoom = Math.max(4, Math.min(18, this.zoom)); this.draw(); });
+    this.map = L.map('geof-map', {
+      center: [39.6335, -92.0033],
+      zoom: 16,
+      zoomControl: false
+    });
+    this.setTiles();
+    L.control.zoom({ position: 'topright' }).addTo(this.map);
+    this.fenceLayer = L.layerGroup().addTo(this.map);
+    this.map.on('moveend', () => this.updateInfo());
     this.refresh();
   },
-  resize() {
-    const rect = this.canvas.parentElement.getBoundingClientRect();
-    this.canvas.width = rect.width;
-    this.canvas.height = rect.height;
-    this.draw();
-  },
-  onTouchStart(e) { e.preventDefault(); if(e.touches.length===1){ this.dragging=true; this.lastTouch={x:e.touches[0].clientX,y:e.touches[0].clientY}; }},
-  onTouchMove(e) { e.preventDefault(); if(this.dragging && e.touches.length===1){ this.pan(e.touches[0].clientX, e.touches[0].clientY); }},
-  pan(x, y) {
-    if(!this.lastTouch) return;
-    const scale = 360 / Math.pow(2, this.zoom) / this.canvas.width;
-    this.center[1] -= (x - this.lastTouch.x) * scale;
-    this.center[0] += (y - this.lastTouch.y) * scale;
-    this.lastTouch = {x, y};
-    this.draw();
-  },
-  zoomIn() { this.zoom = Math.min(18, this.zoom + 1); this.draw(); },
-  zoomOut() { this.zoom = Math.max(4, this.zoom - 1); this.draw(); },
-  latLonToXY(lat, lon) {
-    const scale = Math.pow(2, this.zoom);
-    const w = this.canvas.width, h = this.canvas.height;
-    const cx = w/2, cy = h/2;
-    const dx = (lon - this.center[1]) * scale * w / 360;
-    const latRad = lat * Math.PI / 180;
-    const cLatRad = this.center[0] * Math.PI / 180;
-    const dy = -(Math.log(Math.tan(Math.PI/4 + latRad/2)) - Math.log(Math.tan(Math.PI/4 + cLatRad/2))) * scale * w / (2*Math.PI);
-    return [cx + dx, cy + dy];
-  },
-  draw() {
-    const c = this.ctx, w = this.canvas.width, h = this.canvas.height;
-    c.fillStyle = '#0c0a08'; c.fillRect(0,0,w,h);
 
-    // Grid
-    c.strokeStyle = '#1a1816'; c.lineWidth = 0.5;
-    const gridStep = Math.pow(2, this.zoom) * 2;
-    for(let i=0;i<w;i+=w/gridStep*10){ c.beginPath();c.moveTo(i,0);c.lineTo(i,h);c.stroke(); }
-    for(let i=0;i<h;i+=h/gridStep*10){ c.beginPath();c.moveTo(0,i);c.lineTo(w,i);c.stroke(); }
-
-    // Fence polygon
-    if(this.fence.length > 2) {
-      c.beginPath();
-      this.fence.forEach((v,i) => {
-        const [x,y] = this.latLonToXY(v[0], v[1]);
-        i === 0 ? c.moveTo(x,y) : c.lineTo(x,y);
-      });
-      c.closePath();
-      c.fillStyle = 'rgba(47,165,114,0.12)';
-      c.fill();
-      c.strokeStyle = '#2fa572'; c.lineWidth = 2; c.stroke();
+  setTiles() {
+    if (this.tileLayer) this.map.removeLayer(this.tileLayer);
+    if (this.useSatellite) {
+      this.tileLayer = L.tileLayer(
+        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        { attribution: 'Esri Satellite', maxZoom: 19 }
+      );
+    } else {
+      this.tileLayer = L.tileLayer(
+        'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        { attribution: 'OSM', maxZoom: 19 }
+      );
     }
-
-    // Pins (collars)
-    this.pins.forEach(p => {
-      const [x,y] = this.latLonToXY(p.lat, p.lon);
-      const inFence = p.in_fence !== false;
-      c.beginPath(); c.arc(x,y,8,0,Math.PI*2);
-      c.fillStyle = inFence ? '#2fa572' : '#c4382a'; c.fill();
-      c.strokeStyle = '#f5e6d3'; c.lineWidth = 2; c.stroke();
-      c.fillStyle = '#f5e6d3'; c.font = 'bold 11px sans-serif';
-      c.textAlign = 'center'; c.fillText(p.name || p.id || '?', x, y - 14);
-    });
-
-    // Center crosshair
-    c.strokeStyle = 'rgba(232,121,58,0.3)'; c.lineWidth = 1;
-    c.beginPath(); c.moveTo(w/2-15,h/2); c.lineTo(w/2+15,h/2); c.stroke();
-    c.beginPath(); c.moveTo(w/2,h/2-15); c.lineTo(w/2,h/2+15); c.stroke();
-
-    document.getElementById('geof-info').textContent =
-      `Center: ${this.center[0].toFixed(4)}, ${this.center[1].toFixed(4)} | Zoom: ${this.zoom} | Pins: ${this.pins.length}`;
+    this.tileLayer.addTo(this.map);
   },
+
+  toggleTiles() {
+    this.useSatellite = !this.useSatellite;
+    this.setTiles();
+  },
+
+  updateInfo() {
+    const c = this.map.getCenter();
+    const z = this.map.getZoom();
+    document.getElementById('geof-info').textContent =
+      'Center: ' + c.lat.toFixed(5) + ', ' + c.lng.toFixed(5) + ' | Zoom: ' + z + ' | Pins: ' + this.pinMarkers.length;
+  },
+
+  goToLocation(locId) {
+    if (!locId) return;
+    const loc = _locations.find(l => l.id === locId);
+    if (loc) {
+      this.map.setView([loc.lat, loc.lon], 17);
+    }
+  },
+
+  drawLocationFences() {
+    this.locationFences.forEach(l => this.fenceLayer.removeLayer(l));
+    this.locationFences = [];
+    _locations.forEach(loc => {
+      if (loc.fence_type === 'none') return;
+      const acres = loc.acres || 2;
+      const sqMeters = acres * 4046.86;
+      let latDelta, lonDelta;
+      if (loc.fence_type === 'square') {
+        const side = Math.sqrt(sqMeters);
+        latDelta = (side / 2) / 111320;
+        lonDelta = (side / 2) / (111320 * Math.cos(loc.lat * Math.PI / 180));
+      } else {
+        const ratio = (loc.direction === 'ew') ? 0.5 : 2.0;
+        const h = Math.sqrt(sqMeters * ratio);
+        const w = sqMeters / h;
+        latDelta = (h / 2) / 111320;
+        lonDelta = (w / 2) / (111320 * Math.cos(loc.lat * Math.PI / 180));
+      }
+      const bounds = [
+        [loc.lat - latDelta, loc.lon - lonDelta],
+        [loc.lat + latDelta, loc.lon + lonDelta]
+      ];
+      const rect = L.rectangle(bounds, {
+        color: '#e8793a', weight: 2, opacity: 0.8,
+        fillColor: '#e8793a', fillOpacity: 0.1, dashArray: '6 4'
+      });
+      rect.bindTooltip(loc.name + (loc.address ? '<br>' + loc.address : '') +
+        '<br>' + loc.lat.toFixed(5) + ', ' + loc.lon.toFixed(5) +
+        '<br>' + acres + ' acres (' + loc.fence_type + ')',
+        { sticky: true });
+      this.fenceLayer.addLayer(rect);
+      this.locationFences.push(rect);
+
+      const marker = L.circleMarker([loc.lat, loc.lon], {
+        radius: 6, color: '#e8793a', fillColor: '#e8793a',
+        fillOpacity: 0.9, weight: 2
+      });
+      marker.bindTooltip(loc.name, { permanent: false, direction: 'top' });
+      this.fenceLayer.addLayer(marker);
+      this.locationFences.push(marker);
+    });
+  },
+
   async refresh() {
     try {
       const r = await fetch('/api/geof');
       const d = await r.json();
-      this.fence = d.fence || [];
-      this.pins = d.pins || [];
-      if(d.center) this.center = d.center;
-      if(d.zoom) this.zoom = d.zoom;
-      this.draw();
-      // Update collar table
+
+      // Clear old markers
+      this.pinMarkers.forEach(m => this.map.removeLayer(m));
+      this.pinMarkers = [];
+
+      // Draw main fence polygon
+      this.fenceLayer.clearLayers();
+      const fence = d.fence || [];
+      if (fence.length > 2) {
+        const latlngs = fence.map(v => [v[0], v[1]]);
+        L.polygon(latlngs, {
+          color: '#2fa572', weight: 2, fillColor: '#2fa572', fillOpacity: 0.12
+        }).addTo(this.fenceLayer);
+      }
+
+      // Draw location fences
+      this.drawLocationFences();
+
+      // Collar pins
+      const pins = d.pins || [];
+      pins.forEach(p => {
+        const inFence = p.in_fence !== false;
+        const marker = L.circleMarker([p.lat, p.lon], {
+          radius: 10,
+          color: '#f5e6d3',
+          fillColor: inFence ? '#2fa572' : '#c4382a',
+          fillOpacity: 0.9, weight: 2
+        });
+        marker.bindTooltip((p.name || p.id || '?') + (inFence ? ' (IN)' : ' (OUT)'), {
+          permanent: true, direction: 'top',
+          className: 'collar-tooltip'
+        });
+        marker.addTo(this.map);
+        this.pinMarkers.push(marker);
+      });
+
+      // Collar table
       const tbody = document.getElementById('collar-tbody');
-      if(this.pins.length === 0) {
+      if (pins.length === 0) {
         tbody.innerHTML = '<tr><td colspan="7" style="color:var(--fg2);text-align:center;">No collars detected</td></tr>';
       } else {
-        tbody.innerHTML = this.pins.map(p =>
-          `<tr><td>${p.id||'—'}</td><td>${p.name||'—'}</td>` +
-          `<td style="color:${p.in_fence!==false?'var(--green)':'var(--red)'}">${p.in_fence!==false?'IN':'OUT'}</td>` +
-          `<td>${p.battery||'—'}%</td><td>${(p.lat||0).toFixed(5)}</td>` +
-          `<td>${(p.lon||0).toFixed(5)}</td><td>${p.last_seen||'—'}</td></tr>`
+        tbody.innerHTML = pins.map(p =>
+          '<tr><td>' + (p.id||'-') + '</td><td>' + (p.name||'-') + '</td>' +
+          '<td style="color:' + (p.in_fence!==false?'var(--green)':'var(--red)') + '">' +
+          (p.in_fence!==false?'IN':'OUT') + '</td>' +
+          '<td>' + (p.battery||'-') + '%</td><td>' + (p.lat||0).toFixed(5) + '</td>' +
+          '<td>' + (p.lon||0).toFixed(5) + '</td><td>' + (p.last_seen||'-') + '</td></tr>'
         ).join('');
       }
+
+      this.updateInfo();
     } catch(e) { console.error('GeoF refresh error:', e); }
+  }
+};
+
+// ══════════ RADAR ══════════
+const radar = {
+  set(station, btn) {
+    document.getElementById('radar-frame').src =
+      'https://radar.weather.gov/station/' + station + '/standard';
+    document.querySelectorAll('#radar-btns .v-btn').forEach(b => b.classList.remove('active-station'));
+    if (btn) btn.classList.add('active-station');
+  }
+};
+
+// ══════════ LOCATION MANAGER ══════════
+const locMgr = {
+  openModal() {
+    document.getElementById('loc-modal').classList.add('open');
+    this.showList();
+    this.renderList();
+  },
+  closeModal() {
+    document.getElementById('loc-modal').classList.remove('open');
+  },
+  showList() {
+    document.getElementById('loc-list-view').style.display = '';
+    document.getElementById('loc-form-view').style.display = 'none';
+    document.getElementById('loc-modal-title').textContent = 'Manage Locations';
+    this.renderList();
+  },
+  showAddForm(editLoc) {
+    document.getElementById('loc-list-view').style.display = 'none';
+    document.getElementById('loc-form-view').style.display = '';
+    document.getElementById('loc-geocode-status').textContent = '';
+    if (editLoc) {
+      document.getElementById('loc-modal-title').textContent = 'Edit Location';
+      document.getElementById('loc-edit-id').value = editLoc.id;
+      document.getElementById('loc-name').value = editLoc.name || '';
+      document.getElementById('loc-address').value = editLoc.address || '';
+      document.getElementById('loc-lat').value = editLoc.lat || '';
+      document.getElementById('loc-lon').value = editLoc.lon || '';
+      document.getElementById('loc-fence-type').value = editLoc.fence_type || 'rectangle';
+      document.getElementById('loc-acres').value = editLoc.acres || 2;
+    } else {
+      document.getElementById('loc-modal-title').textContent = 'Add Location';
+      document.getElementById('loc-edit-id').value = '';
+      document.getElementById('loc-name').value = '';
+      document.getElementById('loc-address').value = '';
+      document.getElementById('loc-lat').value = '';
+      document.getElementById('loc-lon').value = '';
+      document.getElementById('loc-fence-type').value = 'rectangle';
+      document.getElementById('loc-acres').value = 2;
+    }
+  },
+  renderList() {
+    const cont = document.getElementById('loc-list-container');
+    if (_locations.length === 0) {
+      cont.innerHTML = '<div style="padding:14px;color:var(--fg2);text-align:center;">No locations saved</div>';
+      return;
+    }
+    cont.innerHTML = _locations.map(l =>
+      '<div class="loc-card">' +
+        '<div onclick="locMgr.showAddForm(' + JSON.stringify(l).replace(/"/g, '&quot;') + ')" style="flex:1;">' +
+          '<div class="lc-name">' + l.name + '</div>' +
+          '<div class="lc-coords">' + l.lat.toFixed(5) + ', ' + l.lon.toFixed(5) + '</div>' +
+          (l.address ? '<div class="lc-address">' + l.address + '</div>' : '') +
+          '<div class="lc-meta">' + (l.fence_type||'none') + ' | ' + (l.acres||0) + ' acres</div>' +
+        '</div>' +
+        '<div class="loc-card-actions">' +
+          '<button class="v-btn danger" style="padding:6px 10px;font-size:11px;" onclick="locMgr.remove(\'' + l.id + '\')">X</button>' +
+        '</div>' +
+      '</div>'
+    ).join('');
+  },
+  async geocode() {
+    const addr = document.getElementById('loc-address').value.trim();
+    if (!addr) return;
+    const status = document.getElementById('loc-geocode-status');
+    status.textContent = 'Looking up...';
+    status.style.color = 'var(--fg2)';
+    try {
+      const r = await fetch('/api/geocode?q=' + encodeURIComponent(addr));
+      const d = await r.json();
+      if (d.error) {
+        status.textContent = 'Not found: ' + d.error;
+        status.style.color = 'var(--red)';
+        return;
+      }
+      document.getElementById('loc-lat').value = d.lat;
+      document.getElementById('loc-lon').value = d.lon;
+      status.textContent = 'Found: ' + d.display;
+      status.style.color = 'var(--green)';
+    } catch(e) {
+      status.textContent = 'Lookup failed';
+      status.style.color = 'var(--red)';
+    }
+  },
+  async save() {
+    const data = {
+      id: document.getElementById('loc-edit-id').value || ('loc_' + Date.now()),
+      name: document.getElementById('loc-name').value.trim(),
+      lat: parseFloat(document.getElementById('loc-lat').value),
+      lon: parseFloat(document.getElementById('loc-lon').value),
+      address: document.getElementById('loc-address').value.trim(),
+      fence_type: document.getElementById('loc-fence-type').value,
+      acres: parseFloat(document.getElementById('loc-acres').value) || 2
+    };
+    if (!data.name || isNaN(data.lat) || isNaN(data.lon)) {
+      document.getElementById('loc-geocode-status').textContent = 'Name and valid coordinates required';
+      document.getElementById('loc-geocode-status').style.color = 'var(--red)';
+      return;
+    }
+    try {
+      await fetch('/api/locations', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+      });
+      await loadLocations();
+      geof.drawLocationFences();
+      this.showList();
+    } catch(e) { console.error(e); }
+  },
+  async remove(id) {
+    try {
+      await fetch('/api/locations/' + id, { method: 'DELETE' });
+      await loadLocations();
+      geof.drawLocationFences();
+      this.renderList();
+    } catch(e) { console.error(e); }
   }
 };
 
@@ -584,14 +998,14 @@ const docs = {
         return;
       }
       list.innerHTML = files.map(f =>
-        `<div class="file-item" onclick="docs.open('${encodeURIComponent(f.path)}','${f.name}')">` +
-        `<div><div class="file-name">${f.name}</div>` +
-        `<div class="file-meta">${f.ext} &middot; ${(f.size/1024).toFixed(1)} KB &middot; ${f.modified}</div></div>` +
-        `<div style="color:var(--accent);font-size:20px;">&rarr;</div></div>`
+        '<div class="file-item" onclick="docs.open(\'' + encodeURIComponent(f.path) + '\',\'' + f.name.replace(/'/g,"\\'") + '\')">' +
+        '<div><div class="file-name">' + f.name + '</div>' +
+        '<div class="file-meta">' + f.ext + ' &middot; ' + (f.size/1024).toFixed(1) + ' KB &middot; ' + f.modified + '</div></div>' +
+        '<div style="color:var(--accent);font-size:20px;">&rarr;</div></div>'
       ).join('');
     } catch(e) { console.error(e); }
   },
-  async open(pathEnc, name) {
+  open(pathEnc, name) {
     document.getElementById('doc-viewer-card').style.display = 'block';
     document.getElementById('doc-title').textContent = decodeURIComponent(name);
     document.getElementById('doc-viewer').src = '/api/docs/view?path=' + pathEnc;
@@ -606,9 +1020,9 @@ const chat = {
       const r = await fetch('/api/models');
       const models = await r.json();
       const sel = document.getElementById('model-select');
-      sel.innerHTML = models.map(m => `<option value="${m}">${m}</option>`).join('');
+      sel.innerHTML = models.map(m => '<option value="' + m + '">' + m + '</option>').join('');
       if(models.length > 0) sel.value = models[0];
-    } catch(e) { /* ignore */ }
+    } catch(e) {}
   },
   async send() {
     const input = document.getElementById('chat-input');
@@ -617,7 +1031,7 @@ const chat = {
     input.value = '';
 
     const log = document.getElementById('chat-log');
-    log.innerHTML += `<div class="msg-user">&gt; ${text}</div>`;
+    log.innerHTML += '<div class="msg-user">&gt; ' + text + '</div>';
     this.messages.push({role: 'user', content: text});
 
     const aiDiv = document.createElement('div');
@@ -637,8 +1051,7 @@ const chat = {
       while(true) {
         const {done, value} = await reader.read();
         if(done) break;
-        const chunk = dec.decode(value);
-        full += chunk;
+        full += dec.decode(value);
         aiDiv.textContent = full;
         log.scrollTop = log.scrollHeight;
       }
@@ -663,10 +1076,16 @@ const logs = {
 };
 
 // ── Init ──
-geof.init();
-chat.init();
-logs.refresh();
-docs.loadDir('home');
+(async function() {
+  await loadLocations();
+  geof.init();
+  chat.init();
+  logs.refresh();
+  docs.loadDir('home');
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  }
+})();
 </script>
 </body>
 </html>"""
@@ -679,6 +1098,10 @@ docs.loadDir('home');
 @app.route("/")
 def index():
     return render_template_string(DASHBOARD_HTML, version=WHIM_V_VERSION)
+
+@app.route("/sw.js")
+def service_worker():
+    return Response(SERVICE_WORKER_JS, mimetype="application/javascript")
 
 @app.route("/api/status")
 def api_status():
@@ -709,13 +1132,62 @@ def api_chat():
 @app.route("/api/geof")
 def api_geof():
     fence_data = load_fence()
-    pins = load_pins()
+    pins = fence_data.get("collars", [])
+    if not pins:
+        pins = load_pins()
     return jsonify({
         "fence": fence_data.get("vertices", []),
-        "center": fence_data.get("center", [36.35, -93.2]),
-        "zoom": fence_data.get("zoom", 12),
+        "center": fence_data.get("center", [39.6335, -92.0033]),
+        "zoom": fence_data.get("zoom", 16),
         "pins": pins
     })
+
+@app.route("/api/locations")
+def api_locations_get():
+    return jsonify(load_locations())
+
+@app.route("/api/locations", methods=["POST"])
+def api_locations_save():
+    data = request.json
+    locs = load_locations()
+    existing = next((l for l in locs if l["id"] == data.get("id")), None)
+    if existing:
+        existing.update(data)
+    else:
+        if not data.get("id"):
+            data["id"] = f"loc_{int(time.time())}"
+        locs.append(data)
+    save_locations(locs)
+    return jsonify({"ok": True})
+
+@app.route("/api/locations/<loc_id>", methods=["DELETE"])
+def api_locations_delete(loc_id):
+    locs = [l for l in load_locations() if l["id"] != loc_id]
+    save_locations(locs)
+    return jsonify({"ok": True})
+
+@app.route("/api/geocode")
+def api_geocode():
+    q = request.args.get("q", "")
+    if not q:
+        return jsonify({"error": "No query"}), 400
+    try:
+        r = http_req.get(
+            "https://nominatim.openstreetmap.org/search",
+            params={"q": q, "format": "json", "limit": 1},
+            headers={"User-Agent": "WhimV/1.1"},
+            timeout=10
+        )
+        results = r.json()
+        if results:
+            return jsonify({
+                "lat": float(results[0]["lat"]),
+                "lon": float(results[0]["lon"]),
+                "display": results[0].get("display_name", "")
+            })
+        return jsonify({"error": "No results"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/api/docs/list")
 def api_docs_list():
@@ -757,7 +1229,6 @@ def api_logs():
     lines.append(f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     lines.append("")
 
-    # Ollama
     try:
         r = http_req.get(f"{OLLAMA_URL}/api/tags", timeout=3)
         models = [m["name"] for m in r.json().get("models", [])]
@@ -768,7 +1239,6 @@ def api_logs():
         lines.append("[!!] Ollama: Not reachable")
     lines.append("")
 
-    # Tailscale
     try:
         result = subprocess.run(["tailscale", "status", "--json"],
                                 capture_output=True, text=True, timeout=5)
@@ -786,7 +1256,6 @@ def api_logs():
         lines.append("[!!] Tailscale: Not available")
     lines.append("")
 
-    # Disk
     try:
         result = subprocess.run(["df", "-h", "/"], capture_output=True, text=True, timeout=5)
         for line in result.stdout.strip().split("\n")[1:]:
@@ -796,12 +1265,17 @@ def api_logs():
     except Exception:
         pass
 
-    # Uptime
     try:
         result = subprocess.run(["uptime", "-p"], capture_output=True, text=True, timeout=5)
         lines.append(f"[OK] {result.stdout.strip()}")
     except Exception:
         pass
+
+    locs = load_locations()
+    lines.append("")
+    lines.append(f"[OK] Locations: {len(locs)} saved")
+    for loc in locs:
+        lines.append(f"     - {loc['name']}: {loc['lat']:.5f}, {loc['lon']:.5f}")
 
     return jsonify({"text": "\n".join(lines)})
 
@@ -811,20 +1285,27 @@ def api_logs():
 # ════════════════════════════════════════════════════════════
 
 def main():
-    parser = argparse.ArgumentParser(description="Whim.V — Vehicle Dashboard")
+    parser = argparse.ArgumentParser(description="Whim.V - Vehicle Dashboard")
     parser.add_argument("--port", type=int, default=8099)
     parser.add_argument("--host", default="0.0.0.0")
     args = parser.parse_args()
 
+    if not os.path.isfile(LOCATIONS_FILE):
+        save_locations(DEFAULT_LOCATIONS)
+
     print()
     print("=" * 50)
-    print("  Whim.V — Vehicle Dashboard")
+    print("  Whim.V - Vehicle Dashboard")
     print(f"  v{WHIM_V_VERSION}")
     print("=" * 50)
     print()
     print(f"  Server: http://{args.host}:{args.port}")
     print(f"  Ollama: {OLLAMA_URL}")
-    print(f"  LibreOffice: {subprocess.getoutput('libreoffice --version')}")
+    try:
+        print(f"  LibreOffice: {subprocess.getoutput('libreoffice --version')}")
+    except Exception:
+        print("  LibreOffice: not found")
+    print(f"  Locations: {len(load_locations())} saved")
     print()
 
     app.run(host=args.host, port=args.port, debug=False, threaded=True)
