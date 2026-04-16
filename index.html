@@ -586,7 +586,7 @@ table code {
   <p style="color: var(--fg-dim); font-size: 14px; margin-top: 8px;">
     The Unified Desktop, Mobile &amp; Vehicle Ecosystem for Voice, AI, Geofencing, Weather Radar, HAM Radio, and Automation
   </p>
-  <div class="version-badge">v0.3.4 &mdash; April 2026 &mdash; CARRARA Mint &mdash; Hybrid Connection &mdash; Whim Terminal + Whim.m + Whim.V</div>
+  <div class="version-badge">v0.3.5 &mdash; April 2026 &mdash; CARRARA Mint &mdash; Hybrid Connection &mdash; Whim Terminal + Whim.m + Whim.V</div>
   <p style="margin-top: 16px;">
     <a href="https://youtu.be/73ZdY070zMQ" target="_blank" style="color: var(--green); font-size: 15px; font-weight: 500;">&#9654; Watch the Whim Overview Video on YouTube</a>
   </p>
@@ -743,9 +743,9 @@ table code {
   <table>
     <thead><tr><th>Platform</th><th>App</th><th>Description</th></tr></thead>
     <tbody>
-      <tr><td><strong>Desktop</strong></td><td>Whim Terminal v3.4</td><td>Full-featured Tkinter application with 18 tabs: AI chat, voice cloning (XTTS v2), wake word engine, GeoF geofence tracker with LoRa collar integration, Doppler weather radar with NWS NEXRAD overlay, HAM/APRS station monitor with Direwolf, SmartThings IoT, Signal/Discord messaging, NodeFlow visual editor, screen share, archive editor, and more. Runs on Linux, Windows 11, and macOS.</td></tr>
+      <tr><td><strong>Desktop</strong></td><td>Whim Terminal v3.4.1</td><td>Full-featured Tkinter application with 18 tabs: AI chat, voice cloning (XTTS v2), wake word engine, GeoF geofence tracker with LoRa collar integration and named location management, Doppler weather radar with NWS NEXRAD overlay and 7 regional radar stations, HAM/APRS station monitor with Direwolf, SmartThings IoT, Signal/Discord messaging, NodeFlow visual editor, screen share, archive editor, and more. Shared location database with address-to-GPS geocoding across GeoF, Doppler, and HAM tabs. Runs on Linux, Windows 11, and macOS.</td></tr>
       <tr><td><strong>Mobile</strong></td><td>Whim.m v3.4</td><td>Android companion app (APK + PWA) with five tabs: REC (voice recording), LIBRARY (file browser), CHAT (Ollama AI proxy), WAKE (voice commands), DEVICES (mesh messaging). Runs on Samsung Galaxy S22, Galaxy S9, and Lenovo TB311FU tablet.</td></tr>
-      <tr><td><strong>Vehicle</strong></td><td>Whim.V v1.0</td><td>Touch-optimized vehicle dashboard for 13.6&Prime; Tesla-style displays (Ubuntu) or Android tablets. Five panels: GeoF geofence map, NWS Doppler radar, LibreOffice document viewer, AI chat, system logs. Flask server + WebView APK with green-dot launcher icon.</td></tr>
+      <tr><td><strong>Vehicle</strong></td><td>Whim.V v1.1</td><td>Touch-optimized vehicle dashboard for 13.6&Prime; Tesla-style displays (Ubuntu) or Android tablets. Five panels: GeoF geofence map with Leaflet satellite tiles and named locations, NWS Doppler radar with 7 station selector, LibreOffice document viewer, AI chat, system logs. Named location manager with Nominatim geocoding, Service Worker for offline caching. Flask server + WebView APK.</td></tr>
     </tbody>
   </table>
 
@@ -1788,7 +1788,7 @@ sudo systemctl status whim-tunnel.service</div>
     <h2>GeoF &mdash; Geofence Tracker</h2>
   </div>
   <p>
-    The GEOF tab is a geofencing and livestock tracking system designed for hilly terrain (Ozarks). It combines a canvas-based map with real-time collar monitoring via LoRa radio, GPS point-in-polygon fence checking, and ESP32-S3 collar firmware with deep sleep power management.
+    The GEOF tab is a geofencing and livestock tracking system designed for hilly terrain (Ozarks). It combines a canvas-based map with real-time collar monitoring via LoRa radio, GPS point-in-polygon fence checking, and ESP32-S3 collar firmware with deep sleep power management. A shared <strong>Named Location Manager</strong> lets you save multiple sites (with address-to-GPS geocoding via Nominatim), define per-site geofence boundaries (rectangle or square, configurable acreage), and jump between them instantly. Named locations are drawn as orange dashed fences on the map and are shared across GeoF, Doppler, and HAM tabs, as well as with Whim.V.
   </p>
 
   <div class="screenshot-container">
@@ -1918,7 +1918,7 @@ C002,36.341000,-93.195000,62,Cow-2,OUTSIDE_FENCE</div>
     <h2>Doppler &mdash; Weather Radar &amp; NWR Audio</h2>
   </div>
   <p>
-    The DOPPLER tab is a full weather radar and situational awareness station, designed for monitoring storm activity, wind conditions, and precipitation relative to your assigned GPS coordinates. It combines text-based weather data from <strong>Open-Meteo</strong> with a visual <strong>NWS NEXRAD radar overlay</strong> on an embedded tile map, plus live <strong>NOAA Weather Radio (NWR)</strong> audio.
+    The DOPPLER tab is a full weather radar and situational awareness station, designed for monitoring storm activity, wind conditions, and precipitation relative to your assigned GPS coordinates. It combines text-based weather data from <strong>Open-Meteo</strong> with a visual <strong>NWS NEXRAD radar overlay</strong> on an embedded tile map, plus live <strong>NOAA Weather Radio (NWR)</strong> audio. A <strong>Location selector</strong> lets you jump to any saved named location (shared with GeoF and HAM tabs), and a <strong>NWS Radar station dropdown</strong> provides one-click access to 7 regional stations: KSGF (Springfield), KSRX (Ozarks), KEAX (Kansas City/Columbia), KLSX (St. Louis), KILX (Quincy/Lincoln), and KLZK (Little Rock). Named location fences are drawn on the radar map overlay.
   </p>
 
   <img src="manual_assets/desktop_doppler_tab.png" alt="Doppler Desktop Tab" class="full-screenshot">
@@ -1928,6 +1928,7 @@ C002,36.341000,-93.195000,62,Cow-2,OUTSIDE_FENCE</div>
     <thead><tr><th>Tier</th><th>Content</th></tr></thead>
     <tbody>
       <tr><td><strong>Header</strong></td><td>DOPPLER FEED title, GPS coordinate input (LAT/LON), FETCH button, "Pet Alert &rarr; S22" checkbox, last-update timestamp.</td></tr>
+      <tr><td><strong>Location Bar</strong></td><td>Named location dropdown (jump to saved sites), MANAGE button (open Location Manager), NWS Radar station selector (KSGF, KSRX, KEAX, KLSX, KILX, KLZK).</td></tr>
       <tr><td><strong>Current Conditions</strong></td><td>Compact horizontal strip: WMO weather icon, temperature (&deg;F), description, anemometer (wind speed + bearing), humidity, assigned GPS.</td></tr>
       <tr><td><strong>Radar Map</strong></td><td>Largest area &mdash; embedded OSM tile map (same engine as GeoF/HAM) with transparent NWS NEXRAD base reflectivity overlay, crosshair at assigned GPS, [+]/[&ndash;] zoom, scroll-wheel zoom, right-click pan, CENTER HOME, EMBED/DETACH MAP toggle.</td></tr>
       <tr><td><strong>NWR Audio</strong></td><td>LIVE NWR AUDIO strip: source selector (Web Stream / RTL-SDR), configurable URL or frequency, LISTEN / STOP buttons, online/offline status indicator.</td></tr>
@@ -2844,7 +2845,7 @@ python3 app/openclaw_tkui.py</code></div>
     <h2>Whim.V &mdash; Vehicle Dashboard</h2>
   </div>
   <p>
-    Whim.V is a touch-optimized vehicle dashboard designed for vertical 13.6&Prime; Tesla-style displays running Ubuntu, or any Android tablet connected to the Whim ecosystem. It delivers a subset of the full Whim Terminal&rsquo;s capabilities in a high-contrast, glanceable interface built for use in the field or on the road.
+    Whim.V is a touch-optimized vehicle dashboard designed for vertical 13.6&Prime; Tesla-style displays running Ubuntu, or any Android tablet connected to the Whim ecosystem. It delivers a subset of the full Whim Terminal&rsquo;s capabilities in a high-contrast, glanceable interface built for use in the field or on the road. Version 1.1 adds Leaflet satellite maps with Esri tiles, a named location manager with Nominatim address-to-GPS geocoding, 7 NWS regional radar stations, per-site geofence overlays, and a Service Worker for offline resilience.
   </p>
   <p>
     The dashboard runs as a lightweight Flask web server on the desktop (or vehicle Ubuntu machine) and is accessed via a WebView-based Android APK on the tablet. A green-dot launcher icon installs to the home screen for one-tap access.
@@ -2854,10 +2855,12 @@ python3 app/openclaw_tkui.py</code></div>
   <table>
     <thead><tr><th>Component</th><th>Description</th></tr></thead>
     <tbody>
-      <tr><td><strong>Server</strong></td><td><code>whim_v.py</code> &mdash; Flask server on port 8099, serves the full dashboard as a single-page web app</td></tr>
+      <tr><td><strong>Server</strong></td><td><code>whim_v.py</code> &mdash; Flask server on port 8099, serves the full dashboard as a single-page web app with Service Worker for offline caching</td></tr>
       <tr><td><strong>Client</strong></td><td>Android APK (<code>com.whim.v</code>) &mdash; fullscreen WebView wrapper with green-dot launcher icon, FLAG_KEEP_SCREEN_ON</td></tr>
       <tr><td><strong>Connection</strong></td><td>LAN (192.168.x.x) or Tailscale mesh (100.69.17.20) &mdash; same hybrid networking as Whim.m</td></tr>
       <tr><td><strong>Document Engine</strong></td><td>LibreOffice headless &mdash; converts .xlsx, .docx, .ods, .odt to PDF for inline viewing</td></tr>
+      <tr><td><strong>Map Engine</strong></td><td>Leaflet 1.9 with Esri World Imagery satellite tiles (toggle to OSM street view)</td></tr>
+      <tr><td><strong>Location Data</strong></td><td><code>~/.openclaw/whimv_locations.json</code> &mdash; shared with Whim Terminal. Nominatim geocoding for address-to-GPS lookup</td></tr>
     </tbody>
   </table>
 
@@ -2865,11 +2868,11 @@ python3 app/openclaw_tkui.py</code></div>
   <table>
     <thead><tr><th>Tab</th><th>Function</th></tr></thead>
     <tbody>
-      <tr><td><strong>GEOF</strong></td><td>Geofence map with collar pins, touch pan/zoom, fence polygon overlay, collar status table (ID, name, in/out, battery, coordinates, last seen)</td></tr>
-      <tr><td><strong>RADAR</strong></td><td>Embedded NWS Doppler radar &mdash; one-tap station switching between KSRX (Ozarks), KLZK (Little Rock), KSGF (Springfield)</td></tr>
+      <tr><td><strong>GEOF</strong></td><td>Leaflet satellite map with Esri World Imagery tiles (toggle to OSM street), collar pins with in/out status, fence polygon overlay, named location fences drawn as orange dashed boundaries, location dropdown to jump between saved sites, collar status table (ID, name, in/out, battery, coordinates, last seen)</td></tr>
+      <tr><td><strong>RADAR</strong></td><td>Embedded NWS Doppler radar in fixed aspect-ratio container &mdash; 7 regional stations: KSGF (Springfield), KSRX (Ozarks), KEAX (Kansas City/Columbia), KLSX (St. Louis), KILX (Quincy/Lincoln), KLZK (Little Rock)</td></tr>
       <tr><td><strong>DOCS</strong></td><td>Document viewer with directory browser (Home, Documents, Incoming, Journal). Opens .xlsx/.docx/.ods via LibreOffice headless, renders .pdf/.txt/.csv/.md natively</td></tr>
       <tr><td><strong>AI</strong></td><td>Whim.AI chat with Ollama model selector, streaming responses. Supports all local models (llama3.1, deepseek-r1, qwen3-coder)</td></tr>
-      <tr><td><strong>LOGS</strong></td><td>System status &mdash; Ollama model inventory, Tailscale mesh peers, disk usage, uptime</td></tr>
+      <tr><td><strong>LOGS</strong></td><td>System status &mdash; Ollama model inventory, Tailscale mesh peers, disk usage, uptime, saved locations summary</td></tr>
     </tbody>
   </table>
 
@@ -2914,11 +2917,13 @@ adb install vehicle/apk_build/out/whim_v.apk</code></pre>
   <table>
     <thead><tr><th>Feature</th><th>Ubuntu Vehicle Dash</th><th>Android Tablet</th><th>Desktop Browser</th></tr></thead>
     <tbody>
-      <tr><td>GeoF Map</td><td>&check;</td><td>&check;</td><td>&check;</td></tr>
-      <tr><td>Doppler Radar</td><td>&check;</td><td>&check;</td><td>&check;</td></tr>
+      <tr><td>GeoF Map (Leaflet Satellite)</td><td>&check;</td><td>&check;</td><td>&check;</td></tr>
+      <tr><td>Doppler Radar (7 stations)</td><td>&check;</td><td>&check;</td><td>&check;</td></tr>
+      <tr><td>Named Locations + Geocoding</td><td>&check;</td><td>&check;</td><td>&check;</td></tr>
       <tr><td>Document Viewer</td><td>&check;</td><td>&check;</td><td>&check;</td></tr>
       <tr><td>AI Chat (Ollama)</td><td>&check;</td><td>&check;</td><td>&check;</td></tr>
       <tr><td>System Logs</td><td>&check;</td><td>&check;</td><td>&check;</td></tr>
+      <tr><td>Offline (Service Worker)</td><td>&check;</td><td>&check;</td><td>&check;</td></tr>
       <tr><td>Touch Gestures</td><td>&check;</td><td>&check;</td><td>Mouse</td></tr>
       <tr><td>Home Screen Icon</td><td>Desktop shortcut</td><td>APK launcher</td><td>Bookmark</td></tr>
     </tbody>
