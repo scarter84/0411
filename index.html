@@ -586,7 +586,7 @@ table code {
   <p style="color: var(--fg-dim); font-size: 14px; margin-top: 8px;">
     The Unified Desktop, Mobile &amp; Vehicle Ecosystem for Voice, AI, Geofencing, Weather Radar, HAM Radio, and Automation
   </p>
-  <div class="version-badge">v0.3.5 &mdash; April 2026 &mdash; CARRARA Mint &mdash; Hybrid Connection &mdash; Whim Terminal + Whim.m + Whim.V</div>
+  <div class="version-badge">v0.3.6 &mdash; April 2026 &mdash; CARRARA Mint &mdash; Hybrid Connection &mdash; Whim Terminal + Whim.m + Whim.V</div>
   <p style="margin-top: 16px;">
     <a href="https://youtu.be/73ZdY070zMQ" target="_blank" style="color: var(--green); font-size: 15px; font-weight: 500;">&#9654; Watch the Whim Overview Video on YouTube</a>
   </p>
@@ -743,7 +743,7 @@ table code {
   <table>
     <thead><tr><th>Platform</th><th>App</th><th>Description</th></tr></thead>
     <tbody>
-      <tr><td><strong>Desktop</strong></td><td>Whim Terminal v3.4.1</td><td>Full-featured Tkinter application with 18 tabs: AI chat, voice cloning (XTTS v2), wake word engine, GeoF geofence tracker with LoRa collar integration and named location management, Doppler weather radar with NWS NEXRAD overlay and 7 regional radar stations, HAM/APRS station monitor with Direwolf, SmartThings IoT, Signal/Discord messaging, NodeFlow visual editor, screen share, archive editor, and more. Shared location database with address-to-GPS geocoding across GeoF, Doppler, and HAM tabs. Runs on Linux, Windows 11, and macOS.</td></tr>
+      <tr><td><strong>Desktop</strong></td><td>Whim Terminal v3.5.0</td><td>Full-featured Tkinter application with 18 tabs: AI chat with Unified Model Router (local-first Ollama with cloud API fallback via OpenAI, Anthropic, DeepSeek), Sovereign Mode toggle, voice cloning (XTTS v2), wake word engine, GeoF geofence tracker with LoRa collar integration and named location management, Doppler weather radar with NWS NEXRAD overlay and 7 regional radar stations, HAM/APRS station monitor with Direwolf, SmartThings IoT, Signal/Discord messaging, NodeFlow visual editor, screen share, archive editor, and more. Shared location database with address-to-GPS geocoding across GeoF, Doppler, and HAM tabs. Runs on Linux, Windows 11, and macOS.</td></tr>
       <tr><td><strong>Mobile</strong></td><td>Whim.m v3.4</td><td>Android companion app (APK + PWA) with five tabs: REC (voice recording), LIBRARY (file browser), CHAT (Ollama AI proxy), WAKE (voice commands), DEVICES (mesh messaging). Runs on Samsung Galaxy S22, Galaxy S9, and Lenovo TB311FU tablet.</td></tr>
       <tr><td><strong>Vehicle</strong></td><td>Whim.V v1.1</td><td>Touch-optimized vehicle dashboard for 13.6&Prime; Tesla-style displays (Ubuntu) or Android tablets. Five panels: GeoF geofence map with Leaflet satellite tiles and named locations, NWS Doppler radar with 7 station selector, LibreOffice document viewer, AI chat, system logs. Named location manager with Nominatim geocoding, Service Worker for offline caching. Flask server + WebView APK.</td></tr>
     </tbody>
@@ -997,7 +997,7 @@ table code {
 
       <tr><td><span class="badge badge-blue">SS</span></td><td>ss</td><td>Screen share server with QR code, phone camera feed, desktop preview, FPS/quality settings, and MJPEG streaming.</td></tr>
 
-      <tr><td><span class="badge badge-yellow">SETTINGS</span></td><td>settings</td><td>API keys &amp; endpoints (Ollama, OpenAI, SmartThings, Notion), model management (pull/delete from Ollama), app preferences, theme, paths.</td></tr>
+      <tr><td><span class="badge badge-yellow">SETTINGS</span></td><td>settings</td><td>API keys &amp; endpoints (Ollama, OpenAI, Anthropic, DeepSeek, SmartThings, Notion), model management (pull/delete from Ollama), Sovereign Mode toggle, Unified Model Router (local-first with cloud fallback), app preferences, theme, paths.</td></tr>
     </tbody>
   </table>
 
@@ -2334,7 +2334,9 @@ Notes: User notes here
     <thead><tr><th>Field</th><th>Description</th></tr></thead>
     <tbody>
       <tr><td><strong>Ollama URL</strong></td><td>Base URL for the local Ollama LLM server (default: <code>http://localhost:11434</code>)</td></tr>
-      <tr><td><strong>OpenAI API Key</strong></td><td>API key for optional OpenAI integration (masked input, stored locally)</td></tr>
+      <tr><td><strong>OpenAI API Key</strong></td><td>API key for OpenAI cloud fallback (masked input, stored locally in <code>whim_settings.json</code>)</td></tr>
+      <tr><td><strong>Anthropic Key</strong></td><td>API key for Anthropic (Claude) cloud fallback (masked input, stored locally)</td></tr>
+      <tr><td><strong>DeepSeek Key</strong></td><td>API key for DeepSeek cloud fallback (masked input, stored locally)</td></tr>
       <tr><td><strong>SmartThings</strong></td><td>Personal access token for Samsung SmartThings API</td></tr>
       <tr><td><strong>Notion Token</strong></td><td>Integration token for Notion session tracking</td></tr>
     </tbody>
@@ -2357,9 +2359,27 @@ Notes: User notes here
     <li><strong>Auto-start Journal Ingest</strong> &mdash; Launch the upload server on app start</li>
     <li><strong>Auto-connect to Gateway</strong> &mdash; Connect to OpenClaw WebSocket on launch</li>
     <li><strong>Monitor tunnel &amp; Whim.m status</strong> &mdash; Background polling for SSH tunnel and Whim.m health</li>
+    <li><strong>Sovereign Mode</strong> &mdash; When ON, Whim Terminal only uses local Ollama models and will never fall back to cloud APIs. When OFF, the Unified Model Router automatically routes prompts to cloud providers (DeepSeek &rarr; OpenAI &rarr; Anthropic) if Ollama is unreachable.</li>
     <li><strong>Theme</strong> &mdash; Visual theme selector (Dark, Midnight, Solarized Dark)</li>
     <li><strong>Paths</strong> &mdash; Shows configured directories for Journal, Archive, Config, and Voice Engine</li>
   </ul>
+
+  <h3>Unified Model Router (v3.5.0)</h3>
+  <p>
+    The Unified Model Router (<code>whim_model_router.py</code>) provides automatic failover from local Ollama to cloud LLM providers. When a user sends a prompt, the router:
+  </p>
+  <ol>
+    <li>Checks if local Ollama is reachable at the configured URL</li>
+    <li>If reachable, routes the prompt to Ollama with full tool-call support (unchanged behavior)</li>
+    <li>If unreachable and <strong>Sovereign Mode is OFF</strong>, attempts cloud providers in priority order: DeepSeek &rarr; OpenAI &rarr; Anthropic</li>
+    <li>If <strong>Sovereign Mode is ON</strong>, returns an error message instead of routing to cloud</li>
+  </ol>
+  <p>
+    Cloud keys are configured in Settings &gt; API Keys &amp; Endpoints. Only providers with a saved key are attempted. The status bar shows which backend served the response (e.g. &ldquo;Routed via deepseek&rdquo;). Cloud fallback uses streaming responses but does not support Whim tool calls &mdash; those require local Ollama.
+  </p>
+  <p>
+    A standalone <strong>Node Manager</strong> window (<code>model_manager.py</code>) is also available for dedicated model management with streaming pull progress bars, a three-provider cloud key vault, and a Sovereign Mode toggle.
+  </p>
 
   <h3>LLM Model Dropdown (Header Bar)</h3>
   <p>
@@ -3212,7 +3232,7 @@ PULL:  Whim.m :8089 &rarr; Tailscale Mesh &rarr; HTTP GET &rarr; ~/Incoming/zipl
 <!-- ==================== FOOTER ==================== -->
 <footer class="manual-footer">
   <img src="manual_assets/fire.png" style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px; opacity: 0.6;">
-  <strong>Whim</strong> &mdash; Complete Manual v1.7 &mdash; April 2026<br>
+  <strong>Whim</strong> &mdash; Complete Manual v1.8 &mdash; April 2026<br>
   <span style="color: var(--fg-muted); font-size: 11px;">
     Built on CARRARA &bull; Whim Terminal + Whim.m + Whim.V &bull; Python &bull; Tkinter &bull; Flask &bull; Ollama &bull; SSH Tunnel + Tailscale Hybrid &bull; OpenClaw &bull; GeoF + LoRa + ESP32 &bull; Doppler + NWS NEXRAD &bull; HAM/APRS + Direwolf &bull; LibreOffice Headless &bull; Windows 11 + Linux + macOS + iOS (Tahoe) &bull; Multi-Terminal Sync &bull; NodeFlow &bull; Zipline CLI
   </span>
