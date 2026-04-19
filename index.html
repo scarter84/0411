@@ -2370,6 +2370,53 @@ Notes: User notes here
     <li><code>llama3.1:8b</code> &mdash; 4.9 GB, standard context</li>
     <li><code>deepseek-r1:32b</code> &mdash; 19.9 GB, reasoning model (slower, smarter)</li>
   </ul>
+
+  <h3>Theme System</h3>
+  <p>
+    Whim Terminal supports three visual themes selectable from App Preferences. Themes apply immediately on save &mdash; no restart required. All colors (backgrounds, cards, buttons, text, accents, toggles, borders) update in-place via a recursive widget recolor that maps each widget's current color to its semantic role and replaces it with the new palette.
+  </p>
+  <table>
+    <thead><tr><th>Theme</th><th>Background</th><th>Accent</th><th>Character</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Dark (Whim)</strong></td><td>#141210 warm charcoal</td><td>#e8793a amber</td><td>Default. Warm tones, high contrast orange accents</td></tr>
+      <tr><td><strong>Midnight</strong></td><td>#0b0e17 deep navy</td><td>#4a7aff electric blue</td><td>Cool-toned, blue accent, suited for night sessions</td></tr>
+      <tr><td><strong>Solarized Dark</strong></td><td>#002b36 teal-black</td><td>#b58900 gold</td><td>Classic Solarized palette with warm gold accents</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Tool Store Sub-Tab</h3>
+  <p>
+    The Tool Store organizes AI tool capabilities into bundles displayed as a card grid. Each bundle card shows a custom icon, risk badge, active tool count, and per-tool toggle switches. Toggle switches are anti-aliased (4&times; supersampled PIL rendering). Per-bundle <code>[all]</code> / <code>[none]</code> controls update only that card's toggles and status in-place without rebuilding the grid.
+  </p>
+  <ul>
+    <li><strong>7 bundles:</strong> System Admin, Workspace, Web Intel, Creative, Farm-Tech, Development, Archive</li>
+    <li><strong>Risk levels:</strong> Safe (green), Moderate (orange), Elevated (red), CRITICAL (hot red) &mdash; critical tools require manual approval</li>
+    <li><strong>Apply to Preset</strong> / <strong>Apply to openclaw.json</strong> &mdash; push tool selections to the active preset or directly to the OpenClaw config</li>
+  </ul>
+
+  <h3>Email Sub-Tab</h3>
+  <p>
+    A front-end GUI for managing email accounts without terminal commands. Configures <a href="https://github.com/sostrovsky-prt/himalaya" style="color:#e8793a">Himalaya</a> (IMAP/SMTP CLI) directly from the Settings panel.
+  </p>
+  <ul>
+    <li><strong>Setup Guide</strong> &mdash; Step-by-step instructions for Gmail, Outlook, Yahoo, and custom IMAP providers, including app password generation</li>
+    <li><strong>Configured Accounts</strong> &mdash; Lists all accounts parsed from <code>~/.config/himalaya/config.toml</code> with display name, server, and default status. Per-account Remove button</li>
+    <li><strong>Add Account</strong> &mdash; Provider dropdown auto-fills IMAP/SMTP hosts and ports. Custom provider reveals editable server fields. App password field with show/hide toggle</li>
+    <li><strong>Test Connection</strong> &mdash; Live IMAP login test (background thread) with pass/fail feedback</li>
+    <li><strong>Storage</strong> &mdash; Passwords stored in <code>chmod 600</code> files under <code>~/.config/himalaya/</code>, referenced by the TOML config's <code>backend.auth.cmd</code></li>
+  </ul>
+
+  <h3>User Guide Sub-Tab</h3>
+  <p>
+    A scrollable reference for all Tool Store bundles with per-bundle commentary. Each bundle section shows its icon (PNG from <code>~/settings/</code>), description, risk level, and all tools with contextual Unicode icons. Two authorship tiers for notes:
+  </p>
+  <ul>
+    <li><strong style="color:#40e0d0">User notes</strong> (turquoise) &mdash; editable integration commentary added by the user</li>
+    <li><strong style="color:#e8a050">Droid notes</strong> (light orange, italic) &mdash; system integration context added by the AI assistant</li>
+  </ul>
+  <p>
+    A General Notes field sits at the top for cross-cutting observations. All comment fields auto-resize to show full content without internal scrolling. Ctrl+S quick-save; data persists to <code>~/.openclaw/user_guide_comments.json</code>.
+  </p>
 </section>
 
 <!-- ==================== 21 AUDIO CAPTURE ==================== -->
