@@ -31,6 +31,9 @@ miniconda3/
 obj/
 gen/
 
+# ── Allow downloadable APKs in releases ──
+!releases/apk/*.apk
+
 # ── Audio / media (user data, not code) ──
 *.wav
 *.mp3
