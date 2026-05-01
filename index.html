@@ -492,6 +492,9 @@ table code {
     font-size: 13px;
     letter-spacing: 2px;
   }
+  .eco-grid {
+    grid-template-columns: 1fr !important;
+  }
   .toc {
     padding: 20px 16px;
   }
@@ -583,14 +586,70 @@ table code {
   <img class="flame-logo" src="manual_assets/fire.png" alt="Whim Flame Logo">
   <h1>WHIM</h1>
   <div class="subtitle">Complete Application Manual</div>
-  <p style="color: var(--fg-dim); font-size: 14px; margin-top: 8px;">
-    The Unified Desktop, Mobile &amp; Vehicle Ecosystem for Voice, AI, Geofencing, Weather Radar, HAM Radio, and Automation
+  <p style="color: var(--fg); font-size: 17px; margin-top: 14px; max-width: 740px; display: inline-block; line-height: 1.6;">
+    A modular, local-first control framework that unifies AI, voice, geofencing, weather radar, HAM radio, and IoT across desktop, mobile, and vehicle &mdash; with zero cloud dependency.
+  </p>
+  <p style="color: var(--fg-dim); font-size: 14px; margin-top: 10px;">
+    Three platforms. One ecosystem. Entirely sovereign.
   </p>
   <div class="version-badge">v0.3.6 &mdash; April 2026 &mdash; CARRARA Mint &mdash; Hybrid Connection &mdash; Whim Terminal + Whim.m + Whim.V</div>
   <p style="margin-top: 16px;">
     <a href="https://youtu.be/73ZdY070zMQ" target="_blank" style="color: var(--green); font-size: 15px; font-weight: 500;">&#9654; Watch the Whim Overview Video on YouTube</a>
   </p>
 </header>
+
+<!-- ==================== ECOSYSTEM DIAGRAM ==================== -->
+<section style="margin-bottom: 48px;">
+  <div style="text-align: center; margin-bottom: 24px;">
+    <h2 style="font-family: 'JetBrains Mono', monospace; font-size: 22px; color: var(--green); letter-spacing: 3px; margin-bottom: 8px;">THE WHIM ECOSYSTEM</h2>
+    <p style="color: var(--fg-dim); font-size: 14px;">How the platforms, models, and infrastructure connect</p>
+  </div>
+  <div class="screenshot-container" style="max-width: 860px; margin: 0 auto 32px;">
+    <img src="manual_assets/whimeco.png" alt="Whim Ecosystem — Top-down architecture diagram showing Whim Terminal, Whim.m Mobile, Whim.V Vehicle, Local LLMs, OpenClaw Injection, Cloud, and IoT/Vehicle systems">
+    <div class="screenshot-caption">Whim Ecosystem &mdash; Local edge, cloud-optional architecture with OpenClaw injection across all nodes</div>
+  </div>
+
+  <div class="eco-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 860px; margin: 0 auto;">
+    <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 20px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--green); font-weight: 600; margin-bottom: 6px;">Whim Terminal</div>
+      <div style="color: var(--fg-dim); font-size: 13px; line-height: 1.6;">Full desktop application (Linux/Windows/macOS). 18-tab Tkinter UI for AI chat, voice cloning, geofencing, weather radar, HAM/APRS, IoT, messaging, and more.</div>
+    </div>
+    <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 20px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--green); font-weight: 600; margin-bottom: 6px;">Whim.m</div>
+      <div style="color: var(--fg-dim); font-size: 13px; line-height: 1.6;">Mobile companion (Android APK/PWA). Voice recording, AI chat via Ollama proxy, wake word commands, file library, and cross-device messaging.</div>
+    </div>
+    <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 20px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--green); font-weight: 600; margin-bottom: 6px;">Whim.V</div>
+      <div style="color: var(--fg-dim); font-size: 13px; line-height: 1.6;">Vehicle dashboard for 13.6&quot; displays and tablets. Touch-optimized GeoF map, Doppler radar, document viewer, AI chat, and system logs.</div>
+    </div>
+    <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 20px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--green); font-weight: 600; margin-bottom: 6px;">OpenClaw</div>
+      <div style="color: var(--fg-dim); font-size: 13px; line-height: 1.6;">Command protocol and AI gateway. Routes instructions, manages sessions, and injects control across all platforms via WebSocket.</div>
+    </div>
+    <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 20px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--green); font-weight: 600; margin-bottom: 6px;">Doppler</div>
+      <div style="color: var(--fg-dim); font-size: 13px; line-height: 1.6;">Weather radar module. NWS NEXRAD precipitation overlay, Open-Meteo forecast, anemometer, NWR audio, and severe weather alerts pushed to mobile.</div>
+    </div>
+    <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 20px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--green); font-weight: 600; margin-bottom: 6px;">GeoF</div>
+      <div style="color: var(--fg-dim); font-size: 13px; line-height: 1.6;">Geofence tracker with canvas map, LoRa collar integration (ESP32), named location management, in/out detection, and battery monitoring.</div>
+    </div>
+    <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 20px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--green); font-weight: 600; margin-bottom: 6px;">Local LLMs</div>
+      <div style="color: var(--fg-dim); font-size: 13px; line-height: 1.6;">All AI inference runs locally through Ollama. DeepSeek R1:32B, Llama 3.1:8B-16K, Qwen3-Coder:32B. No cloud APIs required.</div>
+    </div>
+    <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 20px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--green); font-weight: 600; margin-bottom: 6px;">Tailscale Mesh</div>
+      <div style="color: var(--fg-dim); font-size: 13px; line-height: 1.6;">WireGuard-encrypted mesh VPN connecting PC, phones, tablet, and vehicle. Fallback to reverse SSH tunnel via VPS for cross-network access.</div>
+    </div>
+  </div>
+
+  <div style="text-align: center; margin-top: 24px;">
+    <p style="color: var(--fg-muted); font-size: 13px; font-style: italic; max-width: 640px; display: inline-block;">
+      A typical flow: Mobile device sends a voice command &rarr; OpenClaw routes it through the local LLM &rarr; Whim Terminal executes the action &rarr; result syncs back to all connected devices.
+    </p>
+  </div>
+</section>
 
 <!-- ==================== TABLE OF CONTENTS ==================== -->
 <nav class="toc">
@@ -719,6 +778,10 @@ table code {
     <div class="toc-item">
       <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">26</span>
       <a href="#zipline">Zipline &mdash; File Transfer CLI</a>
+    </div>
+    <div class="toc-item">
+      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">27</span>
+      <a href="#glossary">Glossary</a>
     </div>
   </div>
 </nav>
@@ -1204,10 +1267,7 @@ table code {
       <img src="manual_assets/phone_whimai_chat_v3.jpg" alt="Whim.ai Chat — S22">
       <div class="screenshot-caption">Whim.ai live chat (S22) &mdash; AI conversation with desktop app query, crab avatar, and detailed response</div>
     </div>
-    <div class="screenshot-container">
-      <img src="manual_assets/phone_tailscale_devices_v3.jpg" alt="Tailscale Devices — S22">
-      <div class="screenshot-caption">Tailscale mesh network &mdash; showing michaels-s22 and carraramint devices connected under the Whim Tailscale network</div>
-    </div>
+
   </div>
 
   <h3>Features</h3>
@@ -3227,6 +3287,44 @@ PULL:  Whim.m :8089 &rarr; Tailscale Mesh &rarr; HTTP GET &rarr; ~/Incoming/zipl
     <li>No credentials stored in the script &mdash; relies on Tailscale device authentication</li>
     <li>Filenames are sanitized via <code>os.path.basename()</code> on both send and receive</li>
   </ul>
+</section>
+
+<!-- ==================== 27 GLOSSARY ==================== -->
+<section class="section" id="glossary">
+  <div class="section-header">
+    <img class="flame-sm" src="manual_assets/fire.png" alt="">
+    <span class="sec-num">27</span>
+    <h2>Glossary</h2>
+  </div>
+  <p>Quick reference for all Whim ecosystem terminology.</p>
+  <table>
+    <thead>
+      <tr><th>Term</th><th>Definition</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Whim Terminal</strong></td><td>The primary desktop application. 18-tab Tkinter UI running on Linux, Windows, and macOS. The central hub of the ecosystem.</td></tr>
+      <tr><td><strong>Whim.m</strong></td><td>Mobile companion app for Android (APK + PWA). Five tabs: REC, LIBRARY, CHAT, WAKE, DEVICES. Connects via VPS tunnel or Tailscale.</td></tr>
+      <tr><td><strong>Whim.V</strong></td><td>Vehicle dashboard. Touch-optimized Flask web app for 13.6&Prime; Tesla-style displays and Android tablets. Five panels: GeoF, Radar, Docs, AI, Logs.</td></tr>
+      <tr><td><strong>OpenClaw</strong></td><td>The command protocol and AI gateway. Routes instructions between platforms via WebSocket (port 18789), manages sessions, agents, and approvals.</td></tr>
+      <tr><td><strong>CARRARA / carraramint</strong></td><td>The primary Linux Mint workstation that runs Whim Terminal, Ollama, and all server-side services. Tailscale IP: 100.69.17.20.</td></tr>
+      <tr><td><strong>Ollama</strong></td><td>Local LLM inference server at port 11434. Hosts DeepSeek R1:32B, Llama 3.1:8B-16K, and Qwen3-Coder:32B. No cloud dependency.</td></tr>
+      <tr><td><strong>Doppler</strong></td><td>Weather radar module. NWS NEXRAD base reflectivity overlay, Open-Meteo 7-day forecast, NWR audio, anemometer, and severe weather alerts.</td></tr>
+      <tr><td><strong>GeoF</strong></td><td>Geofence tracker. Canvas map with draggable fence vertices, LoRa collar bridge (ESP32), 20-minute heartbeat monitor, in/out detection, and named location management.</td></tr>
+      <tr><td><strong>HAM / APRS</strong></td><td>Amateur radio station monitor. Embedded OSM tile map with station markers, Direwolf integration (KISS/AGWPE/simulate), distance-filtered station list.</td></tr>
+      <tr><td><strong>LoRa Bridge</strong></td><td>ESP32-based gateway that receives LoRa packets from GPS collars and forwards them to GeoF for geofence tracking.</td></tr>
+      <tr><td><strong>NodeFlow</strong></td><td>Visual node-based editor showing active droids, LLM reasoning, OpenClaw telemetry, and data flow connections on a drag-and-drop canvas.</td></tr>
+      <tr><td><strong>Sovereign Mode</strong></td><td>Toggle that disables all cloud API fallbacks, ensuring 100% local-only AI inference. No data leaves the machine.</td></tr>
+      <tr><td><strong>Unified Model Router</strong></td><td>AI routing layer in Whim.AI. Local-first via Ollama; optionally falls back to OpenAI, Anthropic, or DeepSeek cloud APIs when Sovereign Mode is off.</td></tr>
+      <tr><td><strong>Tailscale</strong></td><td>WireGuard-based mesh VPN connecting all Whim devices. Opt-in fallback for mobile connectivity; handles WiFi-to-cellular handoffs natively.</td></tr>
+      <tr><td><strong>VPS Tunnel</strong></td><td>Primary mobile connectivity. Reverse SSH tunnel via autossh through a Vultr VPS (104.207.140.242). No ports opened on the home router.</td></tr>
+      <tr><td><strong>Zipline</strong></td><td>Local-first CLI file transfer tool. Sends and pulls files between mesh devices over Tailscale using Whim.m HTTP endpoints. Python stdlib only.</td></tr>
+      <tr><td><strong>AVR Lab</strong></td><td>XTTS v2 voice synthesis lab. Speaker references, spectrogram visualization, and Table Reads output for voice cloning.</td></tr>
+      <tr><td><strong>TRV Cipher</strong></td><td>Audio transcription workstation. Spectrogram, playback transport, Whisper transcription, ODT export, and scrub tools.</td></tr>
+      <tr><td><strong>Persona</strong></td><td>Voice personality manager. Coined response playlists per voice clone, confidence-gated, context-aware, with XTTS pre-render pipeline.</td></tr>
+      <tr><td><strong>WISP</strong></td><td>Whim&rsquo;s Integrated Systems Processor. The resident AI assistant for diagnostics, file browsing, and system maintenance tasks.</td></tr>
+      <tr><td><strong>MillyAl</strong></td><td>The cloned voice identity used for spoken AI responses via XTTS v2. Generates audio for wake word replies and voice chat.</td></tr>
+    </tbody>
+  </table>
 </section>
 
 <!-- ==================== FOOTER ==================== -->
