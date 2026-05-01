@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=5, user-scalable=yes">
 <title>Whim — Complete Manual</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
@@ -566,6 +566,43 @@ table code {
   .code-block {
     font-size: 10px;
     padding: 8px 10px;
+  }
+}
+
+/* ===== TOUCH / SCROLL / ZOOM ===== */
+html, body {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+
+body {
+  touch-action: pan-x pan-y pinch-zoom;
+}
+
+.section {
+  touch-action: pan-x pan-y pinch-zoom;
+}
+
+table {
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .screenshot-container img {
+    touch-action: pinch-zoom;
+  }
+
+  #lightbox-overlay {
+    touch-action: pinch-zoom pan-x pan-y;
+  }
+
+  #lightbox-img {
+    touch-action: pinch-zoom;
+  }
+
+  .code-block, pre {
+    -webkit-overflow-scrolling: touch;
+    overflow-x: auto;
   }
 }
 
@@ -3372,20 +3409,79 @@ PULL:  Whim.m :8089 &rarr; Tailscale Mesh &rarr; HTTP GET &rarr; ~/Incoming/zipl
     document.querySelectorAll('img').forEach(bindImage);
   });
 
-  overlay.addEventListener('click', function() {
+  // Zoom/pan state for lightbox
+  var lbScale = 1, lbStartDist = 0, lbTransX = 0, lbTransY = 0;
+  var lbPanStartX = 0, lbPanStartY = 0, lbLastTap = 0;
+
+  function resetLightboxTransform() {
+    lbScale = 1; lbTransX = 0; lbTransY = 0;
+    lbImg.style.transform = 'scale(1) translate(0,0)';
+  }
+
+  function closeLightbox() {
     overlay.style.display = 'none';
     lbImg.src = '';
-  });
-  document.getElementById('lightbox-close').addEventListener('click', function() {
-    overlay.style.display = 'none';
-    lbImg.src = '';
-  });
+    resetLightboxTransform();
+  }
+
+  overlay.addEventListener('click', closeLightbox);
+  document.getElementById('lightbox-close').addEventListener('click', closeLightbox);
   document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape' && overlay.style.display === 'flex') {
-      overlay.style.display = 'none';
-      lbImg.src = '';
-    }
+    if (e.key === 'Escape' && overlay.style.display === 'flex') closeLightbox();
   });
+
+  function applyLightboxTransform() {
+    lbImg.style.transform = 'scale(' + lbScale + ') translate(' + lbTransX + 'px,' + lbTransY + 'px)';
+  }
+
+  function getTouchDist(t) {
+    var dx = t[0].clientX - t[1].clientX;
+    var dy = t[0].clientY - t[1].clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+
+  lbImg.addEventListener('touchstart', function(e) {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      lbStartDist = getTouchDist(e.touches);
+    } else if (e.touches.length === 1) {
+      var now = Date.now();
+      if (now - lbLastTap < 300) {
+        e.preventDefault();
+        if (lbScale > 1.1) { resetLightboxTransform(); }
+        else { lbScale = 2.5; applyLightboxTransform(); }
+      }
+      lbLastTap = now;
+      lbPanStartX = e.touches[0].clientX - lbTransX;
+      lbPanStartY = e.touches[0].clientY - lbTransY;
+    }
+  }, { passive: false });
+
+  lbImg.addEventListener('touchmove', function(e) {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      var dist = getTouchDist(e.touches);
+      var newScale = lbScale * (dist / lbStartDist);
+      lbScale = Math.min(Math.max(newScale, 0.5), 6);
+      lbStartDist = dist;
+      applyLightboxTransform();
+    } else if (e.touches.length === 1 && lbScale > 1) {
+      e.preventDefault();
+      lbTransX = e.touches[0].clientX - lbPanStartX;
+      lbTransY = e.touches[0].clientY - lbPanStartY;
+      applyLightboxTransform();
+    }
+  }, { passive: false });
+
+  // Mouse wheel zoom for desktop lightbox
+  lbImg.addEventListener('wheel', function(e) {
+    if (overlay.style.display !== 'flex') return;
+    e.preventDefault();
+    var delta = e.deltaY > 0 ? 0.9 : 1.1;
+    lbScale = Math.min(Math.max(lbScale * delta, 0.5), 6);
+    applyLightboxTransform();
+  }, { passive: false });
+
 })();
 </script>
 
