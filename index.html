@@ -629,7 +629,7 @@ table {
   <p style="color: var(--fg-dim); font-size: 14px; margin-top: 10px;">
     Three platforms. One ecosystem. Entirely sovereign.
   </p>
-  <div class="version-badge">v0.3.6 &mdash; April 2026 &mdash; CARRARA Mint &mdash; Hybrid Connection &mdash; Whim Terminal + Whim.m + Whim.V</div>
+  <div class="version-badge">v0.3.7 &mdash; May 2026 &mdash; CARRARA Mint &mdash; Hybrid Connection &mdash; Whim Terminal + Whim.m + Whim.V + Whimgo.io + WISP</div>
   <p style="margin-top: 16px;">
     <a href="https://youtu.be/73ZdY070zMQ" target="_blank" style="color: var(--green); font-size: 15px; font-weight: 500;">&#9654; Watch the Whim Overview Video on YouTube</a>
   </p>
@@ -678,6 +678,10 @@ table {
     <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 20px;">
       <div style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--green); font-weight: 600; margin-bottom: 6px;">Tailscale Mesh</div>
       <div style="color: var(--fg-dim); font-size: 13px; line-height: 1.6;">WireGuard-encrypted mesh VPN connecting PC, phones, tablet, and vehicle. Fallback to reverse SSH tunnel via VPS for cross-network access.</div>
+    </div>
+    <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 20px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--green); font-weight: 600; margin-bottom: 6px;">Whimgo.io</div>
+      <div style="color: var(--fg-dim); font-size: 13px; line-height: 1.6;">Public web portal and operator dashboard. WISP remote terminal via ttyd over Tailscale, ADB Quick Actions, mesh status, development journal. GitHub Pages hosted.</div>
     </div>
   </div>
 
@@ -782,42 +786,58 @@ table {
     </div>
     <div class="toc-item">
       <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">21</span>
-      <a href="#audiocapture">Audio Capture Tool</a>
+      <a href="#brain">BRAIN &mdash; GBrain Knowledge Engine</a>
     </div>
     <div class="toc-item">
       <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">22</span>
-      <a href="#tech">Technical Stack &amp; Config</a>
+      <a href="#email">Email &mdash; Himalaya Integration</a>
     </div>
     <div class="toc-item">
       <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">23</span>
-      <a href="#desktop-env">Desktop Environment Customizations</a>
+      <a href="#dictionary">Whim Dictionary &amp; Context System</a>
     </div>
     <div class="toc-item">
       <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">24</span>
-      <a href="#windows11">Windows 11 Support</a>
-    </div>
-    <div class="toc-item">
-      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">24.1</span>
-      <a href="#ios">iOS Support (Tahoe)</a>
-    </div>
-    <div class="toc-item">
-      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">24.2</span>
-      <a href="#macos">macOS Support</a>
-    </div>
-    <div class="toc-item">
-      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">24.3</span>
-      <a href="#whimv">Whim.V &mdash; Vehicle Dashboard</a>
+      <a href="#audiocapture">Audio Capture Tool</a>
     </div>
     <div class="toc-item">
       <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">25</span>
-      <a href="#sync">Multi-Terminal Sync</a>
+      <a href="#tech">Technical Stack &amp; Config</a>
     </div>
     <div class="toc-item">
       <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">26</span>
-      <a href="#zipline">Zipline &mdash; File Transfer CLI</a>
+      <a href="#desktop-env">Desktop Environment Customizations</a>
     </div>
     <div class="toc-item">
       <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">27</span>
+      <a href="#windows11">Windows 11 Support</a>
+    </div>
+    <div class="toc-item">
+      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">27.1</span>
+      <a href="#ios">iOS Support (Tahoe)</a>
+    </div>
+    <div class="toc-item">
+      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">27.2</span>
+      <a href="#macos">macOS Support</a>
+    </div>
+    <div class="toc-item">
+      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">27.3</span>
+      <a href="#whimv">Whim.V &mdash; Vehicle Dashboard</a>
+    </div>
+    <div class="toc-item">
+      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">28</span>
+      <a href="#sync">Multi-Terminal Sync</a>
+    </div>
+    <div class="toc-item">
+      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">29</span>
+      <a href="#zipline">Zipline &mdash; File Transfer CLI</a>
+    </div>
+    <div class="toc-item">
+      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">30</span>
+      <a href="#whimgoio">Whimgo.io &mdash; Web Portal &amp; WISP Terminal</a>
+    </div>
+    <div class="toc-item">
+      <span class="page-num"><img class="flame-sm" src="manual_assets/fire.png" alt="">31</span>
       <a href="#glossary">Glossary</a>
     </div>
   </div>
@@ -843,9 +863,10 @@ table {
   <table>
     <thead><tr><th>Platform</th><th>App</th><th>Description</th></tr></thead>
     <tbody>
-      <tr><td><strong>Desktop</strong></td><td>Whim Terminal v3.5.0</td><td>Full-featured Tkinter application with 18 tabs: AI chat with Unified Model Router (local-first Ollama with cloud API fallback via OpenAI, Anthropic, DeepSeek), Sovereign Mode toggle, voice cloning (XTTS v2), wake word engine, GeoF geofence tracker with LoRa collar integration and named location management, Doppler weather radar with NWS NEXRAD overlay and 7 regional radar stations, HAM/APRS station monitor with Direwolf, SmartThings IoT, Signal/Discord messaging, NodeFlow visual editor, screen share, archive editor, and more. Shared location database with address-to-GPS geocoding across GeoF, Doppler, and HAM tabs. Runs on Linux, Windows 11, and macOS.</td></tr>
+      <tr><td><strong>Desktop</strong></td><td>Whim Terminal v3.5.0</td><td>Full-featured Tkinter application with 20 tabs: AI chat with Unified Model Router (local-first Ollama with cloud API fallback via OpenAI, Anthropic, DeepSeek), Sovereign Mode toggle, GBrain persistent AI memory with knowledge graph and entity tracking, voice cloning (XTTS v2), wake word engine, GeoF geofence tracker with LoRa collar integration and named location management, Doppler weather radar with NWS NEXRAD overlay and 7 regional radar stations, HAM/APRS station monitor with Direwolf, SmartThings IoT, Signal/Discord messaging, Email via Himalaya, NodeFlow visual editor, screen share, archive editor, and more. Shared location database with address-to-GPS geocoding across GeoF, Doppler, and HAM tabs. Runs on Linux, Windows 11, and macOS.</td></tr>
       <tr><td><strong>Mobile</strong></td><td>Whim.m v3.4</td><td>Android companion app (APK + PWA) with five tabs: REC (voice recording), LIBRARY (file browser), CHAT (Ollama AI proxy), WAKE (voice commands), DEVICES (mesh messaging). Runs on Samsung Galaxy S22, Galaxy S9, and Lenovo TB311FU tablet.</td></tr>
       <tr><td><strong>Vehicle</strong></td><td>Whim.V v1.1</td><td>Touch-optimized vehicle dashboard for 13.6&Prime; Tesla-style displays (Ubuntu) or Android tablets. Five panels: GeoF geofence map with Leaflet satellite tiles and named locations, NWS Doppler radar with 7 station selector, LibreOffice document viewer, AI chat, system logs. Named location manager with Nominatim geocoding, Service Worker for offline caching. Flask server + WebView APK.</td></tr>
+      <tr><td><strong>Web Portal</strong></td><td>Whimgo.io</td><td>Public-facing project site and operator dashboard hosted on GitHub Pages. Features product overview, Edge Match GPU selector, development journal, and WISP remote terminal (ttyd :7681 over Tailscale mesh with TLS). Operator-gated pages use client-side SHA-256 passphrase authentication. Enables remote APK sideloading and system administration from any browser on the mesh.</td></tr>
     </tbody>
   </table>
 
@@ -899,7 +920,7 @@ table {
 
   <div style="margin: 24px 0; text-align: center;">
     <img src="manual_assets/whim_uml_architecture.png" alt="Whim System Architecture &amp; Network Topology" style="max-width: 100%; border: 1px solid var(--border-hi); border-radius: 8px;">
-    <p style="color: var(--fg-dim); font-size: 13px; margin-top: 8px;">System Architecture &amp; Network Topology (PlantUML)</p>
+    <p style="color: var(--fg-dim); font-size: 13px; margin-top: 8px;">System Architecture &amp; Network Topology (UML) &mdash; Includes Whimgo.io web portal, WISP remote terminal (ttyd :7681), Tailscale mesh, VPS tunnel, and all device endpoints</p>
   </div>
 
   <div class="conn-diagram">
@@ -938,12 +959,19 @@ table {
       <span class="arrow">&larr; decode &rarr;</span>
       <span class="node">Station Map + Packet Log</span>
     </div>
-    <div>
+    <div style="margin-bottom: 16px;">
       <span class="node">SS Server :8091</span>
       <span class="arrow">&larr; MJPEG &rarr;</span>
       <span class="node">Phone Camera</span>
       <span class="arrow">&larr; POST &rarr;</span>
       <span class="node">Desktop Preview</span>
+    </div>
+    <div>
+      <span class="node">Whimgo.io (Browser)</span>
+      <span class="arrow">&rarr; HTTPS iframe &rarr;</span>
+      <span class="node">ttyd :7681 (TLS)</span>
+      <span class="arrow">&larr; Tailscale &larr;</span>
+      <span class="node">WISP Terminal</span>
     </div>
   </div>
 
@@ -1036,6 +1064,12 @@ table {
         <td>8089</td>
         <td>Local-first file transfer between mesh devices via Whim.m endpoints</td>
       </tr>
+      <tr>
+        <td>WISP Terminal (ttyd)</td>
+        <td>HTTPS (WebSocket)</td>
+        <td>7681</td>
+        <td>Web-based terminal access to CARRAMint via ttyd over Tailscale mesh, embedded in Whimgo.io</td>
+      </tr>
     </tbody>
   </table>
 
@@ -1056,7 +1090,7 @@ table {
 
   <h3>Two-Row Tab Layout</h3>
   <p>
-    All 17 module tabs are split across two rows for better visibility and click targets. Row 1 contains the primary workflow tabs (Chat through TRV Cipher). Row 2 contains utility and configuration tabs (Library through Settings). The active tab is highlighted in green with a border accent. Tabs are button-based with hover effects.
+    All 20 module tabs are split across two rows for better visibility and click targets. Row 1 contains the primary workflow tabs (Chat through TRV Cipher). Row 2 contains utility and configuration tabs (Library through Brain and Settings). The active tab is highlighted in green with a border accent. Tabs are button-based with hover effects. Global mouse-wheel scrolling works on every scrollable widget in the application.
   </p>
 </section>
 
@@ -2536,11 +2570,157 @@ Notes: User notes here
   </p>
 </section>
 
-<!-- ==================== 21 AUDIO CAPTURE ==================== -->
-<section class="section" id="audiocapture">
+<!-- ==================== 21 BRAIN — GBRAIN KNOWLEDGE ENGINE ==================== -->
+<section class="section" id="brain">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
     <span class="sec-num">21</span>
+    <h2>BRAIN &mdash; GBrain Knowledge Engine</h2>
+  </div>
+  <p>
+    The BRAIN tab provides a persistent AI memory system powered by <a href="https://github.com/garrytan/gbrain" style="color:#2fa572">GBrain</a> (v0.28.9). GBrain stores knowledge in a local PGLite database with pgvector for hybrid search (keyword + vector + reciprocal rank fusion). The brain compounds automatically &mdash; every interaction can add knowledge, and the system gets smarter over time.
+  </p>
+
+  <h3>Header: Brain Health Indicator</h3>
+  <p>
+    A live health dot appears in the main header bar alongside Devices and Ecosystem. It polls GBrain every 30 seconds and shows:
+  </p>
+  <ul>
+    <li><strong style="color:#2fa572">&bull; Green</strong> &mdash; Brain online, shows page count (e.g. &ldquo;42pg&rdquo;)</li>
+    <li><strong style="color:#8a7a6a">&bull; Grey</strong> &mdash; Brain offline or not installed</li>
+  </ul>
+  <p>Clicking the indicator jumps directly to the BRAIN tab.</p>
+
+  <h3>Global Shortcut: Ctrl+Shift+G</h3>
+  <p>
+    Press <code>Ctrl+Shift+G</code> from <strong>any tab</strong> to open a quick brain query dialog. Enter a natural language question, hit OK, and results appear in the BRAIN tab&rsquo;s Search &amp; Query view.
+  </p>
+
+  <h3>Sub-Tab: Search &amp; Query</h3>
+  <p>
+    A smart search bar supporting natural language queries (e.g. &ldquo;show me everything about my S22 phone&rdquo;). Result type filters narrow results:
+  </p>
+  <ul>
+    <li><strong>All</strong> &mdash; Hybrid query with synthesis (default)</li>
+    <li><strong>Pages</strong> &mdash; Keyword search across brain pages</li>
+    <li><strong>Entities</strong> &mdash; Filter to people and companies</li>
+    <li><strong>Timeline</strong> &mdash; Filter to timeline entries</li>
+    <li><strong>Repos</strong> &mdash; Search local GitHub repositories from the Whim Dictionary</li>
+  </ul>
+  <p>
+    Action buttons: <strong>Hybrid Query</strong>, <strong>Keyword Search</strong>, <strong>List Pages</strong>, <strong>Get Page</strong> (by slug), and <strong>Backlinks</strong> (show pages linking to a slug). The <strong>&rarr; Whim.ai</strong> button sends results to the AI chat and auto-triggers an analysis response.
+  </p>
+
+  <h3>Sub-Tab: Timeline</h3>
+  <p>
+    Chronological view of brain events with date range selectors. Quick-select buttons: <strong>Today</strong>, <strong>This Week</strong>, <strong>This Month</strong>. Ideal for reviewing what happened across Journal, Voice, and GeoF data.
+  </p>
+
+  <h3>Sub-Tab: Entity Explorer</h3>
+  <p>
+    Browse entities by type: People, Companies, Devices, Projects, Locations, Concepts. Left panel shows an entity list; right panel splits into two views:
+  </p>
+  <ul>
+    <li><strong>Detail pane</strong> &mdash; Full page content with backlinks listed below</li>
+    <li><strong>Backlink Graph</strong> &mdash; Visual radial graph showing the selected entity at center with connected pages arranged in a circle. Nodes are color-coded by type (orange = people, blue = companies, yellow = devices). Up to 12 backlinks displayed with overflow count.</li>
+  </ul>
+
+  <h3>Sub-Tab: Operations</h3>
+  <p>Three-column layout for brain management:</p>
+  <ul>
+    <li><strong>Brain Status</strong> &mdash; Live stats (pages, chunks, links, tags), Refresh/Doctor/Sync buttons</li>
+    <li><strong>Dream Cycle</strong> &mdash; GBrain&rsquo;s 8-phase maintenance cycle (lint &rarr; backlinks &rarr; sync &rarr; synthesize &rarr; extract &rarr; patterns &rarr; embed &rarr; orphans). Dry Run for preview, Full Run with confirmation dialog</li>
+    <li><strong>Safety &amp; Permissions</strong> &mdash; Droid write toggle (see below), auto-enrich, auto-summary, import toggles</li>
+    <li><strong>Export</strong> &mdash; Export entire brain as a Markdown vault or Obsidian-compatible folder (wikilinks converted)</li>
+  </ul>
+
+  <h3>Droid Write Permissions</h3>
+  <p>
+    <strong>&ldquo;Allow Droids to Write to Brain&rdquo;</strong> defaults to OFF. Enabling it triggers a confirmation dialog listing exactly what droids can do: create/update pages, add entity links and backlinks, write timeline entries, and run enrichment pipelines. When enabled, two automated features activate:
+  </p>
+  <ul>
+    <li><strong>Auto-enrich</strong> &mdash; Polls ~/Journal every 5 minutes for new files and auto-imports them</li>
+    <li><strong>Auto-summary</strong> &mdash; Generates a daily summary page (<code>summaries/daily-YYYY-MM-DD</code>) with brain stats and recent activity</li>
+  </ul>
+
+  <h3>Send to Brain (from Whim.ai)</h3>
+  <p>
+    A <strong>Send to Brain</strong> button in the Whim.AI toolbar saves the last AI response (and its prompt) as a brain page. A dialog asks for the page slug (e.g. <code>notes/my-topic</code>). The page is created with frontmatter, tags, and a timestamp. The Brain Health indicator refreshes immediately after save.
+  </p>
+
+  <h3>Slash Commands</h3>
+  <table>
+    <thead><tr><th>Command</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>/gbrain query &lt;question&gt;</code></td><td>Hybrid search with synthesis</td></tr>
+      <tr><td><code>/gbrain search &lt;term&gt;</code></td><td>Keyword search</td></tr>
+      <tr><td><code>/gbrain status</code></td><td>Show brain stats and health</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Recent Activity Feed</h3>
+  <p>
+    A bottom panel in the BRAIN tab shows the latest brain page changes for situational awareness. Auto-refreshes after imports, syncs, and dream cycles.
+  </p>
+
+  <h3>Installation</h3>
+  <p>
+    GBrain is installed via <code>git clone</code> + <code>bun install &amp;&amp; bun link</code> at <code>~/gbrain</code>. Brain data lives at <code>~/.gbrain/brain.pglite</code> (embedded Postgres 17.5, no server needed). A compiled reference page (<code>systems/whim-terminal-ecosystem</code>) documents the full Whim architecture and is searchable from day one.
+  </p>
+</section>
+
+<!-- ==================== 22 EMAIL ==================== -->
+<section class="section" id="email">
+  <div class="section-header">
+    <img class="flame-sm" src="manual_assets/fire.png" alt="">
+    <span class="sec-num">22</span>
+    <h2>Email &mdash; Himalaya Integration</h2>
+  </div>
+  <p>
+    The EMAIL tab integrates <a href="https://github.com/sostrovsky-prt/himalaya" style="color:#e8793a">Himalaya</a>, a CLI email client, directly into Whim Terminal and Whim.ai chat. IMAP/SMTP configuration is managed in the Settings &gt; Email sub-tab.
+  </p>
+  <h3>Chat Commands</h3>
+  <table>
+    <thead><tr><th>Command</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>/email list [count]</code></td><td>List inbox message headers</td></tr>
+      <tr><td><code>/email read &lt;id&gt;</code></td><td>Read a specific email by message ID</td></tr>
+      <tr><td><code>/email search &lt;query&gt;</code></td><td>Search across the mailbox</td></tr>
+    </tbody>
+  </table>
+  <p>
+    Email content is never fabricated. If the Himalaya tool is unavailable, Whim.ai tells the user to run the slash commands directly.
+  </p>
+</section>
+
+<!-- ==================== 23 WHIM DICTIONARY ==================== -->
+<section class="section" id="dictionary">
+  <div class="section-header">
+    <img class="flame-sm" src="manual_assets/fire.png" alt="">
+    <span class="sec-num">23</span>
+    <h2>Whim Dictionary &amp; Context System</h2>
+  </div>
+  <p>
+    The Whim Dictionary (<code>whim_dictionary.py</code>) is a 43-term glossary of the entire Whim ecosystem that gets injected into every Whim.ai system prompt. This gives the local LLM contextual awareness of all subsystems, terminology, and project structure.
+  </p>
+  <h3>What It Contains</h3>
+  <ul>
+    <li><strong>43 ecosystem terms</strong> &mdash; Whim Terminal, OpenClaw, WISP, Whim.ai, Ollama, OpenFang, Collar, TRV, FreshTail, OpenTailor, GBrain, Himalaya, and more</li>
+    <li><strong>6 GitHub repositories</strong> &mdash; Local paths and remote URLs for Whim, whimgo.io, 0411, mtkclient, Azure-ttk-theme, and gbrain</li>
+    <li><strong>GBrain config defaults</strong> &mdash; Install/brain directory paths, feature toggles</li>
+    <li><strong>Context builder</strong> &mdash; <code>build_whimai_context_block()</code> generates the text block appended to every AI system prompt</li>
+  </ul>
+  <h3>How It Works</h3>
+  <p>
+    On every Whim.ai inference call, the dictionary context block is appended to the system prompt <em>after</em> the base prompt and playback/agent logic prompts. The AI sees a &ldquo;Whim Ecosystem Context&rdquo; section listing key terms, all local GitHub repos with paths, and GBrain integration commands. This means the AI can answer questions like &ldquo;where is the Whim repo?&rdquo; or &ldquo;what is OpenFang?&rdquo; without hallucinating.
+  </p>
+</section>
+
+<!-- ==================== 24 AUDIO CAPTURE ==================== -->
+<section class="section" id="audiocapture">
+  <div class="section-header">
+    <img class="flame-sm" src="manual_assets/fire.png" alt="">
+    <span class="sec-num">24</span>
     <h2>Audio Capture Tool</h2>
   </div>
   <p>
@@ -2593,7 +2773,7 @@ Notes: User notes here
 <section class="section" id="tech">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">22</span>
+    <span class="sec-num">25</span>
     <h2>Technical Stack &amp; Configuration</h2>
   </div>
 
@@ -2662,7 +2842,7 @@ Notes: User notes here
 <section class="section" id="desktop-env">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">23</span>
+    <span class="sec-num">26</span>
     <h2>Desktop Environment Customizations</h2>
   </div>
   <p>
@@ -2751,7 +2931,7 @@ Notes: User notes here
 <section class="section" id="windows11">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">24</span>
+    <span class="sec-num">27</span>
     <h2>Windows 11 Support</h2>
   </div>
   <p>
@@ -2875,7 +3055,7 @@ scripts/
 <section class="section" id="ios">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">24.1</span>
+    <span class="sec-num">27.1</span>
     <h2>iOS Support (Tahoe)</h2>
   </div>
   <p>
@@ -2935,7 +3115,7 @@ scripts/
 <section class="section" id="macos">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">24.2</span>
+    <span class="sec-num">27.2</span>
     <h2>macOS Support</h2>
   </div>
   <p>
@@ -3005,7 +3185,7 @@ python3 app/openclaw_tkui.py</code></div>
 <section class="section" id="whimv">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">24.3</span>
+    <span class="sec-num">27.3</span>
     <h2>Whim.V &mdash; Vehicle Dashboard</h2>
   </div>
   <p>
@@ -3098,7 +3278,7 @@ adb install vehicle/apk_build/out/whim_v.apk</code></pre>
 <section class="section" id="sync">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">25</span>
+    <span class="sec-num">28</span>
     <h2>Multi-Terminal Sync</h2>
   </div>
   <p>
@@ -3225,7 +3405,7 @@ adb install vehicle/apk_build/out/whim_v.apk</code></pre>
 <section class="section" id="zipline">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">26</span>
+    <span class="sec-num">29</span>
     <h2>Zipline &mdash; File Transfer CLI</h2>
   </div>
 
@@ -3326,11 +3506,150 @@ PULL:  Whim.m :8089 &rarr; Tailscale Mesh &rarr; HTTP GET &rarr; ~/Incoming/zipl
   </ul>
 </section>
 
-<!-- ==================== 27 GLOSSARY ==================== -->
+<!-- ==================== 27 WHIMGO.IO ==================== -->
+<section class="section" id="whimgoio">
+  <div class="section-header">
+    <img class="flame-sm" src="manual_assets/fire.png" alt="">
+    <span class="sec-num">30</span>
+    <h2>Whimgo.io &mdash; Web Portal &amp; WISP Terminal</h2>
+  </div>
+  <p>
+    <strong><a href="https://whimgo.io" target="_blank">Whimgo.io</a></strong> is the public-facing web portal for the Whim ecosystem, hosted on GitHub Pages. It serves as both a project homepage for the community and a secure operator dashboard for authenticated users. Operators can access the <strong>WISP Terminal</strong> &mdash; a browser-based shell into the CARRAMint workstation &mdash; directly from the portal, enabling remote APK sideloading, system administration, and ADB commands without leaving the browser.
+  </p>
+
+  <h3>Site Architecture</h3>
+  <table>
+    <thead><tr><th>Page</th><th>URL</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Home</strong></td><td><code>whimgo.io</code></td><td>Product overview, feature grid, architecture diagram, Edge Match GPU selector, downloads, community, and operator login</td></tr>
+      <tr><td><strong>Journal</strong></td><td><code>whimgo.io/journal.html</code></td><td>Development journal and build log (operator-gated)</td></tr>
+      <tr><td><strong>WISP</strong></td><td><code>whimgo.io/wisp.html</code></td><td>Remote terminal console via ttyd over Tailscale mesh (operator-gated)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Operator Handshake</h3>
+  <p>
+    Certain pages (Journal, WISP) are gated behind an <strong>Operator Handshake</strong> &mdash; a SHA-256 passphrase challenge verified entirely client-side. No credentials are transmitted to any server. The passphrase hash is embedded in the page source; authentication is stored in <code>sessionStorage</code> and resets on browser close. The home page also features an Operator login that reveals a live dashboard with Tailscale mesh status, VPS tunnel health, OpenClaw gateway status, and a burndown task queue.
+  </p>
+
+  <h3>WISP Terminal</h3>
+  <p>
+    The WISP page embeds a <strong>ttyd</strong> instance running on CARRAMint (<code>100.69.17.20:7681</code>) inside an iframe, providing a full interactive bash shell in the browser. This is the same terminal environment where the WISP droid (Whim&rsquo;s Integrated Systems Processor) operates. Key capabilities:
+  </p>
+  <ul>
+    <li><strong>Remote ADB</strong> &mdash; Connect to vehicle head unit over Tailscale (<code>adb connect 100.64.255.124:5555</code>) and push APKs directly from the browser</li>
+    <li><strong>System Administration</strong> &mdash; Manage Ollama models, check service health, restart daemons, review logs</li>
+    <li><strong>File Operations</strong> &mdash; Browse vaults, edit configs, transfer files via Zipline CLI</li>
+    <li><strong>AI Access</strong> &mdash; Launch the WISP droid session (<code>droid --name WISP --droid wisp</code>) for AI-assisted system diagnostics</li>
+  </ul>
+
+  <h3>WISP Terminal Toolbar</h3>
+  <table>
+    <thead><tr><th>Control</th><th>Function</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Status Dot</strong></td><td>Green (connected), Yellow (checking), Red (unreachable) &mdash; reflects ttyd reachability</td></tr>
+      <tr><td><strong>Target Address</strong></td><td>Displays the Tailscale IP and port (<code>100.69.17.20:7681</code>)</td></tr>
+      <tr><td><strong>Connect / Disconnect</strong></td><td>Creates or destroys the ttyd iframe, with connection timeout detection</td></tr>
+      <tr><td><strong>Sidebar Toggle</strong></td><td>Show/hide the ADB Quick Actions, mesh device list, and ttyd config panels</td></tr>
+    </tbody>
+  </table>
+
+  <h3>ADB Quick Actions Sidebar</h3>
+  <p>
+    The sidebar provides one-click clipboard commands for common ADB operations, eliminating the need to remember paths and IPs:
+  </p>
+  <table>
+    <thead><tr><th>Action</th><th>Command</th></tr></thead>
+    <tbody>
+      <tr><td>Connect Vehicle HU</td><td><code>adb connect 100.64.255.124:5555</code></td></tr>
+      <tr><td>Push Whim.m APK</td><td><code>adb install ~/Apps/whim_m.apk</code></td></tr>
+      <tr><td>Push Whim.V APK</td><td><code>adb install ~/Apps/whim_v.apk</code></td></tr>
+      <tr><td>List Devices</td><td><code>adb devices -l</code></td></tr>
+      <tr><td>Screenshot Vehicle</td><td><code>adb shell screencap &amp;&amp; adb pull</code></td></tr>
+      <tr><td>List Whim Packages</td><td><code>adb shell pm list packages | grep whim</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3>ttyd Service Setup</h3>
+  <p>
+    The ttyd web terminal runs as a systemd service on CARRAMint, bound to the Tailscale interface with TLS enabled so it can be embedded in the HTTPS-hosted Whimgo.io site:
+  </p>
+  <div class="code-block"># Service: /etc/systemd/system/wisp-ttyd.service
+[Unit]
+Description=WISP ttyd -- Web terminal for Whim operator access
+After=network.target tailscaled.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/ttyd -p 7681 -i 100.69.17.20 \
+  --ssl-cert ~/.ttyd/cert.pem \
+  --ssl-key ~/.ttyd/key.pem \
+  -t fontSize=14 -t fontFamily=JetBrains Mono,monospace \
+  -t theme={"background":"#0a0a0a","foreground":"#dce4ee","cursor":"#00ff00"} \
+  /bin/bash
+User=tommymunro
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target</div>
+
+  <h3>TLS Requirement</h3>
+  <p>
+    Because Whimgo.io is served over HTTPS (GitHub Pages), the ttyd iframe must also use HTTPS to avoid mixed-content blocking by browsers. ttyd is configured with a self-signed certificate (or Tailscale cert) bound to the Tailscale IP. On first connection, the operator must accept the certificate by visiting <code>https://100.69.17.20:7681</code> directly in the browser.
+  </p>
+
+  <h3>Mesh Device Panel</h3>
+  <p>
+    The sidebar also displays all Tailscale mesh devices with live status indicators:
+  </p>
+  <table>
+    <thead><tr><th>Device</th><th>Tailscale IP</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td>CARRAMint</td><td>100.69.17.20</td><td><span class="badge badge-green">Online</span></td></tr>
+      <tr><td>Galaxy S22</td><td>100.77.59.2</td><td><span class="badge badge-green">Online</span></td></tr>
+      <tr><td>Galaxy S9</td><td>100.97.96.1</td><td><span class="badge badge-green">Online</span></td></tr>
+      <tr><td>Lenovo Tablet</td><td>100.64.255.124</td><td><span class="badge badge-green">Online</span></td></tr>
+      <tr><td>Vehicle HU</td><td>pending</td><td><span class="badge badge-yellow">Dev</span></td></tr>
+    </tbody>
+  </table>
+
+  <h3>Repository</h3>
+  <table>
+    <thead><tr><th>Item</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td>Source</td><td><a href="https://github.com/scarter84/whimgo.io-site" target="_blank">github.com/scarter84/whimgo.io-site</a></td></tr>
+      <tr><td>Hosting</td><td>GitHub Pages (HTTPS enforced)</td></tr>
+      <tr><td>Domain</td><td>whimgo.io (custom CNAME)</td></tr>
+      <tr><td>Service Worker</td><td>Offline caching for PWA support</td></tr>
+      <tr><td>Auth</td><td>Client-side SHA-256 passphrase (no server component)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Operator Workflow: Remote APK Sideload</h3>
+  <p>
+    The primary use case for the WISP terminal on Whimgo.io is pushing APK updates to the vehicle head unit while sitting in the vehicle, using the phone or tablet&rsquo;s browser:
+  </p>
+  <ol>
+    <li>Open <code>whimgo.io/wisp.html</code> on any mesh-connected device</li>
+    <li>Authenticate with the operator passphrase</li>
+    <li>Click <strong>Connect</strong> to open the CARRAMint terminal</li>
+    <li>Use the ADB Quick Actions to connect to the vehicle HU and push the latest APK</li>
+    <li>The APK transfers from the home PC &rarr; Tailscale mesh &rarr; vehicle head unit &mdash; no USB cables, no cloud</li>
+  </ol>
+
+  <div class="card">
+    <div class="card-title">Why Whimgo.io Matters</div>
+    <p style="font-size: 14px; color: var(--yellow);">
+      Whimgo.io closes the loop on sovereign infrastructure. You are not relying on a third-party app store or cloud service to manage your fleet &mdash; you are using your own hardware, your own mesh, and your own web portal. The entire deployment pipeline from code change to APK running on the vehicle display runs through infrastructure you control.
+    </p>
+  </div>
+</section>
+
+<!-- ==================== 28 GLOSSARY ==================== -->
 <section class="section" id="glossary">
   <div class="section-header">
     <img class="flame-sm" src="manual_assets/fire.png" alt="">
-    <span class="sec-num">27</span>
+    <span class="sec-num">31</span>
     <h2>Glossary</h2>
   </div>
   <p>Quick reference for all Whim ecosystem terminology.</p>
@@ -3339,7 +3658,7 @@ PULL:  Whim.m :8089 &rarr; Tailscale Mesh &rarr; HTTP GET &rarr; ~/Incoming/zipl
       <tr><th>Term</th><th>Definition</th></tr>
     </thead>
     <tbody>
-      <tr><td><strong>Whim Terminal</strong></td><td>The primary desktop application. 18-tab Tkinter UI running on Linux, Windows, and macOS. The central hub of the ecosystem.</td></tr>
+      <tr><td><strong>Whim Terminal</strong></td><td>The primary desktop application. 20-tab Tkinter UI running on Linux, Windows, and macOS. The central hub of the ecosystem.</td></tr>
       <tr><td><strong>Whim.m</strong></td><td>Mobile companion app for Android (APK + PWA). Five tabs: REC, LIBRARY, CHAT, WAKE, DEVICES. Connects via VPS tunnel or Tailscale.</td></tr>
       <tr><td><strong>Whim.V</strong></td><td>Vehicle dashboard. Touch-optimized Flask web app for 13.6&Prime; Tesla-style displays and Android tablets. Five panels: GeoF, Radar, Docs, AI, Logs.</td></tr>
       <tr><td><strong>OpenClaw</strong></td><td>The command protocol and AI gateway. Routes instructions between platforms via WebSocket (port 18789), manages sessions, agents, and approvals.</td></tr>
@@ -3358,8 +3677,19 @@ PULL:  Whim.m :8089 &rarr; Tailscale Mesh &rarr; HTTP GET &rarr; ~/Incoming/zipl
       <tr><td><strong>AVR Lab</strong></td><td>XTTS v2 voice synthesis lab. Speaker references, spectrogram visualization, and Table Reads output for voice cloning.</td></tr>
       <tr><td><strong>TRV Cipher</strong></td><td>Audio transcription workstation. Spectrogram, playback transport, Whisper transcription, ODT export, and scrub tools.</td></tr>
       <tr><td><strong>Persona</strong></td><td>Voice personality manager. Coined response playlists per voice clone, confidence-gated, context-aware, with XTTS pre-render pipeline.</td></tr>
-      <tr><td><strong>WISP</strong></td><td>Whim&rsquo;s Integrated Systems Processor. The resident AI assistant for diagnostics, file browsing, and system maintenance tasks.</td></tr>
+      <tr><td><strong>WISP</strong></td><td>Whim&rsquo;s Integrated Systems Processor. The resident AI assistant for diagnostics, file browsing, and system maintenance tasks. Accessible remotely via the Whimgo.io WISP terminal page.</td></tr>
+      <tr><td><strong>Whimgo.io</strong></td><td>The public web portal for the Whim ecosystem. Hosted on GitHub Pages. Features project overview, Edge Match GPU selector, operator dashboard (passphrase-gated), development journal, and WISP remote terminal.</td></tr>
+      <tr><td><strong>ttyd</strong></td><td>Web-based terminal emulator running on CARRAMint (port 7681, Tailscale-bound, TLS-enabled). Provides browser-based shell access embedded in the Whimgo.io WISP page for remote administration and ADB operations.</td></tr>
       <tr><td><strong>MillyAl</strong></td><td>The cloned voice identity used for spoken AI responses via XTTS v2. Generates audio for wake word replies and voice chat.</td></tr>
+      <tr><td><strong>GBrain</strong></td><td>Open-source AI memory system (github.com/garrytan/gbrain). Persistent knowledge graph with PGLite + pgvector, hybrid search, 34 skills, Dream Cycle maintenance, and entity enrichment. Installed at ~/gbrain, data at ~/.gbrain/.</td></tr>
+      <tr><td><strong>Brain Health</strong></td><td>Live indicator in the header bar showing GBrain status (green dot = online, grey = offline) with page count. Polls every 30 seconds. Click to jump to BRAIN tab.</td></tr>
+      <tr><td><strong>Whim Dictionary</strong></td><td>43-term ecosystem glossary (whim_dictionary.py) injected into every Whim.ai system prompt. Contains subsystem definitions, GitHub repo locations, and GBrain context.</td></tr>
+      <tr><td><strong>Himalaya</strong></td><td>CLI email client for IMAP/SMTP integrated into Whim Terminal. Configured in Settings &gt; Email. Chat commands: /email list, /email read, /email search.</td></tr>
+      <tr><td><strong>Dream Cycle</strong></td><td>GBrain&rsquo;s 8-phase overnight maintenance: lint, backlinks, sync, synthesize, extract, patterns, embed, orphans. Runnable from the BRAIN &gt; Operations tab.</td></tr>
+      <tr><td><strong>Send to Brain</strong></td><td>One-click button in the Whim.AI toolbar that saves the last AI response as a brain page with frontmatter, prompt context, and timestamp.</td></tr>
+      <tr><td><strong>FreshTail</strong></td><td>Context window management system that builds optimized message history for Ollama, handling token overflow and message prioritization.</td></tr>
+      <tr><td><strong>OpenTailor</strong></td><td>The Tool Store in Settings. Manages AI capability bundles with per-preset tool selection, risk badges, and approval requirements.</td></tr>
+      <tr><td><strong>OpenFang</strong></td><td>Visual watchdog kernel. Monitors system state via screenshots, OCR, and neural analysis. Produces kickbacks when issues detected. Commands: /openfang, /chk, /solve.</td></tr>
     </tbody>
   </table>
 </section>
@@ -3367,9 +3697,9 @@ PULL:  Whim.m :8089 &rarr; Tailscale Mesh &rarr; HTTP GET &rarr; ~/Incoming/zipl
 <!-- ==================== FOOTER ==================== -->
 <footer class="manual-footer">
   <img src="manual_assets/fire.png" style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px; opacity: 0.6;">
-  <strong>Whim</strong> &mdash; Complete Manual v1.8 &mdash; April 2026<br>
+  <strong>Whim</strong> &mdash; Complete Manual v2.0 &mdash; May 2026<br>
   <span style="color: var(--fg-muted); font-size: 11px;">
-    Built on CARRARA &bull; Whim Terminal + Whim.m + Whim.V &bull; Python &bull; Tkinter &bull; Flask &bull; Ollama &bull; SSH Tunnel + Tailscale Hybrid &bull; OpenClaw &bull; GeoF + LoRa + ESP32 &bull; Doppler + NWS NEXRAD &bull; HAM/APRS + Direwolf &bull; LibreOffice Headless &bull; Windows 11 + Linux + macOS + iOS (Tahoe) &bull; Multi-Terminal Sync &bull; NodeFlow &bull; Zipline CLI
+    Built on CARRARA &bull; Whim Terminal + Whim.m + Whim.V &bull; Whimgo.io + WISP Terminal &bull; Python &bull; Tkinter &bull; Flask &bull; Ollama &bull; GBrain (PGLite + pgvector) &bull; SSH Tunnel + Tailscale Hybrid &bull; OpenClaw &bull; GeoF + LoRa + ESP32 &bull; Doppler + NWS NEXRAD &bull; HAM/APRS + Direwolf &bull; Himalaya Email &bull; LibreOffice Headless &bull; Windows 11 + Linux + macOS + iOS (Tahoe) &bull; Multi-Terminal Sync &bull; NodeFlow &bull; Zipline CLI &bull; ttyd
   </span>
 </footer>
 
